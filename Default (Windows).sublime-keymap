@@ -1,0 +1,71 @@
+[
+  {
+    "args": {}, 
+    "command": "navigate_to_definition", 
+    "context": [], 
+    "keys": [
+      "ctrl+]"
+    ]
+  }, 
+  {
+    "args": {}, 
+    "command": "jump_back", 
+    "context": [], 
+    "keys": [
+      "ctrl+["
+    ]
+  }, 
+  {
+    //"argr_comment": "TODO", 
+    "args": {
+      "to": "last_modification"
+    }, 
+
+    "command": "jump_back", 
+    "context": [],
+    "keys": [
+      "ctrl+shift+alt+["
+    ]
+  }, 
+  {
+    "args": {}, 
+    "command": "rebuild_tags", 
+    "context": [], 
+    "keys": [
+      "ctrl+alt+shift+t"
+    ]
+  }, 
+  {
+    "args": {}, 
+    "command": "show_symbols", 
+    "context": [
+      {
+        "key": "selector", 
+        "match_all": true, 
+        "operand": "source -source.css", 
+        "operator": "equal"
+      }
+    ], 
+    "keys": [
+      "alt+s"
+    ]
+  }, 
+  {
+    //"argr_comment": "TODO", 
+    "args": {
+      "0": "multi"
+    }, 
+    "command": "show_symbols", 
+    "context": [
+      {
+        "key": "selector", 
+        "match_all": true, 
+        "operand": "source -source.css", 
+        "operator": "equal"
+      }
+    ], 
+    "keys": [
+      "alt+shift+s"
+    ]
+  }
+]
