@@ -185,8 +185,6 @@ def format_tag_for_quickopen(tag, file=1):
     format = []
     tag = ctags.Tag(tag)
 
-    if file: format.append(tag.filename )
-
     f=''
     for field in getattr(tag, "field_keys", []):
         if field in PATH_ORDER:
@@ -194,7 +192,9 @@ def format_tag_for_quickopen(tag, file=1):
             f += string.Template (
                 '    %($field)s$punct%(symbol)s' ).substitute(locals())
 
-    return format + [(f or tag.symbol) % tag, tag.ex_command]
+    format = [(f or tag.symbol) % tag, tag.ex_command]
+    if file: format.insert(1, tag.filename )
+    return format
 
 def prepared_4_quickpanel(formatter=format_tag_for_quickopen, path_cols=()):
     def compile_lists(sorter):
@@ -204,7 +204,7 @@ def prepared_4_quickpanel(formatter=format_tag_for_quickopen, path_cols=()):
             display.append(formatter(t))
             args.append(t)
 
-        return args, display#format_for_display(display, paths=path_cols)
+        return args, display# format_for_display(display,  paths=path_cols)
 
     return compile_lists
 
@@ -225,7 +225,7 @@ def commonfolder(m):
 def tagged_project_files(view, tag_dir):
     window = view.window()
     if not window: return []
-    project = window.project()
+    project = None #window.project()
     fn = view_fn(view)
 
     if not project or ( project and
@@ -339,6 +339,7 @@ def ctags_goto_command(jump_directly_if_one=False):
 
             if result not in (True, False, None):
                 args, display = result
+                if not args: return
 
                 def on_select(i):
                     JumpBack.append(view)
@@ -385,18 +386,20 @@ class ShowSymbols(sublime_plugin.TextCommand):
 
     @ctags_goto_command()
     def run(self, view, args, tags_file, tags):
-        files = files_to_search(view, tags_file, 'multi' in args)
+        multi = args.get('type') =='multi'
+
+        files = files_to_search(view, tags_file, multi)
         if not files: return
 
         tags_file = tags_file + '_sorted_by_file'
         tags = TagFile(tags_file, FILENAME).get_tags_dict(*files)
 
         if not tags:
-            return (
-             'multi' in args and view.run_command('showSymbols', ['multi'])
-                     or sublime.question_box (
-                        'No symbols found **FOR CURRENT FILE**; Try Rebuild?' )
-                    and view.run_command('rebuildCTags') )
+            if multi: 
+                view.run_command('show_symbols', {'type':'multi'})
+            else:
+                sublime.status_message(
+                    'No symbols found **FOR CURRENT FILE**; Try Rebuild?' )
 
         path_cols = (0, ) if len(files) > 1 else ()
         formatting = functools.partial( format_tag_for_quickopen,

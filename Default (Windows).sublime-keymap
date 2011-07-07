@@ -24,7 +24,7 @@
     "command": "jump_back", 
     "context": [],
     "keys": [
-      "ctrl+shift+alt+["
+      "ctrl+shift+["
     ]
   }, 
   {
@@ -53,7 +53,7 @@
   {
     //"argr_comment": "TODO", 
     "args": {
-      "0": "multi"
+      "type": "multi"
     }, 
     "command": "show_symbols", 
     "context": [
