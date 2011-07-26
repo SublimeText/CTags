@@ -31,14 +31,7 @@ from ctags import ( FILENAME, MATCHES_STARTWITH, parse_tag_lines, PATH_ORDER,
 
 ################################### SETTINGS ###################################
 
-# TODO:
-ctags_settings = sublime.load_settings('CTags.sublime-settings')
-
-CTAGS_CMD  = [CTAGS_EXE, '-R']
-CTAGS_EXE  = 'ctags'
-TAGS_PATHS = {('source.python', 'windows') : r'C:\Python27\Lib\tags'}
-
-DEBUGGING  = 0
+setting = sublime.load_settings('CTags.sublime-settings').get # (key, None)
 
 ################################### CONSTANTS ##################################
 
@@ -160,7 +153,7 @@ def alternate_tags_paths(view, tags_file):
     if os.path.exists(tags_paths):
         search_paths.extend(open(tags_paths).read().split('\n'))
 
-    for (selector, platform), path in TAGS_PATHS.items():
+    for (selector, platform), path in settings.get('extra_tag_paths'):
         if ( view.match_selector(view.sel()[0].begin(), selector) and
              sublime.platform() == platform ):
             search_paths.append(path)
@@ -205,7 +198,7 @@ def follow_tag_path(view, tag_path, pattern):
     pattern_region = find_source (
         view, '^' + escape_regex(pattern), start_at, flags=0 )
 
-    if DEBUGGING: # Leave a visual trail for easy debugging
+    if setting('debug'): # Leave a visual trail for easy debugging
         regions = regions  + ([pattern_region] if pattern_region else [])
         view.erase_regions('tag_path')
         view.add_regions('tag_path', regions, 'comment', 1)
@@ -474,15 +467,15 @@ class rebuild_tags(sublime_plugin.TextCommand):
             if 0: #not 1 or sublime.question_box('`ctags -R` in %s ?'% dirname(tag_file)):
                 return
 
-        self.build_ctags(tag_file)
+        self.build_ctags(setting('ctags_command'), tag_file)
 
     def done_building(self, tag_file):
         status_message('Finished building %s' % tag_file)
 
     @threaded(finish=done_building, msg="Already running CTags!")
-    def build_ctags(self, tag_file):
+    def build_ctags(self, cmd, tag_file):
         in_main(lambda: status_message('Re/Building CTags: Please be patient'))()
-        ctags.build_ctags(CTAGS_CMD, tag_file)
+        ctags.build_ctags(cmd, tag_file)
         return tag_file
 
 ################################# AUTOCOMPLETE #################################
@@ -547,7 +540,7 @@ class test_ctags(sublime_plugin.TextCommand):
                         failure = 'FAILURE %s' % pprint.pformat(tag)
                         failure += av.file_name()
 
-                        if DEBUGGING and not sublime.question_box('%s\n\n\n' % failure):
+                        if setting('debug') and not sublime.question_box('%s\n\n\n' % failure):
                             self.routine = None
                             return sublime.set_clipboard(failure)
 
