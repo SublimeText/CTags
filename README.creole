@@ -27,7 +27,7 @@ This uses `tags` files created in `ctags -R` recursive mode.
 The commands will try and find a `tags` file in the same directory as
 the current view, walking up directories until it finds one. If it
 can't find one it will offer to build some ( in the directory of the
-current view )
+current view ) (TODO: doesn't ask as missing api from S1)
 
 If a symbol can't be found in a tags file it will search in
 alternative locations.
