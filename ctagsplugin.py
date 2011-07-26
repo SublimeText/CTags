@@ -1,72 +1,44 @@
-#!/usr/bin/env python
 #coding: utf8
-#################################### IMPORTS #########################TESTING124
-
-from __future__ import with_statement
+#################################### IMPORTS ###################################
 
 # Std Libs
-import os
-import re
-import time
 import functools
-import string
-import pprint
 import glob
-
-from os.path import join, normpath, dirname
-from operator import itemgetter as iget
+import os
+import pprint
+import re
+import string
+import threading
+import time
 
 from itertools import chain
+from operator import itemgetter as iget
+from os.path import join, normpath, dirname
 
 ################################ SUBLIME IMPORTS ###############################
-
 # Sublime Libs
 import sublime
 import sublime_plugin
 
 from sublime import status_message
 
-################################# AAA* IMPORTS #################################
-
-# Helpers
-from pluginhelpers import ( threaded, in_main, wait_until_loaded,
-                            select, on_idle, escape_regex )
-
-# AutoComplete
-# from autocomplete import register_autocomplete
-
-# QuickPanel formatting
-from quickpanelcols import format_for_display
-
 ################################## APP IMPORTS #################################
 
 # Ctags
 import ctags
-from ctags import ( TagFile, SYMBOL, FILENAME, parse_tag_lines, Tag,
-                    MATCHES_STARTWITH, PATH_ORDER )
+from ctags import ( FILENAME, MATCHES_STARTWITH, parse_tag_lines, PATH_ORDER,
+                    SYMBOL, Tag, TagFile )
 
 ################################### SETTINGS ###################################
 
-CTAGS_EXE = join(sublime.packages_path(), 'CTags', 'ctags.exe')
+# TODO:
+ctags_settings = sublime.load_settings('CTags.sublime-settings')
 
-CTAGS_CMD = [CTAGS_EXE, '-R']
+CTAGS_CMD  = [CTAGS_EXE, '-R']
+CTAGS_EXE  = 'ctags'
+TAGS_PATHS = {('source.python', 'windows') : r'C:\Python27\Lib\tags'}
 
-DEBUGGING = 0
-
-TAGS_PATHS = {
-    'source.python' :  r'C:\Python27\Lib\tags',
-}
-
-# This command will run after scroll_to_tag
-SELECTORS = {
-    'source.python' : ["selectPyNode",  "move characters -1"]
-}
-
-# Create a local_settings.py, (don't version control ) and shadow any of
-# the settings above
-
-try:                   from local_settings import *
-except ImportError:    pass
+DEBUGGING  = 0
 
 ################################### CONSTANTS ##################################
 
@@ -77,6 +49,89 @@ OBJECT_PUNCTUATORS = {
 }
 
 ENTITY_SCOPE = "entity.name.function, entity.name.type, meta.toc-list"
+
+################################# AAA* IMPORTS #################################
+# Inlined 07/26/11 20:39:51#
+############################
+
+ON_LOAD       = sublime_plugin.all_callbacks['on_load']
+
+RE_SPECIAL_CHARS = re.compile (
+    '(\\\\|\\*|\\+|\\?|\\||\\{|\\}|\\[|\\]|\\(|\\)|\\^|\\$|\\.|\\#|\\ )' )
+
+def escape_regex(s):
+    return RE_SPECIAL_CHARS.sub(lambda m: '\\%s' % m.group(1), s)
+
+def select(view, region):
+    sel_set = view.sel()
+    sel_set.clear()
+    sel_set.add(region)
+    view.show(region)
+
+def in_main(f):
+    @functools.wraps(f)
+    def done_in_main(*args, **kw):
+        sublime.set_timeout(functools.partial(f, *args, **kw), 0)
+
+    return done_in_main
+
+# TODO: allow thread per tag file. That makes more sense.
+def threaded(finish=None, msg="Thread already running"):
+    def decorator(func):
+        func.running = 0
+        @functools.wraps(func)
+        def threaded(*args, **kwargs):
+            def run():
+                try:
+                    result = func(*args, **kwargs)
+                    if result is None:
+                        result = ()
+
+                    elif not isinstance(result, tuple):
+                        result = (result, )
+
+                    if finish:
+                        sublime.set_timeout (
+                            functools.partial(finish, args[0], *result), 0
+                        )
+                finally:
+                    func.running = 0
+            if not func.running:
+                func.running = 1
+                t = threading.Thread(target=run)
+                t.setDaemon(True)
+                t.start()
+            else:
+                sublime.status_message(msg)
+        threaded.func = func
+        return threaded
+    return decorator
+
+class one_shot(object):
+    def __init__(self):
+        self.callbacks.append(self)
+        self.remove = lambda: self.callbacks.remove(self)
+
+def on_load(f=None, window=None, encoded_row_col=True):
+    window = window or sublime.active_window()
+
+    def wrapper(cb):
+        if not f: return cb(window.active_view())
+        view = window.open_file( normpath(f),
+                                 encoded_row_col)
+
+        if view.is_loading():
+            class set_on_load(one_shot):
+                callbacks = ON_LOAD
+
+                def on_load(self, view):
+                    try:     cb(view)
+                    finally: self.remove()
+
+            set_on_load()
+        else: cb(view)
+
+    return wrapper
 
 #################################### HELPERS ###################################
 
@@ -105,8 +160,9 @@ def alternate_tags_paths(view, tags_file):
     if os.path.exists(tags_paths):
         search_paths.extend(open(tags_paths).read().split('\n'))
 
-    for selector, path in TAGS_PATHS.items():
-        if view.match_selector(view.sel()[0].begin(), selector):
+    for (selector, platform), path in TAGS_PATHS.items():
+        if ( view.match_selector(view.sel()[0].begin(), selector) and
+             sublime.platform() == platform ):
             search_paths.append(path)
 
     return filter(os.path.exists, search_paths)
@@ -157,7 +213,7 @@ def follow_tag_path(view, tag_path, pattern):
     return pattern_region.begin() -1 if pattern_region else start_at
 
 def scroll_to_tag(view, tag, hook=None):
-    @wait_until_loaded(join(tag.root_dir, tag.filename))
+    @on_load(join(tag.root_dir, tag.filename))
     def and_then(view):
         if tag.ex_command.isdigit():
             look_from = view.text_point(int(tag.ex_command)-1, 0)
@@ -169,13 +225,7 @@ def scroll_to_tag(view, tag, hook=None):
         select (
             view,
             (symbol_region or (
-              view.line(look_from + 1)if look_from else sublime.Region(0, 0))))
-
-        # for s, cmd in SELECTORS.items():
-        #     if view.match_selector(view.cursor, s):
-        #         if all(view.can_run_command(c) for c in cmd):
-        #             for c in cmd: view.run_command(c)
-        #         break
+              view.line(look_from + 1) if look_from else sublime.Region(0, 0))))
 
         if hook: hook(view)
 
@@ -310,7 +360,7 @@ class JumpBack(sublime_plugin.WindowCommand):
         self.jump(jf, jr)
 
     def jump(self, fn, sel):
-        @wait_until_loaded(fn, begin_edit=True)
+        @on_load(fn, begin_edit=True)
         def and_then(view):
             select(view, sublime.Region(*sel))
 
@@ -395,7 +445,7 @@ class ShowSymbols(sublime_plugin.TextCommand):
         tags = TagFile(tags_file, FILENAME).get_tags_dict(*files)
 
         if not tags:
-            if multi: 
+            if multi:
                 view.run_command('show_symbols', {'type':'multi'})
             else:
                 sublime.status_message(
@@ -418,6 +468,7 @@ class rebuild_tags(sublime_plugin.TextCommand):
     def run(self, edit, **args):
         view=self.view
         tag_file = find_tags_relative_to(view, ask_to_build=0)
+
         if not tag_file:
             tag_file = join(dirname(view_fn(view)), 'tags')
             if 0: #not 1 or sublime.question_box('`ctags -R` in %s ?'% dirname(tag_file)):
@@ -436,16 +487,16 @@ class rebuild_tags(sublime_plugin.TextCommand):
 
 ################################# AUTOCOMPLETE #################################
 
-class CTagsAutoComplete(sublime_plugin.EventListener):
-    def on_query_completions(self, view, prefix, locations):
-        tags = find_tags_relative_to(view, ask_to_build=False)
-        completions = []
+# class CTagsAutoComplete(sublime_plugin.EventListener):
+#     def on_query_completions(self, view, prefix, locations):
+#         tags = find_tags_relative_to(view, ask_to_build=False)
+#         completions = []
 
-        if tags:
-            tag_file = TagFile(tags, SYMBOL, MATCHES_STARTWITH)
-            completions = [(a,a) for a in sorted(tag_file.get_tags_dict(prefix))]
+#         if tags:
+#             tag_file = TagFile(tags, SYMBOL, MATCHES_STARTWITH)
+#             completions = [(a,a) for a in sorted(tag_file.get_tags_dict(prefix[0]))]
 
-        return []
+#         return []
 
 ##################################### TEST #####################################
 
@@ -509,9 +560,9 @@ class test_ctags(sublime_plugin.TextCommand):
 
         failures = line_failures + ex_failures
         tags_tested = sum(len(v) for v in tags.values()) - len(failures)
-        
+
         view = sublime.active_window().new_file()
-        
+
         edit = view.begin_edit()
         view.insert(edit, view.size(), '%s Tags Tested OK\n' % tags_tested)
         view.insert(edit, view.size(), '%s Tags Failed'    % len(failures))

@@ -94,18 +94,9 @@ def process_fields(fields):
     return dict(f.split(':', 1) for f in fields.split('\t'))
 
 class Tag(dict):
-    "dot.syntatic sugar for tag dicts"
-    __setattr__ = dict.__setitem__
-    def __delattr__(self, name):
-        try:
-            del self[name]
-        except KeyError:
-            raise AttributeError
-    def __getattr__(self, name):
-        try:
-            return self[name]
-        except KeyError:
-            raise AttributeError
+    def __init__(self, *args, **kw):
+        dict.__init__(self, *args, **kw)
+        self.__dict__ = self
 
 ################################################################################
 
@@ -402,4 +393,4 @@ if __name__ == '__main__':
 # with the key portion equal to some language-dependent construct name and its
 # value the name declared for that construct in the program. This scope entry
 # indicates the scope in which the tag was found. For example, a tag generated
-# for a C structure member would have a scope looking like "struct:myStruct".
+# for a C structure member would have a scope looking like "struct:myStruct".myStruct".
