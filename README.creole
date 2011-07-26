@@ -12,9 +12,23 @@ an mmap()'d `tags` file so it will work efficiently with very large ( 50MB+ etc
 
 === Installation ===
 
-==== Windows ====
-* $ cd %APPDATA%\Sublime Text 2\Packages
-* $ git clone https://github.com/sublimator/CTags CTags
+If you are a git user, the best way to install the package and keep up to date
+is to clone the repo directly into your /Packages directory in the Sublime
+Text 2 application settings area. 
+
+==== Using Git ====
+
+Go to your Sublime Text 2 `Packages` directory and clone the repository using the command below:
+
+{{{
+$ git clone https://github.com/sublimator/CTags CTags
+}}}
+
+==== Download Manually ====
+
+* Download the files using the .zip download option
+* Unzip the files (and rename the folder to CTags if needed)
+* Copy the folder to your Sublime Text 2 Packages directory
 
 === About ===
 
