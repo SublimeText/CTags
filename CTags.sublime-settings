@@ -1,5 +1,5 @@
 {
     "debug"           :  false,
     "ctags_command"   :  ["ctags",  "-R"],
-    "extra_tag_paths" :  [["source.python, windows"], "C:\\Python27\\Lib\\tags"]
+    "extra_tag_paths" :  [ [["source.python", "windows"], "C:\\Python27\\Lib\\tags"]  ]
 }
