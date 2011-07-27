@@ -130,7 +130,7 @@ def on_load(f=None, window=None, encoded_row_col=True):
 
 def view_fn(v): return v.file_name() or '.'
 
-def find_tags_relative_to(view, ask_to_build=True):
+def find_tags_relative_to(view):
     fn = view.file_name()
     if not fn: return ''
 
@@ -142,9 +142,7 @@ def find_tags_relative_to(view, ask_to_build=True):
         if os.path.exists(joined): return joined
         else: dirs.pop()
 
-    if ask_to_build:
-        status_message("Can't find any relevant tags file")
-        view.run_command('rebuildCTags')
+    status_message("Can't find any relevant tags file")
 
 def alternate_tags_paths(view, tags_file):
     tags_paths = '%s_search_paths' % tags_file
@@ -380,6 +378,7 @@ def ctags_goto_command(jump_directly_if_one=False):
         def command(self, edit, **args):
             view = self.view
             tags_file = find_tags_relative_to(view)
+            if not tags_file: return
 
             result = f(self, self.view, args, tags_file, {})
 
