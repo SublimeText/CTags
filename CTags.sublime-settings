@@ -1,6 +1,6 @@
 {
     "debug"           :  false,
-    "ctags_command"   :  ["ctags",  "-R"],
+    "ctags_command"   :  ["ctags",  "-R", "--exclude=@tags_ignore_patterns"],
     "filters"         :  {"source.python": {"type":"^i$"}},
-    "extra_tag_paths" :  [ [["source.python", "windows"], "C:\\Python27\\Lib\\tags"]  ]
+    "extra_tag_paths" :  [ [["source.python", "windows"], "C:\\Python27\\Lib\\tags"]]
 }

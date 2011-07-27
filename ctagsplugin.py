@@ -109,34 +109,29 @@ class one_shot(object):
 @contextmanager
 def edition(view):
     edit = view.begin_edit()
-    try:        
+    try:
         yield
     finally:
         view.end_edit(edit)
 
 def on_load(f=None, window=None, encoded_row_col=True, begin_edit=False):
     window = window or sublime.active_window()
-
     def wrapper(cb):
         if not f: return cb(window.active_view())
-        view = window.open_file( normpath(f),
-                                 encoded_row_col)
+        view = window.open_file( normpath(f), encoded_row_col )
+        def wrapped():
+            if begin_edit: 
+                with edition(view): cb(view)
+            else: cb(view)
 
         if view.is_loading():
             class set_on_load(one_shot):
                 callbacks = ON_LOAD
-
                 def on_load(self, view):
-                    try:
-                        if begin_edit:
-                            with edition(view): cb(view)
-                        else:
-                            cb(view)
-                    finally: 
-                        self.remove()
+                    try:wrapped()
+                    finally: self.remove()
             set_on_load()
-        else: cb(view)
-
+        else: wrapped()
     return wrapper
 
 #################################### HELPERS ###################################
@@ -436,7 +431,7 @@ class NavigateToDefinition(sublime_plugin.TextCommand):
 
         for tags_file in alternate_tags_paths(view, tags_file):
             tags = (TagFile( tags_file, SYMBOL)
-                            .get_tags_dict( symbol, 
+                            .get_tags_dict( symbol,
                                             filters=compile_filters(view)) )
             if tags: break
 
