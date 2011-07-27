@@ -164,8 +164,12 @@ def resort_ctags(tag_file):
                 fw.write('\t'.join(split))
 
 def build_ctags(cmd, tag_file):
-    p = subprocess.Popen(cmd, cwd = dirname(tag_file), shell=1)
-    p.wait()
+    p = subprocess.Popen(cmd, cwd = dirname(tag_file), shell=1, 
+                         stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    ret = p.wait()
+
+    if ret:
+        raise Exception("ctags crashed with ret code: %s\n\n%s"  % (ret, p.stdout.read()))
 
     # Faster than ctags.exe again:
     resort_ctags(tag_file)

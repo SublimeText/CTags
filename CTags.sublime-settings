@@ -1,6 +1,9 @@
 {
     "debug"           :  false,
-    "ctags_command"   :  ["ctags",  "-R", "--exclude=@tags_ignore_patterns"],
+    "ctags_command"   :  ["ctags",  "-R" 
+        //"--exclude=@tags_ignore_patterns"
+        // ctags will crash if this file doesn't exist
+    ],
     "filters"         :  {"source.python": {"type":"^i$"}},
     "extra_tag_paths" :  [ [["source.python", "windows"], "C:\\Python27\\Lib\\tags"]]
 }
