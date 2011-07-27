@@ -153,10 +153,13 @@ def alternate_tags_paths(view, tags_file):
     if os.path.exists(tags_paths):
         search_paths.extend(open(tags_paths).read().split('\n'))
 
-    for (selector, platform), path in setting('extra_tag_paths'):
-        if ( view.match_selector(view.sel()[0].begin(), selector) and
-             sublime.platform() == platform ):
-            search_paths.append(path)
+    try:
+        for (selector, platform), path in setting('extra_tag_paths'):
+            if ( view.match_selector(view.sel()[0].begin(), selector) and
+                 sublime.platform() == platform ):
+                search_paths.append(path)
+    except Exception, e:
+        print e
 
     return filter(os.path.exists, search_paths)
 
