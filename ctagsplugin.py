@@ -167,7 +167,7 @@ def alternate_tags_paths(view, tags_file):
     except Exception, e:
         print e
 
-    return filter(os.path.exists, search_paths)
+    return [p for p in search_paths if p and os.path.exists(p)]
 
 ################################# SCROLL TO TAG ################################
 
@@ -386,7 +386,6 @@ def ctags_goto_command(jump_directly_if_one=False):
         def command(self, edit, **args):
             view = self.view
             tags_file = find_tags_relative_to(view)
-            if not tags_file: return
 
             result = f(self, self.view, args, tags_file, {})
 
@@ -451,6 +450,7 @@ class ShowSymbols(sublime_plugin.TextCommand):
 
     @ctags_goto_command()
     def run(self, view, args, tags_file, tags):
+        if not tags_file: return
         multi = args.get('type') =='multi'
 
         files = files_to_search(view, tags_file, multi)
