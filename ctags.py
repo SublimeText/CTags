@@ -59,12 +59,21 @@ def splits(string, *splitters):
 
 ################################################################################
 
-def parse_tag_lines(lines, order_by='symbol', tag_class=None):
+def parse_tag_lines(lines, order_by='symbol', tag_class=None, filters=[]):
     tags_lookup = {}
 
     for search_obj in (t for t in (TAGS_RE.search(l) for l in lines) if t):
         tag = post_process_tag(search_obj)
         if tag_class is not None: tag = tag_class(tag)
+        
+        skip = False
+        for f in filters:
+            for k, v in f.items():
+                if re.match(v, tag[k]):
+                    skip = True
+        
+        if skip: continue
+
         tags_lookup.setdefault(tag[order_by], []).append(tag)
 
     return tags_lookup
@@ -228,9 +237,10 @@ class TagFile(object):
     def tag_class(self):
         return type('Tag', (Tag,), dict(root_dir = self.dir))
 
-    def get_tags_dict(self, *tags):
+    def get_tags_dict(self, *tags, **kw):
+        filters = kw.get('filters', [])
         return parse_tag_lines( self.get(*tags),
-                                tag_class=self.tag_class())
+                                tag_class=self.tag_class(), filters=filters)
 
 ################################################################################
 

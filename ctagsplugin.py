@@ -11,6 +11,7 @@ import string
 import threading
 import time
 
+from contextlib import contextmanager
 from itertools import chain
 from operator import itemgetter as iget
 from os.path import join, normpath, dirname
@@ -105,7 +106,15 @@ class one_shot(object):
         self.callbacks.append(self)
         self.remove = lambda: self.callbacks.remove(self)
 
-def on_load(f=None, window=None, encoded_row_col=True):
+@contextmanager
+def edition(view):
+    edit = view.begin_edit()
+    try:        
+        yield
+    finally:
+        view.end_edit(edit)
+
+def on_load(f=None, window=None, encoded_row_col=True, begin_edit=False):
     window = window or sublime.active_window()
 
     def wrapper(cb):
@@ -118,9 +127,13 @@ def on_load(f=None, window=None, encoded_row_col=True):
                 callbacks = ON_LOAD
 
                 def on_load(self, view):
-                    try:     cb(view)
-                    finally: self.remove()
-
+                    try:
+                        if begin_edit:
+                            with edition(view): cb(view)
+                        else:
+                            cb(view)
+                    finally: 
+                        self.remove()
             set_on_load()
         else: cb(view)
 
@@ -387,8 +400,9 @@ def ctags_goto_command(jump_directly_if_one=False):
                 if not args: return
 
                 def on_select(i):
-                    JumpBack.append(view)
-                    scroll_to_tag(view, args[i])
+                    if i != -1:
+                        JumpBack.append(view)
+                        scroll_to_tag(view, args[i])
 
                 ( on_select(0) if   jump_directly_if_one and len(args) == 1
                                else view.window().show_quick_panel (
@@ -402,6 +416,15 @@ def checkIfBuilding(self, view, args):
 
     else:  return 1
 
+
+def compile_filters(view):
+    filters = []
+    for selector, regexes in setting('filters', {}).items():
+        if view.match_selector (
+            view.sel() and view.sel()[0].begin() or 0, selector ):
+            filters.append(regexes)
+    return filters
+
 ######################### GOTO DEFINITION UNDER CURSOR #########################
 
 class NavigateToDefinition(sublime_plugin.TextCommand):
@@ -412,7 +435,9 @@ class NavigateToDefinition(sublime_plugin.TextCommand):
         symbol = view.substr(view.word(view.sel()[0]))
 
         for tags_file in alternate_tags_paths(view, tags_file):
-            tags = TagFile(tags_file, SYMBOL).get_tags_dict(symbol)
+            tags = (TagFile( tags_file, SYMBOL)
+                            .get_tags_dict( symbol, 
+                                            filters=compile_filters(view)) )
             if tags: break
 
         if not tags:
@@ -462,7 +487,7 @@ class ShowSymbols(sublime_plugin.TextCommand):
 class rebuild_tags(sublime_plugin.TextCommand):
     def run(self, edit, **args):
         view=self.view
-        tag_file = find_tags_relative_to(view, ask_to_build=0)
+        tag_file = find_tags_relative_to(view)
 
         if not tag_file:
             tag_file = join(dirname(view_fn(view)), 'tags')
@@ -484,7 +509,7 @@ class rebuild_tags(sublime_plugin.TextCommand):
 
 # class CTagsAutoComplete(sublime_plugin.EventListener):
 #     def on_query_completions(self, view, prefix, locations):
-#         tags = find_tags_relative_to(view, ask_to_build=False)
+#         tags = find_tags_relative_to(view)
 #         completions = []
 
 #         if tags:
