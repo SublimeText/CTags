@@ -65,13 +65,13 @@ def parse_tag_lines(lines, order_by='symbol', tag_class=None, filters=[]):
     for search_obj in (t for t in (TAGS_RE.search(l) for l in lines) if t):
         tag = post_process_tag(search_obj)
         if tag_class is not None: tag = tag_class(tag)
-        
+
         skip = False
         for f in filters:
             for k, v in f.items():
                 if re.match(v, tag[k]):
                     skip = True
-        
+
         if skip: continue
 
         tags_lookup.setdefault(tag[order_by], []).append(tag)
@@ -163,18 +163,35 @@ def resort_ctags(tag_file):
                 split[FILENAME] = split[FILENAME].lstrip('.\\')
                 fw.write('\t'.join(split))
 
-def build_ctags(cmd, tag_file):
-    p = subprocess.Popen(cmd, cwd = dirname(tag_file), shell=1, 
+def build_ctags(cmd, tag_file, env=None):
+    p = subprocess.Popen(cmd, cwd = dirname(tag_file), shell=1, env=env,
                          stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     ret = p.wait()
 
-    if ret:
-        raise Exception("ctags crashed with ret code: %s\n\n%s"  % (ret, p.stdout.read()))
-
+    if ret: raise EnvironmentError((cmd, ret, p.stdout.read()))
     # Faster than ctags.exe again:
     resort_ctags(tag_file)
 
     return tag_file
+
+def test_build_ctags__ctags_not_on_path():
+    try:
+        build_ctags(['ctags.exe -R'], r'C:\Users\nick\AppData\Roaming\Sublime Text 2\Packages\CTags\tags', env={})
+    except Exception, e:
+        print 'OK'
+        print e
+    else:
+        raise "Should have died"
+    # EnvironmentError: (['ctags.exe -R'], 1, '\'"ctags.exe -R"\' is not recognized as an internal or external command,\r\noperable program or batch file.\r\n')
+
+def test_build_ctags__dodgy_command():
+    try:
+        build_ctags(['ctags', '--arsts'], r'C:\Users\nick\AppData\Roaming\Sublime Text 2\Packages\CTags\tags')
+    except Exception, e:
+        print 'OK'
+        print e
+    else:
+        raise "Should have died"
 
 ################################################################################
 
@@ -245,6 +262,7 @@ class TagFile(object):
         filters = kw.get('filters', [])
         return parse_tag_lines( self.get(*tags),
                                 tag_class=self.tag_class(), filters=filters)
+
 
 ################################################################################
 
