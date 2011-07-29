@@ -9,7 +9,6 @@ import pprint
 import re
 import string
 import threading
-import time
 
 from contextlib import contextmanager
 from itertools import chain
@@ -27,8 +26,7 @@ from sublime import status_message
 
 # Ctags
 import ctags
-from ctags import ( FILENAME, MATCHES_STARTWITH, parse_tag_lines, PATH_ORDER,
-                    SYMBOL, Tag, TagFile )
+from ctags import (FILENAME, parse_tag_lines, PATH_ORDER, SYMBOL, Tag, TagFile)
 
 ################################### SETTINGS ###################################
 
@@ -404,8 +402,8 @@ def ctags_goto_command(jump_directly_if_one=False):
         return command
     return wrapper
 
-def checkIfBuilding(self, view, args):
-    if RebuildCTags.build_ctags.func.running:
+def check_if_building(self, **args):
+    if rebuild_tags.build_ctags.func.running:
         status_message('Please wait while tags are built')
 
     else:  return 1
@@ -422,7 +420,7 @@ def compile_filters(view):
 ######################### GOTO DEFINITION UNDER CURSOR #########################
 
 class NavigateToDefinition(sublime_plugin.TextCommand):
-    isEnabled = checkIfBuilding
+    is_enabled = check_if_building
 
     @ctags_goto_command(jump_directly_if_one=True)
     def run(self, view, args, tags_file, tags):
@@ -446,7 +444,7 @@ class NavigateToDefinition(sublime_plugin.TextCommand):
 ################################# SHOW SYMBOLS #################################
 
 class ShowSymbols(sublime_plugin.TextCommand):
-    isEnabled = checkIfBuilding
+    is_enabled = check_if_building
 
     @ctags_goto_command()
     def run(self, view, args, tags_file, tags):
@@ -457,8 +455,8 @@ class ShowSymbols(sublime_plugin.TextCommand):
         if not files: return
 
         tags_file = tags_file + '_sorted_by_file'
-        tags = TagFile(tags_file, FILENAME).get_tags_dict(*files)
-
+        tags = (TagFile(tags_file, FILENAME)
+                       .get_tags_dict(*files, filters=compile_filters(view)))
         if not tags:
             if multi:
                 view.run_command('show_symbols', {'type':'multi'})

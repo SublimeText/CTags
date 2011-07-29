@@ -6,19 +6,13 @@
 from __future__ import with_statement
 
 import re
-import pprint
 import unittest
-import threading
-import Queue
 import os
-import functools
 import subprocess
 import bisect
-import time
 import mmap
 
-from os.path import join, normpath, dirname
-from itertools import izip, chain
+from os.path import dirname
 
 ################################################################################
 
@@ -240,8 +234,6 @@ class TagFile(object):
             yield l
 
     def starts_with(self, iterator, tag):
-        lines = []
-
         for l in iterator:
             field = l.split('\t')[self.column]
             comp = cmp(field, tag)

@@ -6,6 +6,10 @@ The ctags command is searched for on PATH. It works by doing a binary search of
 an mmap()'d `tags` file so it will work efficiently with very large ( 50MB+ etc
 ) tags files if needed.
 
+== Exuberant Tags ==
+
+This is only designed to work with [[http://ctags.sourceforge.net/|Exuberant CTags]]
+
 === Dependencies ===
 
 * No dependencies!
@@ -63,10 +67,7 @@ There's a CTags.sublime-settings file:
 {{{
 {
     "debug"           :  false,
-    "ctags_command"   :  ["ctags",  "-R" 
-        //"--exclude=@tags_ignore_patterns"
-        // ctags will crash if this file doesn't exist
-    ],
+    "ctags_command"   :  "ctags -R",
     "filters"         :  {"source.python": {"type":"^i$"}},
     "extra_tag_paths" :  [ [["source.python", "windows"], "C:\\Python27\\Lib\\tags"]]
 }
