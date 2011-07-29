@@ -15,7 +15,12 @@ This is only designed to work with [[http://ctags.sourceforge.net/|Exuberant CTa
 If anyone is having trouble getting the CTags -R flag to work on OSX, you are probably using the stock CTags installation.
 
 * Follow the instructions on http://adamyoung.net/Exuberant-Ctags-OS-X to install a good version of CTags that recognizes the -R flag. This installs CTags to /usr/local/bin.
+
+Note: There is a broken link on that page - looks like it was an old sourceforge mirror. Here's a working link:
+http://ignum.dl.sourceforge.net/project ... 5.8.tar.gz
+
 * Make sure that Sublime Text is using the right version of CTags: Ensure that ~/.MacOSX/environment.plist has /usr/local/bin in the PATH string before /usr/bin (the standard location for CTags). Here's a sample environment.plist that should work:
+
 
 {{{
 <?xml version="1.0" encoding="UTF-8"?>
