@@ -56,7 +56,9 @@ def splits(string, *splitters):
 def parse_tag_lines(lines, order_by='symbol', tag_class=None, filters=[]):
     tags_lookup = {}
 
-    for search_obj in (t for t in (TAGS_RE.search(l) for l in lines) if t):
+    for search_obj in (t for t in (TAGS_RE.search (
+                            l.decode('utf8')) for l in lines) if t):
+
         tag = post_process_tag(search_obj)
         if tag_class is not None: tag = tag_class(tag)
 

@@ -48,7 +48,7 @@ ENTITY_SCOPE = "entity.name.function, entity.name.type, meta.toc-list"
 
 ON_LOAD       = sublime_plugin.all_callbacks['on_load']
 
-RE_SPECIAL_CHARS = re.compile (
+RE_SPECIAL_CHARS = re.compile ( #as “f
     '(\\\\|\\*|\\+|\\?|\\||\\{|\\}|\\[|\\]|\\(|\\)|\\^|\\$|\\.|\\#|\\ )' )
 
 def escape_regex(s):
