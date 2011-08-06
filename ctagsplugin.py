@@ -118,7 +118,7 @@ def on_load(f=None, window=None, encoded_row_col=True, begin_edit=False):
         if not f: return cb(window.active_view())
         view = window.open_file( normpath(f), encoded_row_col )
         def wrapped():
-            if begin_edit: 
+            if begin_edit:
                 with edition(view): cb(view)
             else: cb(view)
 
@@ -145,7 +145,7 @@ def find_tags_relative_to(view):
 
     while dirs:
         joined = normpath(os.path.sep.join(dirs + [f]))
-        if os.path.exists(joined): return joined
+        if os.path.exists(joined) and not os.path.isdir(joined): return joined
         else: dirs.pop()
 
     status_message("Can't find any relevant tags file")
