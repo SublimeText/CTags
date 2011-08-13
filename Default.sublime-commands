@@ -1,0 +1,7 @@
+[
+  {
+    "args": {}, 
+    "caption": "CTags: Rebuild Tags",
+    "command": "rebuild_tags"
+  }
+]
