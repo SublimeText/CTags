@@ -13,7 +13,7 @@ import threading
 from contextlib import contextmanager
 from itertools import chain
 from operator import itemgetter as iget
-from os.path import join, normpath, dirname, basename
+from os.path import join, normpath, dirname
 
 ################################ SUBLIME IMPORTS ###############################
 # Sublime Libs
@@ -436,7 +436,7 @@ class NavigateToDefinition(sublime_plugin.TextCommand):
         if not tags:
             return status_message('Can\'t find "%s"' % symbol)
 
-        current_file = basename(view.file_name())
+        current_file = view.file_name().replace(dirname(tags_file) + "/", '')
         def definition_cmp(a, b):
             if a.tag_path[0] == current_file:
                 return -1
@@ -444,10 +444,17 @@ class NavigateToDefinition(sublime_plugin.TextCommand):
                 return 1
             return 0
 
+        def is_func(o):
+            if o.type == "f":
+                return True
+            return False
+
         @prepared_4_quickpanel()
         def sorted_tags():
             return sorted(
-                sorted(tags.get(symbol, []), key=iget('tag_path')), 
+                sorted(
+                    filter(is_func, tags.get(symbol, [])),
+                    key=iget('tag_path')), 
                 cmp=definition_cmp)
 
         return sorted_tags
