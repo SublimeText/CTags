@@ -13,7 +13,7 @@ import threading
 from contextlib import contextmanager
 from itertools import chain
 from operator import itemgetter as iget
-from os.path import join, normpath, dirname
+from os.path import join, normpath, dirname, basename
 
 ################################ SUBLIME IMPORTS ###############################
 # Sublime Libs
@@ -243,6 +243,7 @@ def format_tag_for_quickopen(tag, file=1):
                 '    %($field)s$punct%(symbol)s' ).substitute(locals())
 
     format = [(f or tag.symbol) % tag, tag.ex_command]
+    format[1] = format[1].strip()
     if file: format.insert(1, tag.filename )
     return format
 
@@ -435,9 +436,19 @@ class NavigateToDefinition(sublime_plugin.TextCommand):
         if not tags:
             return status_message('Can\'t find "%s"' % symbol)
 
+        current_file = basename(view.file_name())
+        def definition_cmp(a, b):
+            if a.tag_path[0] == current_file:
+                return -1
+            if b.tag_path[0] == current_file:
+                return 1
+            return 0
+
         @prepared_4_quickpanel()
         def sorted_tags():
-            return sorted(tags.get(symbol, []), key=iget('tag_path'))
+            return sorted(
+                sorted(tags.get(symbol, []), key=iget('tag_path')), 
+                cmp=definition_cmp)
 
         return sorted_tags
 
