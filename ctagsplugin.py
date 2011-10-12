@@ -445,11 +445,11 @@ class NavigateToDefinition(sublime_plugin.TextCommand):
         if not tags:
             return status_message('Can\'t find "%s"' % symbol)
 
-        current_file = view.file_name().replace(dirname(tags_file) + "/", '')
+        current_file = view.file_name().replace(dirname(tags_file) + os.sep, '')
         def definition_cmp(a, b):
-            if a.tag_path[0] == current_file:
+            if normpath(a.tag_path[0]) == current_file:
                 return -1
-            if b.tag_path[0] == current_file:
+            if normpath(b.tag_path[0]) == current_file:
                 return 1
             return 0
 
