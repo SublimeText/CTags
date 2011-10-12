@@ -243,6 +243,7 @@ def format_tag_for_quickopen(tag, file=1):
                 '    %($field)s$punct%(symbol)s' ).substitute(locals())
 
     format = [(f or tag.symbol) % tag, tag.ex_command]
+    format[1] = format[1].strip()
     if file: format.insert(1, tag.filename )
     return format
 
@@ -417,6 +418,14 @@ def compile_filters(view):
             filters.append(regexes)
     return filters
 
+def compile_definition_filters(view):
+    filters = []
+    for selector, regexes in setting('definition_filters', {}).items():
+        if view.match_selector (
+            view.sel() and view.sel()[0].begin() or 0, selector ):
+            filters.append(regexes)
+    return filters
+
 ######################### GOTO DEFINITION UNDER CURSOR #########################
 
 class NavigateToDefinition(sublime_plugin.TextCommand):
@@ -425,6 +434,7 @@ class NavigateToDefinition(sublime_plugin.TextCommand):
     @ctags_goto_command(jump_directly_if_one=True)
     def run(self, view, args, tags_file, tags):
         symbol = view.substr(view.word(view.sel()[0]))
+        #symbol = symbol.replace('$', '')
 
         for tags_file in alternate_tags_paths(view, tags_file):
             tags = (TagFile( tags_file, SYMBOL)
@@ -435,9 +445,32 @@ class NavigateToDefinition(sublime_plugin.TextCommand):
         if not tags:
             return status_message('Can\'t find "%s"' % symbol)
 
+        current_file = view.file_name().replace(dirname(tags_file) + "/", '')
+        def definition_cmp(a, b):
+            if a.tag_path[0] == current_file:
+                return -1
+            if b.tag_path[0] == current_file:
+                return 1
+            return 0
+
+        def_filters = compile_definition_filters(view)
+        def is_nmatch(o):
+            skip = False
+            for f in def_filters:
+                for k, v in f.items():
+                    if re.match(v, o[k]):
+                        skip = True
+            return not skip
+
         @prepared_4_quickpanel()
         def sorted_tags():
-            return sorted(tags.get(symbol, []), key=iget('tag_path'))
+            p_tags = filter(is_nmatch, tags.get(symbol, []))
+            if not p_tags:
+                status_message('Can\'t find "%s"' % symbol)
+            p_tags = sorted(p_tags, key=iget('tag_path'))
+            if setting('definition_current_first', False):
+                p_tags = sorted(p_tags, cmp=definition_cmp)
+            return p_tags                
 
         return sorted_tags
 

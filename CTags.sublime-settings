@@ -1,6 +1,12 @@
 {
     "debug"           :  false,
     "ctags_command"   :  "ctags -R",
-    "filters"         :  {"source.python": {"type":"^i$"}},
+    "filters"         :  {
+        "source.python": {"type":"^i$"}
+    },
+    "definition_filters": {
+        "source.php": {"type":"^v$"}
+    },
+    "definition_current_first": false,
     "extra_tag_paths" :  [ [["source.python", "windows"], "C:\\Python27\\Lib\\tags"]]
 }
