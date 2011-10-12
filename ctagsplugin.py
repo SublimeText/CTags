@@ -434,7 +434,6 @@ class NavigateToDefinition(sublime_plugin.TextCommand):
     @ctags_goto_command(jump_directly_if_one=True)
     def run(self, view, args, tags_file, tags):
         symbol = view.substr(view.word(view.sel()[0]))
-        #symbol = symbol.replace('$', '')
 
         for tags_file in alternate_tags_paths(view, tags_file):
             tags = (TagFile( tags_file, SYMBOL)
