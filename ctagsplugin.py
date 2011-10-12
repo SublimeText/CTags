@@ -453,17 +453,16 @@ class NavigateToDefinition(sublime_plugin.TextCommand):
             return 0
 
         def_filters = compile_definition_filters(view)
-        def is_nmatch(o):
-            skip = False
+        def pass_def_filter(o):
             for f in def_filters:
                 for k, v in f.items():
                     if re.match(v, o[k]):
-                        skip = True
-            return not skip
+                        return False
+            return True
 
         @prepared_4_quickpanel()
         def sorted_tags():
-            p_tags = filter(is_nmatch, tags.get(symbol, []))
+            p_tags = filter(pass_def_filter, tags.get(symbol, []))
             if not p_tags:
                 status_message('Can\'t find "%s"' % symbol)
             p_tags = sorted(p_tags, key=iget('tag_path'))
