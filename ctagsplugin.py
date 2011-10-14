@@ -243,6 +243,7 @@ def format_tag_for_quickopen(tag, file=1):
                 '    %($field)s$punct%(symbol)s' ).substitute(locals())
 
     format = [(f or tag.symbol) % tag, tag.ex_command]
+    format[1] = format[1].strip()
     if file: format.insert(1, tag.filename )
     return format
 
@@ -417,6 +418,14 @@ def compile_filters(view):
             filters.append(regexes)
     return filters
 
+def compile_definition_filters(view):
+    filters = []
+    for selector, regexes in setting('definition_filters', {}).items():
+        if view.match_selector (
+            view.sel() and view.sel()[0].begin() or 0, selector ):
+            filters.append(regexes)
+    return filters
+
 ######################### GOTO DEFINITION UNDER CURSOR #########################
 
 class NavigateToDefinition(sublime_plugin.TextCommand):
@@ -435,9 +444,31 @@ class NavigateToDefinition(sublime_plugin.TextCommand):
         if not tags:
             return status_message('Can\'t find "%s"' % symbol)
 
+        current_file = view.file_name().replace(dirname(tags_file) + os.sep, '')
+        def definition_cmp(a, b):
+            if normpath(a.tag_path[0]) == current_file:
+                return -1
+            if normpath(b.tag_path[0]) == current_file:
+                return 1
+            return 0
+
+        def_filters = compile_definition_filters(view)
+        def pass_def_filter(o):
+            for f in def_filters:
+                for k, v in f.items():
+                    if re.match(v, o[k]):
+                        return False
+            return True
+
         @prepared_4_quickpanel()
         def sorted_tags():
-            return sorted(tags.get(symbol, []), key=iget('tag_path'))
+            p_tags = filter(pass_def_filter, tags.get(symbol, []))
+            if not p_tags:
+                status_message('Can\'t find "%s"' % symbol)
+            p_tags = sorted(p_tags, key=iget('tag_path'))
+            if setting('definition_current_first', False):
+                p_tags = sorted(p_tags, cmp=definition_cmp)
+            return p_tags                
 
         return sorted_tags
 
