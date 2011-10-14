@@ -1,0 +1,33 @@
+[
+  {
+    "caption": "-"
+  },
+  {
+    "args": {}, 
+    "command": "navigate_to_definition", 
+    "context": [], 
+    "keys": [
+      "ctrl+]"
+    ]
+  }, 
+  {
+    "args": {}, 
+    "command": "jump_back", 
+    "context": [], 
+    "keys": [
+      "ctrl+["
+    ]
+  }, 
+  {
+    //"argr_comment": "TODO", 
+    "args": {
+      "to": "last_modification"
+    }, 
+
+    "command": "jump_back", 
+    "context": [],
+    "keys": [
+      "ctrl+shift+["
+    ]
+  }
+]
