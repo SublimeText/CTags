@@ -92,7 +92,14 @@ There's a CTags.sublime-settings file:
 {
     "debug"           :  false,
     "ctags_command"   :  "ctags -R",
-    "filters"         :  {"source.python": {"type":"^i$"}},
+    "filters"         :  {
+        "source.python": {"type":"^i$"}
+    },
+    "definition_filters": {
+        "source.php": {"type":"^v$"}
+    },
+    "definition_current_first": false,
+    "show_context_menus": false,
     "extra_tag_paths" :  [ [["source.python", "windows"], "C:\\Python27\\Lib\\tags"]]
 }
 }}}
@@ -125,9 +132,17 @@ Thanks :)
 === Commands Listing ===
 
 |=Command                        |=Key Binding            |
-| rebuild_ctags                  | ctrl+alt+shift+t       |
-| navigate_to_definition         | ctrl+rightbracket      |
-| jump_back                      | ctrl+leftbracket       |
-| jump_back to_last_modification | ctrl+shift+leftbracket |
+| rebuild_ctags                  | ctrl+t ctrl+r          |
+| navigate_to_definition         | ctrl+t ctrl+t          |
+| jump_back                      | ctrl+t ctrl+b          |
+| jump_back to_last_modification | ctrl+t ctrl+m          |
 | show_symbols                   | alt+s                  |
 | show_symbols multi             | alt+shift+s            |
+
+=== Alternative Commands ===
+
+One can enable older (short) shortcuts, which override global ones, 
+by setting `ctags_short_shortcuts` to true in 'Base File.sublime-settings'.
+|=Command                        |=Key Binding       |
+| navigate_to_definition         | ctrl+rightbracket |
+| jump_back                      | ctrl+leftbracket  |

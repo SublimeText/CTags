@@ -3,31 +3,20 @@
     "caption": "-"
   },
   {
-    "args": {}, 
     "command": "navigate_to_definition", 
-    "context": [], 
-    "keys": [
-      "ctrl+]"
-    ]
-  }, 
-  {
     "args": {}, 
-    "command": "jump_back", 
-    "context": [], 
-    "keys": [
-      "ctrl+["
-    ]
+    "caption": "Navigate to Definition"
   }, 
   {
-    //"argr_comment": "TODO", 
+    "command": "jump_back", 
+    "args": {}, 
+    "caption": "Jump Back"
+  }, 
+  {
+    "command": "jump_back", 
     "args": {
       "to": "last_modification"
     }, 
-
-    "command": "jump_back", 
-    "context": [],
-    "keys": [
-      "ctrl+shift+["
-    ]
+    "caption": "Jump to Last Modification"
   }
 ]

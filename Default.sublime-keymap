@@ -1,48 +1,60 @@
 [
   {
-    "args": {}, 
-    "command": "navigate_to_definition", 
-    "context": [], 
+    "command": "navigate_to_definition",
+    "context": [],
     "keys": [
-      "ctrl+]"
+      "ctrl+t", "ctrl+t"
     ]
   }, 
   {
-    "args": {}, 
-    "command": "jump_back", 
+    "command": "navigate_to_definition",
+    "context": [
+      { "key": "setting.ctags_short_shortcuts", "operator": "equal", "operand": true }
+    ],
+    "keys": [
+      "ctrl+]"
+    ]
+  },  
+  {
+    "command": "jump_back",
     "context": [], 
+    "keys": [
+      "ctrl+t", "ctrl+b"
+    ]
+  }, 
+  {
+    "command": "jump_back",
+    "context": [
+      { "key": "setting.ctags_short_shortcuts", "operator": "equal", "operand": true }
+    ], 
     "keys": [
       "ctrl+["
     ]
   }, 
   {
-    //"argr_comment": "TODO", 
+    "command": "jump_back",
     "args": {
       "to": "last_modification"
     }, 
-
-    "command": "jump_back", 
     "context": [],
     "keys": [
-      "ctrl+shift+["
+      "ctrl+t", "ctrl+m"
     ]
   }, 
   {
-    "args": {}, 
-    "command": "rebuild_tags", 
-    "context": [], 
+    "command": "rebuild_tags",
+    "context": [],
     "keys": [
-      "ctrl+alt+shift+t"
+      "ctrl+t", "ctrl+r"
     ]
   }, 
   {
-    "args": {}, 
-    "command": "show_symbols", 
+    "command": "show_symbols",
     "context": [
       {
-        "key": "selector", 
-        "match_all": true, 
-        "operand": "source -source.css", 
+        "key": "selector",
+        "match_all": true,
+        "operand": "source -source.css",
         "operator": "equal"
       }
     ], 
@@ -51,21 +63,27 @@
     ]
   }, 
   {
-    //"argr_comment": "TODO", 
+    "command": "show_symbols",
     "args": {
       "type": "multi"
     }, 
-    "command": "show_symbols", 
     "context": [
       {
-        "key": "selector", 
-        "match_all": true, 
-        "operand": "source -source.css", 
+        "key": "selector",
+        "match_all": true,
+        "operand": "source -source.css",
         "operator": "equal"
       }
     ], 
     "keys": [
       "alt+shift+s"
+    ]
+  },
+  { // override current default
+    "keys": ["ctrl+t"],
+    "command": "transpose",
+    "context": [
+      { "key": "num_selections", "operator": "not_equal", "operand": 1 }
     ]
   }
 ]

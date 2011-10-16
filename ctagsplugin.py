@@ -315,6 +315,14 @@ def different_mod_area(f1, f2, r1, r2):
     return not same_file or not same_region
 
 class JumpBack(sublime_plugin.WindowCommand):
+    def is_enabled(self, to=None):
+        if to == 'last_modification':
+            return len(self.mods) > 1
+        return len(self.last) > 0
+
+    def is_visible(self, to=None):
+        return setting("show_context_menus")
+
     last    =     []
     mods    =     []
 
@@ -431,6 +439,9 @@ def compile_definition_filters(view):
 class NavigateToDefinition(sublime_plugin.TextCommand):
     is_enabled = check_if_building
 
+    def is_visible(self):
+        return setting("show_context_menus")
+
     @ctags_goto_command(jump_directly_if_one=True)
     def run(self, view, args, tags_file, tags):
         symbol = view.substr(view.word(view.sel()[0]))
@@ -476,6 +487,9 @@ class NavigateToDefinition(sublime_plugin.TextCommand):
 
 class ShowSymbols(sublime_plugin.TextCommand):
     is_enabled = check_if_building
+
+    def is_visible(self):
+        return setting("show_context_menus")
 
     @ctags_goto_command()
     def run(self, view, args, tags_file, tags):
