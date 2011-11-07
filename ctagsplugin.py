@@ -165,8 +165,17 @@ def alternate_tags_paths(view, tags_file):
     except Exception, e:
         print e
 
-    for extrafile in setting('extra_tag_files'):
-        search_paths.append(normpath(join(dirname(tags_file), extrafile)))
+    if os.path.exists(tags_paths):
+        for extrafile in setting('extra_tag_files'):
+            search_paths.append(normpath(join(dirname(tags_file), extrafile)))
+
+
+    # Ok, didn't found the .tags file under the viewed file.
+    # Let's look in the currently openened folder
+    for folder in view.window().folders():
+        search_paths.append(normpath(join(folder, '.tags')))
+        for extrafile in setting('extra_tag_files'):
+            search_paths.append(normpath(join(folder, extrafile)))
 
     return [p for p in search_paths if p and os.path.exists(p)]
 
