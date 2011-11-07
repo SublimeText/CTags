@@ -1,6 +1,6 @@
 {
     "debug"           :  false,
-    "ctags_command"   :  "ctags -R",
+    "ctags_command"   :  "ctags -R -f .tags",
     "filters"         :  {
         "source.python": {"type":"^i$"}
     },
@@ -9,5 +9,6 @@
     },
     "definition_current_first": true,
     "show_context_menus": false,
-    "extra_tag_paths" :  [ [["source.python", "windows"], "C:\\Python27\\Lib\\tags"]]
+    "extra_tag_paths" :  [ [["source.python", "windows"], "C:\\Python27\\Lib\\tags"]],
+    "extra_tag_files" : [".gemtags"]
 }

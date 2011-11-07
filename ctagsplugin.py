@@ -140,7 +140,7 @@ def find_tags_relative_to(view):
     fn = view.file_name()
     if not fn: return ''
 
-    dirs = normpath(join(dirname(fn), 'tags')).split(os.path.sep)
+    dirs = normpath(join(dirname(fn), '.tags')).split(os.path.sep)
     f = dirs.pop()
 
     while dirs:
@@ -164,6 +164,18 @@ def alternate_tags_paths(view, tags_file):
                 search_paths.append(path)
     except Exception, e:
         print e
+
+    if os.path.exists(tags_paths):
+        for extrafile in setting('extra_tag_files'):
+            search_paths.append(normpath(join(dirname(tags_file), extrafile)))
+
+
+    # Ok, didn't found the .tags file under the viewed file.
+    # Let's look in the currently openened folder
+    for folder in view.window().folders():
+        search_paths.append(normpath(join(folder, '.tags')))
+        for extrafile in setting('extra_tag_files'):
+            search_paths.append(normpath(join(folder, extrafile)))
 
     return [p for p in search_paths if p and os.path.exists(p)]
 
@@ -528,7 +540,7 @@ class rebuild_tags(sublime_plugin.TextCommand):
         tag_file = find_tags_relative_to(view)
 
         if not tag_file:
-            tag_file = join(dirname(view_fn(view)), 'tags')
+            tag_file = join(dirname(view_fn(view)), '.tags')
             if 0: #not 1 or sublime.question_box('`ctags -R` in %s ?'% dirname(tag_file)):
                 return
 
