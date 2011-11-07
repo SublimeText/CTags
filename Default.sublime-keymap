@@ -3,7 +3,7 @@
     "command": "navigate_to_definition",
     "context": [],
     "keys": [
-      "ctrl+t", "ctrl+t"
+      "ctrl+f", "ctrl+t"
     ]
   }, 
   {
