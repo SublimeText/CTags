@@ -528,7 +528,12 @@ class rebuild_tags(sublime_plugin.TextCommand):
         tag_file = find_tags_relative_to(view)
 
         if not tag_file:
-            tag_file = join(dirname(view_fn(view)), 'tags')
+            if view.window().folders():
+                base_path = view.window().folders()[0]
+            else:
+                base_path = dirname(view_fn(view))
+            tag_file = join(base_path, 'tags')
+
             if 0: #not 1 or sublime.question_box('`ctags -R` in %s ?'% dirname(tag_file)):
                 return
 
