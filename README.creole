@@ -6,17 +6,15 @@ The ctags command is searched for on PATH. It works by doing a binary search of
 an mmap()'d `.tags` file so it will work efficiently with very large ( 50MB+ etc
 ) tags files if needed.
 
-== Exuberant Tags ==
-
-This is only designed to work with [[http://ctags.sourceforge.net/|Exuberant CTags]]
-
 === OS X ===
 
 If anyone is having trouble getting the CTags -R flag to work on OSX, you are probably using the stock CTags installation.
 
 To get a proper copy of ctags, use one of the following options:
-* Using [[http://mxcl.github.com/homebrew/|Homebrew]]: 'brew install ctags'
-* Using [[http://www.macports.org/|MacPorts]]: 'port install ctags'
+* Using [[http://mxcl.github.com/homebrew/|Homebrew]]:
+{{{brew install ctags'}}}
+* Using [[http://www.macports.org/|MacPorts]]:
+{{{port install ctags}}}
 
 * Make sure that Sublime Text is using the right version of CTags: Ensure that ~/.MacOSX/environment.plist has /usr/local/bin in the PATH string before /usr/bin (the standard location for CTags). Here's a sample environment.plist that should work:
 
@@ -31,6 +29,12 @@ To get a proper copy of ctags, use one of the following options:
 </plist>
 }}}
 * If /usr/local/bin wasn't in your PATH already, you have to log out and log back in for the environment variables to be read in again.
+
+=== Linux ===
+
+To get a proper copy of ctags, use one of the following options:
+* In a terminal session:
+{{{sudo apt-get install ctags}}}
 
 === Dependencies ===
 
@@ -129,6 +133,11 @@ The rest of the options are fairly self explanatory.
 If there are any problems or you have a suggestion [[https://github.com/SublimeText/CTags/issues/new|open an issue]] and I will receive an email notification.
 
 Thanks :)
+
+=== Mouse Actions ===
+
+|=Command               |=Action     |
+|navigate_to_definition | ctrl+click |
 
 === Commands Listing ===
 
