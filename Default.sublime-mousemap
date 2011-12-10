@@ -2,7 +2,7 @@
 	{
 		"button": "button1",
 		"count": 1,
-		"modifiers": ["ctrl"],
+		"modifiers": ["ctrl","shift"],
 		"press_command": "navigate_to_definition"
 	}
 ]
