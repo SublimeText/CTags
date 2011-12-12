@@ -8,11 +8,8 @@
   }, 
   {
     "command": "navigate_to_definition",
-    "context": [
-      { "key": "setting.ctags_short_shortcuts", "operator": "equal", "operand": true }
-    ],
     "keys": [
-      "ctrl+]"
+      "ctrl+alt+]"
     ]
   },  
   {
@@ -24,11 +21,8 @@
   }, 
   {
     "command": "jump_back",
-    "context": [
-      { "key": "setting.ctags_short_shortcuts", "operator": "equal", "operand": true }
-    ], 
     "keys": [
-      "ctrl+["
+      "ctrl+alt+["
     ]
   }, 
   {
