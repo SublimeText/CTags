@@ -1,0 +1,55 @@
+[
+    {
+        "id": "find",
+        "children":
+        [
+          {
+            "caption": "-",
+            "id": "find_tools_ctags"
+          },
+          {
+            "caption": "CTags",
+            "id": "ctags",
+            "children":
+            [
+              {
+                "command": "navigate_to_definition"
+              }, 
+              {
+                "command": "jump_back"
+              },
+              {
+                "command": "rebuild_tags"
+              }, 
+              {
+                "command": "show_symbols", 
+                "context": [
+                  {
+                    "key": "selector", 
+                    "match_all": true, 
+                    "operand": "source -source.css", 
+                    "operator": "equal"
+                  }
+                ]
+              }, 
+              {
+                //"argr_comment": "TODO", 
+                "args": {
+                  "type": "multi"
+                }, 
+                "caption": "Show Symbols (multi)",
+                "command": "show_symbols", 
+                "context": [
+                  {
+                    "key": "selector", 
+                    "match_all": true, 
+                    "operand": "source -source.css", 
+                    "operator": "equal"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+    }
+]
