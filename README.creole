@@ -12,7 +12,7 @@ If anyone is having trouble getting the CTags -R flag to work on OSX, you are pr
 
 To get a proper copy of ctags, use one of the following options:
 * Using [[http://mxcl.github.com/homebrew/|Homebrew]]:
-{{{brew install ctags'}}}
+{{{brew install ctags}}}
 * Using [[http://www.macports.org/|MacPorts]]:
 {{{port install ctags}}}
 
