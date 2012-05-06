@@ -18,6 +18,8 @@ Install awk
 
 Clone to Packages
 
+**Note**: remove CTags package from Package Control if you have it installed.
+
     rm -rf ~/Library/Application\ Support/Sublime\ Text\ 2/Packages/CTags
     git clone https://github.com/yury/CTags ~/Library/Application\ Support/Sublime\ Text\ 2/Packages/CTags
     
