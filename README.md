@@ -1,21 +1,66 @@
-h1 CTags
+CTags
+-----
 
 CTags Sublime Text 2 Plugin with autocompletion love
 
 
-h2 OS X
+Installation
+------------
 
-If anyone is having trouble getting the CTags -R flag to work on OSX, you are probably using the stock CTags installation.
+Install good ctags:
 
-* Using (Homebrew)[http://mxcl.github.com/homebrew/]
     brew install ctags
     brew link ctags
 
+Install awk
 
+    brew install awk
 
-h3 Using Git
+Clone to Packages
 
-Go to your Sublime Text 2 `Packages` directory and clone the repository using the command below:
+    rm -rf ~/Library/Application\ Support/Sublime\ Text\ 2/Packages/CTags
+    git clone https://github.com/yury/CTags ~/Library/Application\ Support/Sublime\ Text\ 2/Packages/CTags
+    
+Keybindings
+-----------
 
+<table>
+    <tr>
+        <th>
+            Command
+        </th>
+        <th>
+            Key Binding
+        </th>
+        <th>
+            Mouse Binding
+        </th>
+    </tr>
+    <tr>
+        <td>
+            rebuild_ctags
+        </td>
+        <td>
+            ctrl+shift+r
+        </td>
+        <td></td>
+    </tr>
+    <tr>
+        <td>navigate_to_definition</td>
+        <td>cmd+&gt;</td>
+        <td>ctrl+alt+click</td>
+    </tr>
+    <tr>
+        <td>jump_back</td>
+        <td>cmd+&lt;</td>
+        <td></td>
+    </tr>
+    <tr>
+        <td>show_symbols</td>
+        <td>alt+s</td>
+        <td></td>
+    </tr>
+</table>
 
-    $ git clone https://github.com/yury/CTags CTags
+**Do not forget to add .tags and .tags_sorted_by_file to your .gitignore file**
+
