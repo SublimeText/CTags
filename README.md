@@ -62,5 +62,11 @@ Keybindings
     </tr>
 </table>
 
+Basic CoffeeScript support
+--------------------------
+
+[Drop](https://gist.github.com/1932675) to ~/.tags
+
+
 **Do not forget to add .tags and .tags_sorted_by_file to your .gitignore file**
 
