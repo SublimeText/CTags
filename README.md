@@ -1,7 +1,7 @@
 CTags
 -----
 
-CTags Sublime Text 2 Plugin with autocompletion love
+CTags Sublime Text 2 Plugin with autocompletion love. This plugin autocompletes from all open tabs and from .tags file.
 
 
 Installation
