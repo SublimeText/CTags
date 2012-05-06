@@ -65,7 +65,7 @@ Keybindings
 Basic CoffeeScript support
 --------------------------
 
-[Drop](https://gist.github.com/1932675) to ~/.tags
+Drop [this](https://gist.github.com/1932675) to ~/.tags or [this](https://gist.github.com/2624883) for better class detection
 
 
 **Do not forget to add .tags and .tags_sorted_by_file to your .gitignore file**
