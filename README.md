@@ -48,7 +48,7 @@ Keybindings
     <tr>
         <td>navigate_to_definition</td>
         <td>cmd+&gt;</td>
-        <td>ctrl+alt+click</td>
+        <td>ctrl+shift+click</td>
     </tr>
     <tr>
         <td>jump_back</td>
