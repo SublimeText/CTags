@@ -585,6 +585,28 @@ class rebuild_tags(sublime_plugin.TextCommand):
 
 ################################# AUTOCOMPLETE #################################
 
+class AutocompleteAll(sublime_plugin.EventListener):
+
+    def on_query_completions(self, view, prefix, locations):
+        window = sublime.active_window()
+        # get results from each tab
+        results = [v.extract_completions(prefix) for v in window.views() if v.buffer_id() != view.buffer_id()]
+        results = [(item,item) for sublist in results for item in sublist] #flatten
+        results = list(set(results)) # make unique
+
+        # get results from tags
+        tags_path = find_tags_relative_to(view) #view.window().folders()[0]+"/.tags"
+
+        if not tags_path: #check if a project is open and the .tags file exists
+            return results
+        # prefix = prefix.replace("'", "''")
+        count = 100
+        f=os.popen("grep -i '^"+prefix+"' '"+tags_path+"' | awk 'uniq[$1] == 0 && i < " + str(count) + " { print $1; uniq[$1] = 1; i++ }'") # grep tags from project directory .tags file
+        for i in f.readlines():
+            s = i.strip()
+            results.append((s,s))
+        return results
+
 # class CTagsAutoComplete(sublime_plugin.EventListener):
 #     def on_query_completions(self, view, prefix, locations):
 #         tags = find_tags_relative_to(view)
