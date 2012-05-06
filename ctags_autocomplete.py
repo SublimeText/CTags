@@ -10,6 +10,8 @@ class AutocompleteAll(sublime_plugin.EventListener):
         window = sublime.active_window()
         # get results from each tab
         results = [v.extract_completions(prefix) for v in window.views() if v.buffer_id() != view.buffer_id()]
+        results = [(item,item) for sublist in results for item in sublist] #flatten
+        results = list(set(results)) # make unique
 
         # get results from tags
         tags_path = view.window().folders()[0]+"/.tags"
@@ -21,7 +23,4 @@ class AutocompleteAll(sublime_plugin.EventListener):
         f=os.popen("grep -i '^"+prefix+"' '"+tags_path+"' | awk 'uniq[$1] == 0 && i < " + str(count) + " { print $1; uniq[$1] = 1; i++ }'") # grep tags from project directory .tags file
         for i in f.readlines():
             results.append([i.strip()])
-        results = [(item,item) for sublist in results for item in sublist] #flatten
-        results = list(set(results)) # make unique
-        results.sort() # sort
         return results
