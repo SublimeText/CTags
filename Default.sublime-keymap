@@ -3,43 +3,21 @@
     "command": "navigate_to_definition",
     "context": [],
     "keys": [
-      "ctrl+t", "ctrl+t"
+      "super+>"
     ]
   }, 
-  {
-    "command": "navigate_to_definition",
-    "keys": [
-      "ctrl+alt+]"
-    ]
-  },  
   {
     "command": "jump_back",
     "context": [], 
     "keys": [
-      "ctrl+t", "ctrl+b"
+      "super+<"
     ]
-  }, 
-  {
-    "command": "jump_back",
-    "keys": [
-      "ctrl+alt+["
-    ]
-  }, 
-  {
-    "command": "jump_back",
-    "args": {
-      "to": "last_modification"
-    }, 
-    "context": [],
-    "keys": [
-      "ctrl+t", "ctrl+m"
-    ]
-  }, 
+  },
   {
     "command": "rebuild_tags",
     "context": [],
     "keys": [
-      "ctrl+t", "ctrl+r"
+      "ctrl+shift+r"
     ]
   }, 
   {
@@ -71,13 +49,6 @@
     ], 
     "keys": [
       "alt+shift+s"
-    ]
-  },
-  { // override current default
-    "keys": ["ctrl+t"],
-    "command": "transpose",
-    "context": [
-      { "key": "num_selections", "operator": "not_equal", "operand": 1 }
     ]
   }
 ]
