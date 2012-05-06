@@ -601,8 +601,9 @@ class AutocompleteAll(sublime_plugin.EventListener):
             results.sort()
             return results
         prefix = prefix.replace("'", "''")
-        count = 100
-        f=os.popen("grep -i '^"+prefix+"' '"+tags_path+"' | awk 'uniq[$1] == 0 && i < " + str(count) + " { print $1; uniq[$1] = 1; i++ }'") # grep tags from project directory .tags file
+        count = 200
+        cmd = "grep -i '^"+prefix+"' '"+tags_path+"' | awk 'uniq[$1] == 0 && i < " + str(count) + " { print $1; uniq[$1] = 1; i++ }'"
+        f=os.popen(cmd) # grep tags from project directory .tags file
         for i in f.readlines():
             s = i.strip()
             results.append((s,s))
