@@ -74,6 +74,23 @@ Objective-C support
 
 See [Greg Sexton](http://www.gregsexton.org/2011/04/objective-c-exuberant-ctags-regex/) ctags regex
 
+RubyMotion love
+---------------
+
+Add this rake task to your Rakefile
+
+```ruby
+desc "Generate ctags for sublime"
+task :tags do
+  config = App.config
+  files = config.bridgesupport_files + config.vendor_projects.map { |p| Dir.glob(File.join(p.path, '*.bridgesupport')) }.flatten
+  files += Dir.glob(config.project_dir + "/app/**/*").flatten
+  files += Dir.glob(config.project_dir + "/spec/**/*").flatten
+  tags_config = File.join(config.motiondir, 'data', 'bridgesupport-ctags.cfg')
+  sh "ctags --options=\"#{tags_config}\" -f .tags #{files.map { |x| '"' + x + '"' }.join(' ')}"
+end
+```
+
 
 **Do not forget to add .tags and .tags_sorted_by_file to your .gitignore file**
 
