@@ -594,15 +594,16 @@ class AutocompleteAll(sublime_plugin.EventListener):
         results = [(item,item) for sublist in results for item in sublist] #flatten
 
         # get results from tags
-        tags_path = find_tags_relative_to(view) #view.window().folders()[0]+"/.tags"
+        tags_path = find_tags_relative_to(view)
 
         if not tags_path: #check if a project is open and the .tags file exists
             results = list(set(results)) # make unique
             results.sort()
             return results
-        prefix = prefix.replace("'", "''")
-        count = 200
-        cmd = "grep -i '^"+prefix+"' '"+tags_path+"' | awk 'uniq[$1] == 0 && i < " + str(count) + " { print $1; uniq[$1] = 1; i++ }'"
+
+        count = 2000
+        cmd = "awk '/^"+prefix+"/i && uniq[$1] == 0 { print $1; uniq[$1] = 1; i++; if (i > " + str(count) + ") exit }' " + tags_path
+
         f=os.popen(cmd) # grep tags from project directory .tags file
         for i in f.readlines():
             s = i.strip()
