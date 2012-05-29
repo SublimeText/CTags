@@ -422,6 +422,20 @@ class JumpBackListener(sublime_plugin.EventListener):
 
 ################################ CTAGS COMMANDS ################################
 
+def show_tag_panel(view, result, jump_directly_if_one):
+    if result not in (True, False, None):
+        args, display = result
+        if not args: return
+
+        def on_select(i):
+            if i != -1:
+                JumpBack.append(view)
+                scroll_to_tag(view, args[i])
+
+        ( on_select(0) if   jump_directly_if_one and len(args) == 1
+                       else view.window().show_quick_panel (
+                                          display, on_select ) )
+
 def ctags_goto_command(jump_directly_if_one=False):
     def wrapper(f):
         def command(self, edit, **args):
@@ -429,19 +443,8 @@ def ctags_goto_command(jump_directly_if_one=False):
             tags_file = find_tags_relative_to(view)
 
             result = f(self, self.view, args, tags_file, {})
+            show_tag_panel(self.view, result, jump_directly_if_one)
 
-            if result not in (True, False, None):
-                args, display = result
-                if not args: return
-
-                def on_select(i):
-                    if i != -1:
-                        JumpBack.append(view)
-                        scroll_to_tag(view, args[i])
-
-                ( on_select(0) if   jump_directly_if_one and len(args) == 1
-                               else view.window().show_quick_panel (
-                                                  display, on_select ) )
         return command
     return wrapper
 
@@ -470,16 +473,9 @@ def compile_definition_filters(view):
 
 ######################### GOTO DEFINITION UNDER CURSOR #########################
 
-class NavigateToDefinition(sublime_plugin.TextCommand):
-    is_enabled = check_if_building
-
-    def is_visible(self):
-        return setting("show_context_menus")
-
-    @ctags_goto_command(jump_directly_if_one=True)
-    def run(self, view, args, tags_file, tags):
-        symbol = view.substr(view.word(view.sel()[0]))
-
+class JumpToDefinition:
+    @staticmethod
+    def run(symbol, view, tags_file, tags):
         for tags_file in alternate_tags_paths(view, tags_file):
             tags = (TagFile( tags_file, SYMBOL)
                             .get_tags_dict( symbol,
@@ -516,6 +512,41 @@ class NavigateToDefinition(sublime_plugin.TextCommand):
             return p_tags
 
         return sorted_tags
+
+
+class NavigateToDefinition(sublime_plugin.TextCommand):
+    is_enabled = check_if_building
+
+    def is_visible(self):
+        return setting("show_context_menus")
+
+    @ctags_goto_command(jump_directly_if_one=True)
+    def run(self, view, args, tags_file, tags):
+        symbol = view.substr(view.word(view.sel()[0]))
+        return JumpToDefinition.run(symbol, view, tags_file, tags)
+
+
+class SearchForDefinition(sublime_plugin.WindowCommand):
+    is_enabled = check_if_building
+
+    def is_visible(self):
+        return setting("show_context_menus")
+
+    def run(self):
+        self.window.show_input_panel('','', self.on_done, self.on_change, self.on_cancel)
+
+    def on_done(self, symbol):
+        view = self.window.active_view()
+        tags_file = find_tags_relative_to(view)
+
+        result = JumpToDefinition.run(symbol, view, tags_file, {})
+        show_tag_panel(view, result, True)
+
+    def on_change(self, text):
+        pass
+
+    def on_cancel(self):
+        pass
 
 ################################# SHOW SYMBOLS #################################
 
