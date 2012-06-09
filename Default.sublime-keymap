@@ -11,7 +11,13 @@
     "keys": [
       "ctrl+alt+]"
     ]
-  },  
+  },
+  {
+    "command": "search_for_definition",
+    "keys": [
+      "ctrl+t", "ctrl+y"
+    ]
+  },
   {
     "command": "jump_back",
     "context": [], 
