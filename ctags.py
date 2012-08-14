@@ -217,7 +217,7 @@ class TagFile(object):
         with open(self.p, 'r+') as fh:
             self.fh = mmap.mmap(fh.fileno(), 0)
 
-            for tag in tags:
+            for tag in (t.encode() for t in tags):
                 b4 = bisect.bisect_left(self, tag)
                 fh.seek(b4)
 

@@ -179,6 +179,28 @@ def alternate_tags_paths(view, tags_file):
 
     return [p for p in search_paths if p and os.path.exists(p)]
 
+
+def reached_top_level_folders(folders, oldpath, path):
+    if oldpath == path:
+        return True
+    for folder in folders:
+        if folder[:len(path)] == path:
+            return True
+        if path == os.path.dirname(folder):
+            return True
+    return False
+
+
+def find_top_folder(view, filename):
+    folders = view.window().folders()
+    path = os.path.dirname(filename)
+    oldpath = ''
+    while not reached_top_level_folders(folders, oldpath, path):
+        oldpath = path
+        path = os.path.dirname(path)
+    return path
+
+
 ################################# SCROLL TO TAG ################################
 
 def find_with_scope(view, pattern, scope, start_pos=0, cond=True, flags=0):
@@ -400,6 +422,20 @@ class JumpBackListener(sublime_plugin.EventListener):
 
 ################################ CTAGS COMMANDS ################################
 
+def show_tag_panel(view, result, jump_directly_if_one):
+    if result not in (True, False, None):
+        args, display = result
+        if not args: return
+
+        def on_select(i):
+            if i != -1:
+                JumpBack.append(view)
+                scroll_to_tag(view, args[i])
+
+        ( on_select(0) if   jump_directly_if_one and len(args) == 1
+                       else view.window().show_quick_panel (
+                                          display, on_select ) )
+
 def ctags_goto_command(jump_directly_if_one=False):
     def wrapper(f):
         def command(self, edit, **args):
@@ -407,19 +443,8 @@ def ctags_goto_command(jump_directly_if_one=False):
             tags_file = find_tags_relative_to(view)
 
             result = f(self, self.view, args, tags_file, {})
+            show_tag_panel(self.view, result, jump_directly_if_one)
 
-            if result not in (True, False, None):
-                args, display = result
-                if not args: return
-
-                def on_select(i):
-                    if i != -1:
-                        JumpBack.append(view)
-                        scroll_to_tag(view, args[i])
-
-                ( on_select(0) if   jump_directly_if_one and len(args) == 1
-                               else view.window().show_quick_panel (
-                                                  display, on_select ) )
         return command
     return wrapper
 
@@ -448,16 +473,9 @@ def compile_definition_filters(view):
 
 ######################### GOTO DEFINITION UNDER CURSOR #########################
 
-class NavigateToDefinition(sublime_plugin.TextCommand):
-    is_enabled = check_if_building
-
-    def is_visible(self):
-        return setting("show_context_menus")
-
-    @ctags_goto_command(jump_directly_if_one=True)
-    def run(self, view, args, tags_file, tags):
-        symbol = view.substr(view.word(view.sel()[0]))
-
+class JumpToDefinition:
+    @staticmethod
+    def run(symbol, view, tags_file, tags):
         for tags_file in alternate_tags_paths(view, tags_file):
             tags = (TagFile( tags_file, SYMBOL)
                             .get_tags_dict( symbol,
@@ -491,9 +509,44 @@ class NavigateToDefinition(sublime_plugin.TextCommand):
             p_tags = sorted(p_tags, key=iget('tag_path'))
             if setting('definition_current_first', False):
                 p_tags = sorted(p_tags, cmp=definition_cmp)
-            return p_tags                
+            return p_tags
 
         return sorted_tags
+
+
+class NavigateToDefinition(sublime_plugin.TextCommand):
+    is_enabled = check_if_building
+
+    def is_visible(self):
+        return setting("show_context_menus")
+
+    @ctags_goto_command(jump_directly_if_one=True)
+    def run(self, view, args, tags_file, tags):
+        symbol = view.substr(view.word(view.sel()[0]))
+        return JumpToDefinition.run(symbol, view, tags_file, tags)
+
+
+class SearchForDefinition(sublime_plugin.WindowCommand):
+    is_enabled = check_if_building
+
+    def is_visible(self):
+        return setting("show_context_menus")
+
+    def run(self):
+        self.window.show_input_panel('','', self.on_done, self.on_change, self.on_cancel)
+
+    def on_done(self, symbol):
+        view = self.window.active_view()
+        tags_file = find_tags_relative_to(view)
+
+        result = JumpToDefinition.run(symbol, view, tags_file, {})
+        show_tag_panel(view, result, True)
+
+    def on_change(self, text):
+        pass
+
+    def on_cancel(self):
+        pass
 
 ################################# SHOW SYMBOLS #################################
 
@@ -541,12 +594,13 @@ class rebuild_tags(sublime_plugin.TextCommand):
 
         if not tag_file:
             if view.window().folders():
-                base_path = view.window().folders()[0]
+                base_path = find_top_folder(view, self.view.file_name())
+                print base_path
             else:
                 base_path = dirname(view_fn(view))
             tag_file = join(base_path, '.tags')
-            
-            if 0: #not 1 or sublime.question_box('`ctags -R` in %s ?'% dirname(tag_file)):
+
+            if 0:  # not 1 or sublime.question_box('`ctags -R` in %s ?'% dirname(tag_file)):
                 return
 
         self.build_ctags(setting('ctags_command'), tag_file)
