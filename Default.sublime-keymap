@@ -1,7 +1,6 @@
 [
   {
     "command": "navigate_to_definition",
-    "context": [],
     "keys": ["ctrl+t", "ctrl+t"]
   },
   {
@@ -10,18 +9,15 @@
   },
   {
     "command": "jump_back",
-    "context": [], 
     "keys": ["ctrl+t", "ctrl+b"]
   },
   {
     "command": "jump_back",
     "args": {"to": "last_modification"},
-    "context": [],
     "keys": ["ctrl+t", "ctrl+m"]
   }, 
   {
     "command": "rebuild_tags",
-    "context": [],
     "keys": ["ctrl+t", "ctrl+r"]
   }, 
   {

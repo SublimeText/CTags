@@ -2,7 +2,8 @@
 	{
 		"button": "button1",
 		"count": 1,
+		"press_command": "drag_select",
 		"modifiers": ["ctrl","shift"],
-		"press_command": "navigate_to_definition"
+		"command": "navigate_to_definition"
 	}
 ]
