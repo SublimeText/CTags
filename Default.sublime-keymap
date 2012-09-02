@@ -45,6 +45,19 @@
     ], 
     "keys": ["alt+shift+s"]
   },
+  {
+    "command": "show_symbols",
+    "args": {"type": "lang"},
+    "context": [
+      {
+        "key": "selector",
+        "match_all": true,
+        "operand": "source -source.css",
+        "operator": "equal"
+      }
+    ], 
+    "keys": ["ctrl+alt+shift+s"]
+  },
   { // override current default
     "command": "transpose",
     "context": [
