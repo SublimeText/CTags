@@ -226,6 +226,17 @@ class TagFile(object):
 
             self.fh.close()
 
+    def get_by_suffix(self, suffix):
+        with open(self.p, 'r+') as fh:
+            self.fh = mmap.mmap(fh.fileno(), 0)
+
+            for l in fh:
+                if l.split('\t')[self.column].endswith(suffix): yield l
+                else: continue
+
+            self.fh.close()
+
+
     def exact_matches(self, iterator, tag):
         for l in iterator:
             comp = cmp(l.split('\t')[self.column], tag)
@@ -251,6 +262,11 @@ class TagFile(object):
 
     def tag_class(self):
         return type('Tag', (Tag,), dict(root_dir = self.dir))
+
+    def get_tags_dict_by_suffix(self, suffix, **kw):
+        filters = kw.get('filters', [])
+        return parse_tag_lines( self.get_by_suffix(suffix),
+                                tag_class=self.tag_class(), filters=filters)
 
     def get_tags_dict(self, *tags, **kw):
         filters = kw.get('filters', [])

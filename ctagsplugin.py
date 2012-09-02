@@ -14,6 +14,7 @@ from contextlib import contextmanager
 from itertools import chain
 from operator import itemgetter as iget
 from os.path import join, normpath, dirname
+from collections import defaultdict
 
 ################################ SUBLIME IMPORTS ###############################
 # Sublime Libs
@@ -341,6 +342,12 @@ def files_to_search(view, tags_file, multiple=True):
 
     return files
 
+def get_current_file_suffix(view):
+    current = view.file_name()
+    fileName, fileExtension = os.path.splitext(current)
+    return fileExtension
+
+
 ############################### JUMPBACK COMMANDS ##############################
 
 def different_mod_area(f1, f2, r1, r2):
@@ -454,7 +461,6 @@ def check_if_building(self, **args):
 
     else:  return 1
 
-
 def compile_filters(view):
     filters = []
     for selector, regexes in setting('filters', {}).items():
@@ -550,6 +556,8 @@ class SearchForDefinition(sublime_plugin.WindowCommand):
 
 ################################# SHOW SYMBOLS #################################
 
+tags_cache = defaultdict(dict)
+
 class ShowSymbols(sublime_plugin.TextCommand):
     is_enabled = check_if_building
 
@@ -559,14 +567,37 @@ class ShowSymbols(sublime_plugin.TextCommand):
     @ctags_goto_command()
     def run(self, view, args, tags_file, tags):
         if not tags_file: return
-        multi = args.get('type') =='multi'
+        multi = args.get('type') == 'multi'
+        lang = args.get('type') == 'lang'
 
         files = files_to_search(view, tags_file, multi)
-        if not files: return
+ 
+        if lang:
+            suffix = get_current_file_suffix(view)
+            key = suffix
+        else:
+            key = ",".join(files)
 
         tags_file = tags_file + '_sorted_by_file'
-        tags = (TagFile(tags_file, FILENAME)
-                       .get_tags_dict(*files, filters=compile_filters(view)))
+
+        base_path = find_top_folder(view, view.file_name())
+
+
+        def get_tags():
+            loaded = TagFile(tags_file, FILENAME)
+            if lang: return loaded.get_tags_dict_by_suffix(suffix, filters=compile_filters(view))
+            else: return loaded.get_tags_dict(*files, filters=compile_filters(view))
+
+        if key in tags_cache[base_path]:
+            print "loading symbols from cache"
+            tags = tags_cache[base_path][key]
+        else:
+            print "loading symbols from file"
+            tags = get_tags()
+            tags_cache[base_path][key] = tags
+
+        print "loaded [%d] symbols" % len(tags)
+
         if not tags:
             if multi:
                 view.run_command('show_symbols', {'type':'multi'})
@@ -592,9 +623,10 @@ class rebuild_tags(sublime_plugin.TextCommand):
         view=self.view
         tag_file = find_tags_relative_to(view)
 
+        base_path = find_top_folder(view, self.view.file_name())
+
         if not tag_file:
             if view.window().folders():
-                base_path = find_top_folder(view, self.view.file_name())
                 print base_path
             else:
                 base_path = dirname(view_fn(view))
@@ -604,6 +636,7 @@ class rebuild_tags(sublime_plugin.TextCommand):
                 return
 
         self.build_ctags(setting('ctags_command'), tag_file)
+        tags_cache[base_path].clear()
 
     def done_building(self, tag_file):
         status_message('Finished building %s' % tag_file)
