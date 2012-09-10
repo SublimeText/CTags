@@ -33,14 +33,14 @@
                             {
                                 "command": "open_file",
                                 "args": {
-                                    "file": "${packages}/CTags/Default.sublime-keymap"
+                                    "file": "${packages}/CTags/CTags.sublime-keymap"
                                 },
                                 "caption": "Key Bindings – Default"
                             },
                             {
                                 "command": "open_file",
                                 "args": {
-                                    "file": "${packages}/User/Default (Windows).sublime-keymap",
+                                    "file": "${packages}/User/CTags (Windows).sublime-keymap",
                                     "platform": "Windows"
                                 },
                                 "caption": "Key Bindings – User"
@@ -48,7 +48,7 @@
                             {
                                 "command": "open_file",
                                 "args": {
-                                    "file": "${packages}/User/Default (OSX).sublime-keymap",
+                                    "file": "${packages}/User/CTags (OSX).sublime-keymap",
                                     "platform": "OSX"
                                 },
                                 "caption": "Key Bindings – User"
@@ -56,7 +56,7 @@
                             {
                                 "command": "open_file",
                                 "args": {
-                                    "file": "${packages}/User/Default (Linux).sublime-keymap",
+                                    "file": "${packages}/User/CTags (Linux).sublime-keymap",
                                     "platform": "Linux"
                                 },
                                 "caption": "Key Bindings – User"
@@ -82,36 +82,36 @@
             [
               {
                 "command": "navigate_to_definition"
-              }, 
+              },
               {
                 "command": "jump_back"
               },
               {
                 "command": "rebuild_tags"
-              }, 
+              },
               {
-                "command": "show_symbols", 
+                "command": "show_symbols",
                 "context": [
                   {
-                    "key": "selector", 
-                    "match_all": true, 
-                    "operand": "source -source.css", 
+                    "key": "selector",
+                    "match_all": true,
+                    "operand": "source -source.css",
                     "operator": "equal"
                   }
                 ]
-              }, 
+              },
               {
-                //"argr_comment": "TODO", 
+                //"argr_comment": "TODO",
                 "args": {
                   "type": "multi"
-                }, 
+                },
                 "caption": "Show Symbols (multi)",
-                "command": "show_symbols", 
+                "command": "show_symbols",
                 "context": [
                   {
-                    "key": "selector", 
-                    "match_all": true, 
-                    "operand": "source -source.css", 
+                    "key": "selector",
+                    "match_all": true,
+                    "operand": "source -source.css",
                     "operator": "equal"
                   }
                 ]
