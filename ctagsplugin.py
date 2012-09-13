@@ -178,7 +178,7 @@ def alternate_tags_paths(view, tags_file):
         for extrafile in setting('extra_tag_files'):
             search_paths.append(normpath(join(folder, extrafile)))
 
-    return [p for p in search_paths if p and os.path.exists(p)]
+    return set(p for p in search_paths if p and os.path.exists(p))
 
 
 def reached_top_level_folders(folders, oldpath, path):
