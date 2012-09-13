@@ -10,5 +10,5 @@
     "definition_current_first": true,
     "show_context_menus": true,
     "extra_tag_paths" :  [ [["source.python", "windows"], "C:\\Python27\\Lib\\tags"]],
-    "extra_tag_files" : [".gemtags"]
+    "extra_tag_files" : [".gemtags", "tags"]
 }
