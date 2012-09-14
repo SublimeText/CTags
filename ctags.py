@@ -17,12 +17,9 @@ from os.path import dirname
 ################################################################################
 
 TAGS_RE = re.compile (
-
     '(?P<symbol>[^\t]+)\t'
     '(?P<filename>[^\t]+)\t'
-    '(?P<ex_command>.*?);"\t'
-    '(?P<type>[^\t\r\n]+)'
-    '(?:\t(?P<fields>.*))?'
+    '(?P<ex_command>.*)'
 )
 
 # Column indexes
@@ -56,8 +53,10 @@ def splits(string, *splitters):
 def parse_tag_lines(lines, order_by='symbol', tag_class=None, filters=[]):
     tags_lookup = {}
 
-    for search_obj in (t for t in (TAGS_RE.search (
-                            l.decode('utf8')) for l in lines) if t):
+    for l in lines:
+        search_obj = TAGS_RE.search(l.decode('utf8'))
+        if not search_obj:
+            continue
 
         tag = post_process_tag(search_obj)
         if tag_class is not None: tag = tag_class(tag)
