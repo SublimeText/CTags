@@ -137,11 +137,10 @@ def on_load(f=None, window=None, encoded_row_col=True, begin_edit=False):
 
 def view_fn(v): return v.file_name() or '.'
 
-def find_tags_relative_to(view):
-    fn = view.file_name()
-    if not fn: return ''
+def find_tags_relative_to(file_name):
+    if not file_name: return ''
 
-    dirs = normpath(join(dirname(fn), '.tags')).split(os.path.sep)
+    dirs = normpath(join(dirname(file_name), '.tags')).split(os.path.sep)
     f = dirs.pop()
 
     while dirs:
@@ -149,7 +148,7 @@ def find_tags_relative_to(view):
         if os.path.exists(joined) and not os.path.isdir(joined): return joined
         else: dirs.pop()
 
-    status_message("Can't find any relevant tags file")
+    return None
 
 def alternate_tags_paths(view, tags_file):
     tags_paths = '%s_search_paths' % tags_file
@@ -195,6 +194,11 @@ def reached_top_level_folders(folders, oldpath, path):
 def find_top_folder(view, filename):
     folders = view.window().folders()
     path = os.path.dirname(filename)
+
+    # We don't have any folders open, return the folder this file is in
+    if len(folders) == 0:
+        return path
+
     oldpath = ''
     while not reached_top_level_folders(folders, oldpath, path):
         oldpath = path
@@ -447,7 +451,10 @@ def ctags_goto_command(jump_directly_if_one=False):
     def wrapper(f):
         def command(self, edit, **args):
             view = self.view
-            tags_file = find_tags_relative_to(view)
+            tags_file = find_tags_relative_to(view.file_name())
+            if not tags_file:
+                status_message("Can't find any relevant tags file")
+                return
 
             result = f(self, self.view, args, tags_file, {})
             show_tag_panel(self.view, result, jump_directly_if_one)
@@ -543,7 +550,10 @@ class SearchForDefinition(sublime_plugin.WindowCommand):
 
     def on_done(self, symbol):
         view = self.window.active_view()
-        tags_file = find_tags_relative_to(view)
+        tags_file = find_tags_relative_to(view.file_name())
+        if not tags_file:
+            status_message("Can't find any relevant tags file")
+            return
 
         result = JumpToDefinition.run(symbol, view, tags_file, {})
         show_tag_panel(view, result, True)
@@ -621,37 +631,55 @@ class ShowSymbols(sublime_plugin.TextCommand):
 class rebuild_tags(sublime_plugin.TextCommand):
     def run(self, edit, **args):
         view=self.view
-        tag_file = find_tags_relative_to(view)
 
-        base_path = find_top_folder(view, self.view.file_name())
+        tag_dirs = []
+        if args.has_key("dirs"):
+            # User has requested to rebuild CTags for the specific folders (via context menu in Folders pane)
+            tag_dirs.extend(args["dirs"])
+        elif view.file_name() is not None:
+            # Rebuild and rebuild tags relative to the currently opened file
+            tag_dir = find_top_folder(view, view.file_name())
+            tag_dirs.append(tag_dir)
+        elif len(view.window().folders()) > 0:
+            # No file is open, rebuild tags for all opened folders
+            tag_dirs.extend(view.window().folders())
+        else:
+            status_message("Cannot build CTags: No file or folder open.")
+            return
 
-        if not tag_file:
-            if view.window().folders():
-                print base_path
-            else:
-                base_path = dirname(view_fn(view))
-            tag_file = join(base_path, '.tags')
+        tag_files = map(lambda t: join(t, ".tags"), tag_dirs)
 
-            if 0:  # not 1 or sublime.question_box('`ctags -R` in %s ?'% dirname(tag_file)):
-                return
+        # Any .tags file found when walking up the directory tree has precedence
+        def replace_with_parent_tags_if_exists(tag_file):
+            parent_tag_file = find_tags_relative_to(tag_file)
+            return parent_tag_file if parent_tag_file else tag_file
+        tag_files = set(map(replace_with_parent_tags_if_exists, tag_files))
 
-        self.build_ctags(setting('ctags_command'), tag_file)
-        tags_cache[base_path].clear()
+        # TODO: replace with sublime.ok_cancel_dialog or maybe just delete?
+        if 0:  # not 1 or sublime.question_box('`ctags -R` in %s ?'% dirname(tag_file)):
+            return
 
-    def done_building(self, tag_file):
-        status_message('Finished building %s' % tag_file)
+        self.build_ctags(setting('ctags_command'), tag_files)
 
-    @threaded(finish=done_building, msg="Already running CTags!")
-    def build_ctags(self, cmd, tag_file):
-        in_main(lambda: status_message('Re/Building CTags: Please be patient'))()
-        ctags.build_ctags(cmd, tag_file)
-        return tag_file
+    @threaded(msg="Already running CTags!")
+    def build_ctags(self, cmd, tag_files):
+        
+        def tags_built(tag_file):
+            print 'Finished building %s' % tag_file
+            in_main(lambda: status_message('Finished building %s' % tag_file))()
+            in_main(lambda: tags_cache[dirname(tag_file)].clear())()
+
+        for tag_file in tag_files:
+            print 'Re/Building CTags for %s: Please be patient' % tag_file
+            in_main(lambda: status_message('Re/Building CTags for %s: Please be patient' % tag_file))()
+            ctags.build_ctags(cmd, tag_file)
+            tags_built(tag_file)
 
 ################################# AUTOCOMPLETE #################################
 
 # class CTagsAutoComplete(sublime_plugin.EventListener):
 #     def on_query_completions(self, view, prefix, locations):
-#         tags = find_tags_relative_to(view)
+#         tags = find_tags_relative_to(view.file_name())
 #         completions = []
 
 #         if tags:
@@ -679,7 +707,7 @@ class test_ctags(sublime_plugin.TextCommand):
             self.routine = None
 
     def co_routine(self, view):
-        tag_file = find_tags_relative_to(view)
+        tag_file = find_tags_relative_to(view.file_name())
 
         with open(tag_file) as tf:
             tags = parse_tag_lines(tf, tag_class=Tag)
