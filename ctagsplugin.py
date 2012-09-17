@@ -503,8 +503,9 @@ class JumpToDefinition:
         def pass_def_filter(o):
             for f in def_filters:
                 for k, v in f.items():
-                    if re.match(v, o[k]):
-                        return False
+		    if k in o:
+                        if re.match(v, o[k]):
+                            return False
             return True
 
         @prepared_4_quickpanel()
