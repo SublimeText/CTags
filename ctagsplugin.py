@@ -208,7 +208,7 @@ def find_with_scope(view, pattern, scope, start_pos=0, cond=True, flags=0):
     max_pos = view.size()
 
     while start_pos < max_pos:
-        f = view.find(pattern, start_pos, flags )
+        f = view.find(pattern[:-4], start_pos, flags )
 
         if not f or view.match_selector( f.begin(), scope) is cond:
             break
@@ -503,8 +503,9 @@ class JumpToDefinition:
         def pass_def_filter(o):
             for f in def_filters:
                 for k, v in f.items():
-                    if re.match(v, o[k]):
-                        return False
+		    if k in o:
+                        if re.match(v, o[k]):
+                            return False
             return True
 
         @prepared_4_quickpanel()
