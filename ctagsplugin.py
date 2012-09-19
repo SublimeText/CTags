@@ -623,7 +623,15 @@ class rebuild_tags(sublime_plugin.TextCommand):
         view=self.view
         tag_file = find_tags_relative_to(view)
 
-        base_path = find_top_folder(view, self.view.file_name())
+        if "dirs" in args and len(args["dirs"]) >= 1:
+            # when right-click in sidebar
+            base_path = args["dirs"][0];
+        elif self.view.file_name() is None:
+            # in some old sublime version, self.view.file_name() is None, 
+            # while self.view.window().active_view().file_name() has value
+            base_path = find_top_folder(view, self.view.window().active_view().file_name());
+        else:
+            base_path = find_top_folder(view, self.view.file_name());
 
         if not tag_file:
             if view.window().folders():
