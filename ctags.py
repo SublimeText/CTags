@@ -17,9 +17,12 @@ from os.path import dirname
 ################################################################################
 
 TAGS_RE = re.compile (
+
     '(?P<symbol>[^\t]+)\t'
     '(?P<filename>[^\t]+)\t'
-    '(?P<ex_command>.*)'
+    '(?P<ex_command>.*?);"\t'
+    '(?P<type>[^\t\r\n]+)'
+    '(?:\t(?P<fields>.*))?'
 )
 
 # Column indexes
