@@ -16,19 +16,9 @@ To get a proper copy of ctags, use one of the following options:
 * Using [[http://www.macports.org/|MacPorts]]:
 {{{port install ctags}}}
 
-* Make sure that Sublime Text is using the right version of CTags: Ensure that ~/.MacOSX/environment.plist has /usr/local/bin in the PATH string before /usr/bin (the standard location for CTags). Here's a sample environment.plist that should work:
-
-{{{
-<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<plist version="1.0">
-<dict>
-<key>PATH</key>
-<string>/usr/local/bin:/usr/bin:/bin</string>
-</dict>
-</plist>
-}}}
-* If /usr/local/bin wasn't in your PATH already, you have to log out and log back in for the environment variables to be read in again.
+*Make sure that Sublime Text is using the right version of CTags:*
+* If 'which ctags' doesn't point at ctags in '/usr/local/bin', make sure you add '/usr/local/bin' to your PATH ahead of the folder that 'which ctags' reported.
+** Add or modify the 'export PATH=...' (e.g. in ~/.profile) to make the change permanent 
 
 === Linux ===
 
@@ -136,10 +126,10 @@ Thanks :)
 
 === Commands Listing ===
 
-|=Command                        |=Key Binding            |=Alt Binding       |=Mouse Binding       |
-| rebuild_ctags                  | ctrl+t ctrl+r          |                   |                     |
-| navigate_to_definition         | ctrl+t ctrl+t          | ctrl+alt+]        | ctrl+alt+left_click |
-| jump_back                      | ctrl+t ctrl+b          | ctrl+alt+[        |                     |
-| jump_back to_last_modification | ctrl+t ctrl+m          |                   |                     |
-| show_symbols                   | alt+s                  |                   |                     |
-| show_symbols multi             | alt+shift+s            |                   |                     |
+|=Command                        |=Key Binding            |=Alt Binding       |=Mouse Binding          |
+| rebuild_ctags                  | ctrl+t ctrl+r          |                   |                        |
+| navigate_to_definition         | ctrl+t ctrl+t          | ctrl+>            | ctrl+shift+left_click  |
+| jump_back                      | ctrl+t ctrl+b          | ctrl+<            | ctrl+shift+right_click |
+| jump_back to_last_modification | ctrl+t ctrl+m          |                   |                        |
+| show_symbols                   | alt+s                  |                   |                        |
+| show_symbols multi             | alt+shift+s            |                   |                        |

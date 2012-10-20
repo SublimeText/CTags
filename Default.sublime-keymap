@@ -4,12 +4,20 @@
     "keys": ["ctrl+t", "ctrl+t"]
   },
   {
+    "command": "navigate_to_definition",
+    "keys": ["ctrl+shift+period"]
+  },
+  {
     "command": "search_for_definition",
     "keys": ["ctrl+t", "ctrl+y"]
   },
   {
     "command": "jump_back",
     "keys": ["ctrl+t", "ctrl+b"]
+  },
+  {
+    "command": "jump_back",
+    "keys": ["ctrl+shift+comma"]
   },
   {
     "command": "jump_back",
@@ -61,7 +69,7 @@
   { // override current default
     "command": "transpose",
     "context": [
-      { "key": "num_selections", "operator": "not_equal", "operand": 1 }
+      { "key": "num_selections", "operator": "greater_than", "operand": 1 }
     ],
     "keys": ["ctrl+t"]
   }
