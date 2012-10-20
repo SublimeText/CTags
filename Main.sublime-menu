@@ -113,6 +113,38 @@
                                     "platform": "Linux"
                                 },
                                 "caption": "Key Bindings – User"
+                            },
+                            { "caption": "-" },
+                            {
+                                "command": "open_file",
+                                "args": {
+                                    "file": "${packages}/CTags/Default.sublime-mousemap"
+                                },
+                                "caption": "Mouse Bindings – Default"
+                            },
+                            {
+                                "command": "open_file",
+                                "args": {
+                                    "file": "${packages}/User/Default (Windows).sublime-mousemap",
+                                    "platform": "Windows"
+                                },
+                                "caption": "Mouse Bindings – User"
+                            },
+                            {
+                                "command": "open_file",
+                                "args": {
+                                    "file": "${packages}/User/Default (OSX).sublime-mousemap",
+                                    "platform": "OSX"
+                                },
+                                "caption": "Mouse Bindings – User"
+                            },
+                            {
+                                "command": "open_file",
+                                "args": {
+                                    "file": "${packages}/User/Default (Linux).sublime-mousemap",
+                                    "platform": "Linux"
+                                },
+                                "caption": "Mouse Bindings – User"
                             }
                         ]
                     }
