@@ -23,11 +23,11 @@
     "command": "jump_back",
     "args": {"to": "last_modification"},
     "keys": ["ctrl+t", "ctrl+m"]
-  }, 
+  },
   {
     "command": "rebuild_tags",
     "keys": ["ctrl+t", "ctrl+r"]
-  }, 
+  },
   {
     "command": "show_symbols",
     "context": [
@@ -37,9 +37,9 @@
         "operand": "source -source.css",
         "operator": "equal"
       }
-    ], 
+    ],
     "keys": ["alt+s"]
-  }, 
+  },
   {
     "command": "show_symbols",
     "args": {"type": "multi"},
@@ -50,7 +50,7 @@
         "operand": "source -source.css",
         "operator": "equal"
       }
-    ], 
+    ],
     "keys": ["alt+shift+s"]
   },
   {
@@ -63,13 +63,13 @@
         "operand": "source -source.css",
         "operator": "equal"
       }
-    ], 
+    ],
     "keys": ["ctrl+alt+shift+s"]
   },
   { // override current default
     "command": "transpose",
     "context": [
-      { "key": "num_selections", "operator": "greater_than", "operand": 1 }
+      { "key": "num_selections", "operator": "not_equal", "operand": 1 }
     ],
     "keys": ["ctrl+t"]
   }

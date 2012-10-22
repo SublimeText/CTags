@@ -18,13 +18,19 @@ To get a proper copy of ctags, use one of the following options:
 
 *Make sure that Sublime Text is using the right version of CTags:*
 * If 'which ctags' doesn't point at ctags in '/usr/local/bin', make sure you add '/usr/local/bin' to your PATH ahead of the folder that 'which ctags' reported.
-** Add or modify the 'export PATH=...' (e.g. in ~/.profile) to make the change permanent 
+** Add or modify the 'export PATH=...' (e.g. in ~/.profile) to make the change permanent
 
 === Linux ===
 
 To get a proper copy of ctags, use one of the following options:
 * In a terminal session:
 {{{sudo apt-get install ctags}}}
+
+=== Windows ===
+
+Download the [[http://prdownloads.sourceforge.net/ctags/ctags58.zip|binary ctags.exe]] from [[http://ctags.sourceforge.net/|Exuberant Ctags site]].
+
+Extract `ctags.exe` from the download zip to "C:\Program Files\Sublime Text 2" or any folder that within your PATH so CTags support for Sublime Text 2 can run it.
 
 === Dependencies ===
 
@@ -70,10 +76,18 @@ If you create a file `tags_search_paths` in the same folder as your
 `tags` file, listing alternative locations (full absolute paths, one
 per line) it will search those files also.
 
-eg 
+eg
 
 {{{
 D:\myProject\tags
+}}}
+
+If you are a rubyist, you can build the whole Ruby Gems ctags file for your application seperately via a `build_gemtags.rb` script:
+
+{{{
+require 'bundler'
+paths = Bundler.load.specs.map(&:full_gem_path)
+system("ctags -R -f .gemtags #{paths.join(' ')}")
 }}}
 
 === Other Settings ===
