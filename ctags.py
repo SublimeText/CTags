@@ -438,3 +438,4 @@ if __name__ == '__main__':
 # value the name declared for that construct in the program. This scope entry
 # indicates the scope in which the tag was found. For example, a tag generated
 # for a C structure member would have a scope looking like "struct:myStruct".myStruct".
+
