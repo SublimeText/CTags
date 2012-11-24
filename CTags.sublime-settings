@@ -1,6 +1,17 @@
 {
+    // All options in here can also be specified in your project settings
+    // with a prepended "ctags_" for example if you have
+    //
+    // "settings":
+    // {
+    //     "ctags_command": ""echo \":ctags .tags\" | ghci -v0 /path/to/Main.hs"
+    // }
+    //
+    // in your project settings, this will override the settings specified
+    // in this file and in your user settings.
+
     "debug"           :  false,
-    "ctags_command"   :  "ctags -R -f .tags",
+    "command"   :  "ctags -R -f .tags",
     "filters"         :  {
         "source.python": {"type":"^i$"}
     },

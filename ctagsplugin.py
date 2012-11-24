@@ -31,7 +31,21 @@ from ctags import (FILENAME, parse_tag_lines, PATH_ORDER, SYMBOL, Tag, TagFile)
 
 ################################### SETTINGS ###################################
 
-setting = sublime.load_settings('CTags.sublime-settings').get # (key, None)
+def get_settings():
+    return sublime.load_settings("CTags.sublime-settings")
+
+def get_setting(key, default=None, view=None):
+    try:
+        if view == None:
+            view = sublime.active_window().active_view()
+        s = view.settings()
+        if s.has("ctags_%s" % key):
+            return s.get("ctags_%s" % key)
+    except:
+        pass
+    return get_settings().get(key, default)
+
+setting = get_setting
 
 ################################### CONSTANTS ##################################
 
@@ -660,7 +674,8 @@ class rebuild_tags(sublime_plugin.TextCommand):
         if 0:  # not 1 or sublime.question_box('`ctags -R` in %s ?'% dirname(tag_file)):
             return
 
-        self.build_ctags(setting('ctags_command'), tag_files)
+        command = setting('command', setting('ctags_command'))
+        self.build_ctags(command, tag_files)
 
     @threaded(msg="Already running CTags!")
     def build_ctags(self, cmd, tag_files):
