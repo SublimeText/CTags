@@ -138,7 +138,7 @@ def on_load(f=None, window=None, encoded_row_col=True, begin_edit=False):
 def view_fn(v): return v.file_name() or '.'
 
 def find_tags_relative_to(file_name):
-    if not file_name: return ''
+    if not file_name: return None
 
     dirs = dirname(normpath(file_name)).split(os.path.sep)
 
