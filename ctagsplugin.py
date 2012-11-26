@@ -510,7 +510,7 @@ class JumpToDefinition:
         def pass_def_filter(o):
             for f in def_filters:
                 for k, v in f.items():
-		    if k in o:
+                    if k in o:
                         if re.match(v, o[k]):
                             return False
             return True
@@ -582,7 +582,7 @@ class ShowSymbols(sublime_plugin.TextCommand):
         lang = args.get('type') == 'lang'
 
         files = files_to_search(view, tags_file, multi)
- 
+
         if lang:
             suffix = get_current_file_suffix(view)
             key = suffix
@@ -664,7 +664,7 @@ class rebuild_tags(sublime_plugin.TextCommand):
 
     @threaded(msg="Already running CTags!")
     def build_ctags(self, cmd, tag_files):
-        
+
         def tags_built(tag_file):
             print 'Finished building %s' % tag_file
             in_main(lambda: status_message('Finished building %s' % tag_file))()
