@@ -140,11 +140,10 @@ def view_fn(v): return v.file_name() or '.'
 def find_tags_relative_to(file_name):
     if not file_name: return ''
 
-    dirs = normpath(join(dirname(file_name), '.tags')).split(os.path.sep)
-    f = dirs.pop()
+    dirs = dirname(normpath(file_name)).split(os.path.sep)
 
     while dirs:
-        joined = normpath(os.path.sep.join(dirs + [f]))
+        joined = os.path.sep.join(dirs + ['.tags'])
         if os.path.exists(joined) and not os.path.isdir(joined): return joined
         else: dirs.pop()
 
