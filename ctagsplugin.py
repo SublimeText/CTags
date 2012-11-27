@@ -531,7 +531,10 @@ class NavigateToDefinition(sublime_plugin.TextCommand):
 
     @ctags_goto_command(jump_directly_if_one=True)
     def run(self, view, args, tags_file):
-        symbol = view.substr(view.word(view.sel()[0]))
+        region = view.sel()[0]
+        if region.begin() == region.end(): #point
+          region = view.word(region)
+        symbol = view.substr(region)
         return JumpToDefinition.run(symbol, view, tags_file)
 
 
