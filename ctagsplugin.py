@@ -152,13 +152,12 @@ def on_load(f=None, window=None, encoded_row_col=True, begin_edit=False):
 def view_fn(v): return v.file_name() or '.'
 
 def find_tags_relative_to(file_name):
-    if not file_name: return ''
+    if not file_name: return None
 
-    dirs = normpath(join(dirname(file_name), '.tags')).split(os.path.sep)
-    f = dirs.pop()
+    dirs = dirname(normpath(file_name)).split(os.path.sep)
 
     while dirs:
-        joined = normpath(os.path.sep.join(dirs + [f]))
+        joined = os.path.sep.join(dirs + ['.tags'])
         if os.path.exists(joined) and not os.path.isdir(joined): return joined
         else: dirs.pop()
 
@@ -470,7 +469,7 @@ def ctags_goto_command(jump_directly_if_one=False):
                 status_message("Can't find any relevant tags file")
                 return
 
-            result = f(self, self.view, args, tags_file, {})
+            result = f(self, self.view, args, tags_file)
             show_tag_panel(self.view, result, jump_directly_if_one)
 
         return command
@@ -502,7 +501,8 @@ def compile_definition_filters(view):
 
 class JumpToDefinition:
     @staticmethod
-    def run(symbol, view, tags_file, tags):
+    def run(symbol, view, tags_file):
+        tags = {}
         for tags_file in alternate_tags_paths(view, tags_file):
             tags = (TagFile( tags_file, SYMBOL)
                             .get_tags_dict( symbol,
@@ -524,7 +524,7 @@ class JumpToDefinition:
         def pass_def_filter(o):
             for f in def_filters:
                 for k, v in f.items():
-		    if k in o:
+                    if k in o:
                         if re.match(v, o[k]):
                             return False
             return True
@@ -549,9 +549,9 @@ class NavigateToDefinition(sublime_plugin.TextCommand):
         return setting("show_context_menus")
 
     @ctags_goto_command(jump_directly_if_one=True)
-    def run(self, view, args, tags_file, tags):
+    def run(self, view, args, tags_file):
         symbol = view.substr(view.word(view.sel()[0]))
-        return JumpToDefinition.run(symbol, view, tags_file, tags)
+        return JumpToDefinition.run(symbol, view, tags_file)
 
 
 class SearchForDefinition(sublime_plugin.WindowCommand):
@@ -570,7 +570,7 @@ class SearchForDefinition(sublime_plugin.WindowCommand):
             status_message("Can't find any relevant tags file")
             return
 
-        result = JumpToDefinition.run(symbol, view, tags_file, {})
+        result = JumpToDefinition.run(symbol, view, tags_file)
         show_tag_panel(view, result, True)
 
     def on_change(self, text):
@@ -590,13 +590,13 @@ class ShowSymbols(sublime_plugin.TextCommand):
         return setting("show_context_menus")
 
     @ctags_goto_command()
-    def run(self, view, args, tags_file, tags):
+    def run(self, view, args, tags_file):
         if not tags_file: return
         multi = args.get('type') == 'multi'
         lang = args.get('type') == 'lang'
 
         files = files_to_search(view, tags_file, multi)
- 
+
         if lang:
             suffix = get_current_file_suffix(view)
             key = suffix
@@ -679,7 +679,7 @@ class rebuild_tags(sublime_plugin.TextCommand):
 
     @threaded(msg="Already running CTags!")
     def build_ctags(self, cmd, tag_files):
-        
+
         def tags_built(tag_file):
             print 'Finished building %s' % tag_file
             in_main(lambda: status_message('Finished building %s' % tag_file))()
