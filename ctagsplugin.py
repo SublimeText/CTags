@@ -354,6 +354,7 @@ def files_to_search(view, tags_file, multiple=True):
     files = [fn[len(common_prefix)+1:]]
 
     if multiple:
+        files.pop()
         more_files = tagged_project_files(view, tag_dir)
         files.extend(more_files)
 
