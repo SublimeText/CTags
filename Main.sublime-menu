@@ -37,7 +37,7 @@
                 "args": {
                   "type": "multi"
                 },
-                "caption": "Show Symbols (multi)",
+                "caption": "Show Symbols (all)",
                 "command": "show_symbols",
                 "context": [
                   {
