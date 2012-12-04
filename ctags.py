@@ -217,16 +217,20 @@ class TagFile(object):
 
     def get(self, *tags):
         with open(self.p, 'r+') as fh:
-            self.fh = mmap.mmap(fh.fileno(), 0)
+            if tags:
+                self.fh = mmap.mmap(fh.fileno(), 0)
 
-            for tag in (t.encode() for t in tags):
-                b4 = bisect.bisect_left(self, tag)
-                fh.seek(b4)
+                for tag in (t.encode() for t in tags):
+                    b4 = bisect.bisect_left(self, tag)
+                    fh.seek(b4)
 
-                for l in self.match_as(fh, tag):
+                    for l in self.match_as(fh, tag):
+                        yield l
+
+                self.fh.close()
+            else:
+                for l in fh.readlines():
                     yield l
-
-            self.fh.close()
 
     def get_by_suffix(self, suffix):
         with open(self.p, 'r+') as fh:
