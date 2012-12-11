@@ -7,9 +7,7 @@ a memory-mapped tags file, so it will work efficiently with very large (50MB+) t
 
 === Installation ===
 
-If you are a git user, the best way to install the package and keep up to date
-is to clone the repo directly into your /Packages directory in the Sublime Text
-2 application settings area.
+The easiest way to install this plugin, is to use the [[http://wbond.net/sublime_packages/package_control|Package Control]] plugin (written by [[http://wbond.net|Will Bond]])
 
 ==== Using Git ====
 
