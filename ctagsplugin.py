@@ -611,7 +611,7 @@ class ShowSymbols(sublime_plugin.TextCommand):
                 sublime.status_message(
                     'No symbols found **FOR CURRENT FILE**; Try Rebuild?' )
 
-        path_cols = (0, ) if len(files) > 1 else ()
+        path_cols = (0, ) if len(files) > 1 or multi else ()
         formatting = functools.partial( format_tag_for_quickopen,
                                         file = bool(path_cols)  )
 
