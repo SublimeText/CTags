@@ -674,16 +674,16 @@ class rebuild_tags(sublime_plugin.TextCommand):
 
 ################################# AUTOCOMPLETE #################################
 
-# class CTagsAutoComplete(sublime_plugin.EventListener):
-#     def on_query_completions(self, view, prefix, locations):
-#         tags = find_tags_relative_to(view.file_name())
-#         completions = []
+class CTagsAutoComplete(sublime_plugin.EventListener):
+     def on_query_completions(self, view, prefix, locations):
+         tags = find_tags_relative_to(view.file_name())
+         completions = []
 
-#         if tags:
-#             tag_file = TagFile(tags, SYMBOL, MATCHES_STARTWITH)
-#             completions = [(a,a) for a in sorted(tag_file.get_tags_dict(prefix[0]))]
+         if tags:
+             tag_file = TagFile(tags, SYMBOL, MATCHES_STARTWITH)
+             completions = [(a,a) for a in sorted(tag_file.get_tags_dict(prefix[0]))]
 
-#         return []
+         return []
 
 ##################################### TEST #####################################
 
