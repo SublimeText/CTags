@@ -531,7 +531,10 @@ class NavigateToDefinition(sublime_plugin.TextCommand):
 
     @ctags_goto_command(jump_directly_if_one=True)
     def run(self, view, args, tags_file):
-        symbol = view.substr(view.word(view.sel()[0]))
+        region = view.sel()[0]
+        if region.begin() == region.end(): #point
+          region = view.word(region)
+        symbol = view.substr(region)
         return JumpToDefinition.run(symbol, view, tags_file)
 
 
@@ -611,7 +614,7 @@ class ShowSymbols(sublime_plugin.TextCommand):
                 sublime.status_message(
                     'No symbols found **FOR CURRENT FILE**; Try Rebuild?' )
 
-        path_cols = (0, ) if len(files) > 1 else ()
+        path_cols = (0, ) if len(files) > 1 or multi else ()
         formatting = functools.partial( format_tag_for_quickopen,
                                         file = bool(path_cols)  )
 
@@ -674,16 +677,20 @@ class rebuild_tags(sublime_plugin.TextCommand):
 
 ################################# AUTOCOMPLETE #################################
 
-# class CTagsAutoComplete(sublime_plugin.EventListener):
-#     def on_query_completions(self, view, prefix, locations):
-#         tags = find_tags_relative_to(view.file_name())
-#         completions = []
-
-#         if tags:
-#             tag_file = TagFile(tags, SYMBOL, MATCHES_STARTWITH)
-#             completions = [(a,a) for a in sorted(tag_file.get_tags_dict(prefix[0]))]
-
-#         return []
+class CTagsAutoComplete(sublime_plugin.EventListener):
+    def on_query_completions(self, view, prefix, locations):
+        if setting('autocomplete'):
+            tags_path = view.window().folders()[0]+"/.tags"
+            results=[]
+            if (not view.window().folders() or not os.path.exists(tags_path)): #check if a project is open and the .tags file exists
+                return results
+            f=os.popen("grep -i '^"+prefix+"' '"+tags_path+"' | awk '{ print $1 }'") # grep tags from project directory .tags file
+            for i in f.readlines():
+                results.append([i.strip()])
+            results = [(item,item) for sublist in results for item in sublist] #flatten
+            results = list(set(results)) # make unique
+            results.sort() # sort
+            return results
 
 ##################################### TEST #####################################
 
