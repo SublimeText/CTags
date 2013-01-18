@@ -57,6 +57,9 @@ OBJECT_PUNCTUATORS = {
 
 ENTITY_SCOPE = "entity.name.function, entity.name.type, meta.toc-list"
 
+RUBY_SPECIAL_ENDINGS = "\?|!"
+RUBY_SCOPES = ".*(ruby|rails).*"
+
 ################################# AAA* IMPORTS #################################
 # Inlined 07/26/11 20:39:51#
 ############################
@@ -525,6 +528,10 @@ class JumpToDefinition:
 
 class NavigateToDefinition(sublime_plugin.TextCommand):
     is_enabled = check_if_building
+    def __init__(self, args):
+      sublime_plugin.TextCommand.__init__(self,args)
+      self.scopes = re.compile(RUBY_SCOPES)
+      self.endings = re.compile(RUBY_SPECIAL_ENDINGS)
 
     def is_visible(self):
         return setting("show_context_menus")
@@ -534,6 +541,9 @@ class NavigateToDefinition(sublime_plugin.TextCommand):
         region = view.sel()[0]
         if region.begin() == region.end(): #point
           region = view.word(region)
+          if self.scopes.match(view.syntax_name(view.sel()[0].b)) is not None:
+            if self.endings.match(view.substr(sublime.Region(region.end(), region.end()+1))) is not None:
+              region = sublime.Region(region.begin(), region.end()+1)
         symbol = view.substr(region)
         return JumpToDefinition.run(symbol, view, tags_file)
 
