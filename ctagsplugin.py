@@ -670,6 +670,7 @@ class rebuild_tags(sublime_plugin.TextCommand):
 
         command = setting('command', setting('ctags_command'))
         self.build_ctags(command, tag_files)
+        GetAllCTagsList.ctags_list = []  # clear the cached ctags list
 
     @threaded(msg="Already running CTags!")
     def build_ctags(self, cmd, tag_files):
@@ -687,20 +688,38 @@ class rebuild_tags(sublime_plugin.TextCommand):
 
 ################################# AUTOCOMPLETE #################################
 
+class GetAllCTagsList():
+    ctags_list = []
+    """cache all the ctags list"""
+    def __init__(self, list):
+        self.ctags_list = list
+
 class CTagsAutoComplete(sublime_plugin.EventListener):
     def on_query_completions(self, view, prefix, locations):
         if setting('autocomplete'):
+            prefix = prefix.strip().lower()
             tags_path = view.window().folders()[0]+"/.tags"
-            results=[]
-            if (not view.window().folders() or not os.path.exists(tags_path)): #check if a project is open and the .tags file exists
+
+            if GetAllCTagsList.ctags_list: 
+                results = [sublist for sublist in GetAllCTagsList.ctags_list if sublist[0].lower().startswith(prefix)]
+                results = list(set(results))
+                results.sort()
+                return results    
+            else:
+                tags = []
+                if (not view.window().folders() or not os.path.exists(tags_path)): #check if a project is open and the .tags file exists
+                    return tags
+                f=os.popen("awk '{ print $1 }' '" + tags_path + "'")  
+                for i in f.readlines():
+                    tags.append([i.strip()])  
+                tags = [(item,item) for sublist in tags for item in sublist] #flatten
+                tags = list(set(tags)) # make unique
+                tags.sort()
+                GetAllCTagsList.ctags_list = tags
+                results = [sublist for sublist in GetAllCTagsList.ctags_list if sublist[0].lower().startswith(prefix)]
+                results = list(set(results))
+                results.sort()
                 return results
-            f=os.popen("grep -i '^"+prefix+"' '"+tags_path+"' | awk '{ print $1 }'") # grep tags from project directory .tags file
-            for i in f.readlines():
-                results.append([i.strip()])
-            results = [(item,item) for sublist in results for item in sublist] #flatten
-            results = list(set(results)) # make unique
-            results.sort() # sort
-            return results
 
 ##################################### TEST #####################################
 
