@@ -700,24 +700,27 @@ class CTagsAutoComplete(sublime_plugin.EventListener):
             prefix = prefix.strip().lower()
             tags_path = view.window().folders()[0]+"/.tags"
 
-            if GetAllCTagsList.ctags_list: 
+            sub_results = [v.extract_completions(prefix) for v in sublime.active_window().views()]
+            sub_results = [(item,item) for sublist in sub_results for item in sublist] #flatten
+
+            if GetAllCTagsList.ctags_list:
                 results = [sublist for sublist in GetAllCTagsList.ctags_list if sublist[0].lower().startswith(prefix)]
-                results = list(set(results))
+                results = list(set(results).union(set(sub_results)))
                 results.sort()
-                return results    
+                return results
             else:
                 tags = []
                 if (not view.window().folders() or not os.path.exists(tags_path)): #check if a project is open and the .tags file exists
                     return tags
-                f=os.popen("awk '{ print $1 }' '" + tags_path + "'")  
+                f=os.popen("awk '{ print $1 }' '" + tags_path + "'")
                 for i in f.readlines():
-                    tags.append([i.strip()])  
+                    tags.append([i.strip()])
                 tags = [(item,item) for sublist in tags for item in sublist] #flatten
                 tags = list(set(tags)) # make unique
                 tags.sort()
                 GetAllCTagsList.ctags_list = tags
                 results = [sublist for sublist in GetAllCTagsList.ctags_list if sublist[0].lower().startswith(prefix)]
-                results = list(set(results))
+                results = list(set(results).union(set(sub_results)))
                 results.sort()
                 return results
 
