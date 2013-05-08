@@ -62,7 +62,7 @@ the current view, walking up directories until it finds one. If it
 can't find one it will offer to build one ( in the directory of the
 current view )
 
-If a symbol can't be found in a tags file, it will search in additional locations that are sprecified in the CTags.sublime-settings file (see below).
+If a symbol can't be found in a tags file, it will search in additional locations that are specified in the CTags.sublime-settings file (see below).
 
 If you are a Rubyist, you can build a Ruby Gem's tags with the following script:
 
@@ -74,7 +74,7 @@ system("ctags -R -f .gemtags #{paths.join(' ')}")
 
 === Other Settings ===
 
-By default, Sublime will include ctags files in your project, which causes them to show up in the file treee and search results. To disable this behaviour you should add a {{{file_exclude_patterns}}} entry to your {{{Preferences.sublime-settings}}} or you project file.
+By default, Sublime will include ctags files in your project, which causes them to show up in the file tree and search results. To disable this behaviour you should add a {{{file_exclude_patterns}}} entry to your {{{Preferences.sublime-settings}}} or your project file.
 
 e.g.:
 
