@@ -11,6 +11,8 @@ import os
 import subprocess
 import bisect
 import mmap
+import platform
+import sublime
 
 from os.path import dirname
 
@@ -162,6 +164,10 @@ def resort_ctags(tag_file):
                 fw.write('\t'.join(split))
 
 def build_ctags(cmd, tag_file, env=None):
+    if platform.system() == "Windows":
+        ctags_path = str(sublime.packages_path())+"\\Ctags\\ctags58\\"
+        env = os.environ.copy()
+        env["PATH"] = ";".join([env["PATH"], ctags_path])
     p = subprocess.Popen(cmd, cwd = dirname(tag_file), shell=1, env=env,
                          stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
     ret = p.wait()
