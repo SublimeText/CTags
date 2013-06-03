@@ -463,8 +463,9 @@ def ctags_goto_command(jump_directly_if_one=False):
 def check_if_building(self, **args):
     if rebuild_tags.build_ctags.func.running:
         status_message('Please wait while tags are built')
-
-    else:  return 1
+        return False
+    else:
+        return True
 
 def compile_filters(view):
     filters = []
