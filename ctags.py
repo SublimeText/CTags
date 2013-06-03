@@ -185,7 +185,7 @@ def test_build_ctags__ctags_not_on_path():
         print('OK')
         print(e)
     else:
-        raise "Should have died"
+        raise Exception("Should have died")
     # EnvironmentError: (['ctags.exe -R'], 1, '\'"ctags.exe -R"\' is not recognized as an internal or external command,\r\noperable program or batch file.\r\n')
 
 def test_build_ctags__dodgy_command():
@@ -195,7 +195,7 @@ def test_build_ctags__dodgy_command():
         print('OK')
         print(e)
     else:
-        raise "Should have died"
+        raise Exception("Should have died")
 
 ################################################################################
 
