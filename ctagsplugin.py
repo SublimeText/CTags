@@ -499,12 +499,6 @@ class JumpToDefinition:
             return status_message('Can\'t find "%s"' % symbol)
 
         current_file = view.file_name().replace(dirname(tags_file) + os.sep, '')
-        def definition_cmp(a, b):
-            if normpath(a.tag_path[0]) == current_file:
-                return -1
-            if normpath(b.tag_path[0]) == current_file:
-                return 1
-            return 0
 
         def_filters = compile_definition_filters(view)
         def pass_def_filter(o):
@@ -522,7 +516,7 @@ class JumpToDefinition:
                 status_message('Can\'t find "%s"' % symbol)
             p_tags = sorted(p_tags, key=iget('tag_path'))
             if setting('definition_current_first', False):
-                p_tags = sorted(p_tags, cmp=definition_cmp)
+                p_tags = sorted(p_tags, key=lambda tag: normpath(tag.tag_path[0]) == current_file)
             return p_tags
 
         return sorted_tags
