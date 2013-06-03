@@ -26,8 +26,9 @@ from sublime import status_message
 ################################## APP IMPORTS #################################
 
 # Ctags
-import ctags
-from ctags import (FILENAME, parse_tag_lines, PATH_ORDER, SYMBOL, Tag, TagFile)
+
+from . import ctags
+from .ctags import (FILENAME, parse_tag_lines, PATH_ORDER, SYMBOL, Tag, TagFile)
 
 ################################### SETTINGS ###################################
 
