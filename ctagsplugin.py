@@ -537,7 +537,7 @@ class NavigateToDefinition(sublime_plugin.TextCommand):
         region = view.sel()[0]
         if region.begin() == region.end(): #point
           region = view.word(region)
-          if self.scopes.match(view.syntax_name(view.sel()[0].b)) is not None:
+          if self.scopes.match(view.scope_name(view.sel()[0].b)) is not None:
             if self.endings.match(view.substr(sublime.Region(region.end(), region.end()+1))) is not None:
               region = sublime.Region(region.begin(), region.end()+1)
         symbol = view.substr(region)
