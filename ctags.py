@@ -181,7 +181,7 @@ def build_ctags(cmd, tag_file, env=None):
 def test_build_ctags__ctags_not_on_path():
     try:
         build_ctags(['ctags.exe -R'], r'C:\Users\nick\AppData\Roaming\Sublime Text 2\Packages\CTags\tags', env={})
-    except Exception, e:
+    except Exception as e:
         print 'OK'
         print e
     else:
@@ -191,7 +191,7 @@ def test_build_ctags__ctags_not_on_path():
 def test_build_ctags__dodgy_command():
     try:
         build_ctags(['ctags', '--arsts'], r'C:\Users\nick\AppData\Roaming\Sublime Text 2\Packages\CTags\tags')
-    except Exception, e:
+    except Exception as e:
         print 'OK'
         print e
     else:
