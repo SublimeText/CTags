@@ -181,9 +181,9 @@ def build_ctags(cmd, tag_file, env=None):
 def test_build_ctags__ctags_not_on_path():
     try:
         build_ctags(['ctags.exe -R'], r'C:\Users\nick\AppData\Roaming\Sublime Text 2\Packages\CTags\tags', env={})
-    except Exception, e:
-        print 'OK'
-        print e
+    except Exception as e:
+        print ('OK')
+        print (e)
     else:
         raise "Should have died"
     # EnvironmentError: (['ctags.exe -R'], 1, '\'"ctags.exe -R"\' is not recognized as an internal or external command,\r\noperable program or batch file.\r\n')
@@ -191,9 +191,9 @@ def test_build_ctags__ctags_not_on_path():
 def test_build_ctags__dodgy_command():
     try:
         build_ctags(['ctags', '--arsts'], r'C:\Users\nick\AppData\Roaming\Sublime Text 2\Packages\CTags\tags')
-    except Exception, e:
-        print 'OK'
-        print e
+    except Exception as e:
+        print ('OK')
+        print (e)
     else:
         raise "Should have died"
 

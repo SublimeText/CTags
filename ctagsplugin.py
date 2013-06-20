@@ -26,8 +26,12 @@ from sublime import status_message
 ################################## APP IMPORTS #################################
 
 # Ctags
-import ctags
-from ctags import (FILENAME, parse_tag_lines, PATH_ORDER, SYMBOL, Tag, TagFile)
+
+try:
+    import ctags
+    from ctags import (FILENAME, parse_tag_lines, PATH_ORDER, SYMBOL, Tag, TagFile)
+except ImportError:
+    print ('Assuming that Sublime Text 3 has already imported the ctags module')
 
 ################################### SETTINGS ###################################
 
@@ -178,8 +182,8 @@ def alternate_tags_paths(view, tags_file):
             if ( view.match_selector(view.sel()[0].begin(), selector) and
                  sublime.platform() == platform ):
                 search_paths.append(path)
-    except Exception, e:
-        print e
+    except Exception as e:
+        print (e)
 
     if os.path.exists(tags_paths):
         for extrafile in setting('extra_tag_files'):
@@ -380,7 +384,7 @@ class JumpBack(sublime_plugin.WindowCommand):
     def lastModifications(self):
         # Current Region
         cv = sublime.active_window().active_view()
-        cr = eval(`cv.sel()[0]`)
+        cr = eval('cv.sel()[0]')
         cf   = cv.file_name()
 
         # Very latest, s)tarting modification
@@ -406,7 +410,7 @@ class JumpBack(sublime_plugin.WindowCommand):
                 jf, jr = f, region
 
         if in_different_mod_area or not JumpBack.mods:
-            JumpBack.mods.insert(0, (jf, `jr`))
+            JumpBack.mods.insert(0, (jf, 'jr'))
 
         self.jump(jf, jr)
 
@@ -419,13 +423,13 @@ class JumpBack(sublime_plugin.WindowCommand):
     def append(cls, view):
         fn = view.file_name()
         if fn:
-            cls.last.append((fn, `view.sel()[0]`))
+            cls.last.append((fn, 'view.sel()[0]'))
 
 class JumpBackListener(sublime_plugin.EventListener):
     def on_modified(self, view):
         sel = view.sel()
         if len(sel):
-            JumpBack.mods.insert(0, (view.file_name(), `sel[0]`))
+            JumpBack.mods.insert(0, (view.file_name(), 'sel[0]'))
             del JumpBack.mods[100:]
 
 ################################ CTAGS COMMANDS ################################
@@ -608,14 +612,14 @@ class ShowSymbols(sublime_plugin.TextCommand):
             else: return loaded.get_tags_dict(*files, filters=compile_filters(view))
 
         if key in tags_cache[base_path]:
-            print "loading symbols from cache"
+            print ("loading symbols from cache")
             tags = tags_cache[base_path][key]
         else:
-            print "loading symbols from file"
+            print ("loading symbols from file")
             tags = get_tags()
             tags_cache[base_path][key] = tags
 
-        print "loaded [%d] symbols" % len(tags)
+        print ("loaded [%d] symbols" % len(tags))
 
         if not tags:
             if multi:
@@ -665,7 +669,7 @@ class rebuild_tags(sublime_plugin.TextCommand):
         tag_files = set(map(replace_with_parent_tags_if_exists, tag_files))
 
         # TODO: replace with sublime.ok_cancel_dialog or maybe just delete?
-        if 0:  # not 1 or sublime.question_box('`ctags -R` in %s ?'% dirname(tag_file)):
+        if 0:  # not 1 or sublime.question_box(''ctags -R' in %s ?'% dirname(tag_file)):
             return
 
         command = setting('command', setting('ctags_command'))
@@ -676,12 +680,12 @@ class rebuild_tags(sublime_plugin.TextCommand):
     def build_ctags(self, cmd, tag_files):
 
         def tags_built(tag_file):
-            print 'Finished building %s' % tag_file
+            print ('Finished building %s' % tag_file)
             in_main(lambda: status_message('Finished building %s' % tag_file))()
             in_main(lambda: tags_cache[dirname(tag_file)].clear())()
 
         for tag_file in tag_files:
-            print 'Re/Building CTags for %s: Please be patient' % tag_file
+            print ('Re/Building CTags for %s: Please be patient' % tag_file)
             in_main(lambda: status_message('Re/Building CTags for %s: Please be patient' % tag_file))()
             ctags.build_ctags(cmd, tag_file)
             tags_built(tag_file)
@@ -738,8 +742,8 @@ class test_ctags(sublime_plugin.TextCommand):
     def next(self):
         try:
             self.routine.next()
-        except Exception, e:
-            print e
+        except Exception as e:
+            print (e)
             self.routine = None
 
     def co_routine(self, view):
@@ -748,7 +752,7 @@ class test_ctags(sublime_plugin.TextCommand):
         with open(tag_file) as tf:
             tags = parse_tag_lines(tf, tag_class=Tag)
 
-        print 'Starting Test'
+        print ('Starting Test')
 
         ex_failures = []
         line_failures = []
