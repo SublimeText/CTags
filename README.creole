@@ -36,9 +36,11 @@ To get a proper copy of ctags, use one of the following options:
 
 After you're done, you'll need to change the `command` setting to point to the new version of ctags. If you used Homebrew, add the following to your user settings for the CTags plugin (Preferences -> Package Settings > CTags -> Settings - User).
 
+{{{{
     {
         "command"   :  "/usr/local/bin/ctags -R -f .tags"
     }
+}}}}
 
 If you used MacPorts, locate the path to the executable and modify it above.
 
