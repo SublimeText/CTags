@@ -24,11 +24,16 @@ import sublime_plugin
 from sublime import status_message
 
 ################################## APP IMPORTS #################################
-
+sublime_version = 2
+if int(sublime.version()) > 3000:
+    sublime_version = 3
 # Ctags
-
-from . import ctags
-from .ctags import (FILENAME, parse_tag_lines, PATH_ORDER, SYMBOL, Tag, TagFile)
+if sublime_version == 2:
+    import ctags
+    from ctags import (FILENAME, parse_tag_lines, PATH_ORDER, SYMBOL, Tag, TagFile)
+elif sublime_version == 3:
+    from . import ctags
+    from .ctags import (FILENAME, parse_tag_lines, PATH_ORDER, SYMBOL, Tag, TagFile)
 
 ################################### SETTINGS ###################################
 
@@ -584,7 +589,6 @@ class ShowSymbols(sublime_plugin.TextCommand):
         if not tags_file: return
         multi = args.get('type') == 'multi'
         lang = args.get('type') == 'lang'
-
         files = files_to_search(view, tags_file, multi)
 
         if lang:
@@ -601,17 +605,18 @@ class ShowSymbols(sublime_plugin.TextCommand):
         def get_tags():
             loaded = TagFile(tags_file, FILENAME)
             if lang: return loaded.get_tags_dict_by_suffix(suffix, filters=compile_filters(view))
-            else: return loaded.get_tags_dict(*files, filters=compile_filters(view))
+            else:
+                return loaded.get_tags_dict(*files, filters=compile_filters(view))
 
         if key in tags_cache[base_path]:
-            print("loading symbols from cache")
+            print ("loading symbols from cache")
             tags = tags_cache[base_path][key]
         else:
-            print("loading symbols from file")
+            print ("loading symbols from file")
             tags = get_tags()
             tags_cache[base_path][key] = tags
 
-        print("loaded [%d] symbols" % len(tags))
+        print(("loaded [%d] symbols" % len(tags)))
 
         if not tags:
             if multi:
@@ -661,7 +666,7 @@ class rebuild_tags(sublime_plugin.TextCommand):
         tag_files = set(map(replace_with_parent_tags_if_exists, tag_files))
 
         # TODO: replace with sublime.ok_cancel_dialog or maybe just delete?
-        if 0:  # not 1 or sublime.question_box('`ctags -R` in %s ?'% dirname(tag_file)):
+        if 0:  # not 1 or sublime.question_box(''ctags -R' in %s ?'% dirname(tag_file)):
             return
 
         command = setting('command', setting('ctags_command'))

@@ -43,7 +43,8 @@ PATH_IGNORE_FIELDS = ( 'file', 'access', 'signature',
 TAG_PATH_SPLITTERS = ('/', '.', '::', ':')
 
 ################################################################################
-
+def cmp(a,b):
+    return (str(a) > str(b)) - (str(a) < str(b))
 def splits(string, *splitters):
     if splitters:
         split = string.split(splitters[0])
@@ -203,7 +204,6 @@ class TagFile(object):
     def __init__(self, p, column, match_as=None):
         self.p = p
         self.column = column
-
         if isinstance(match_as, str):
             match_as = getattr(self, match_as)
 
