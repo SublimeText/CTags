@@ -25,7 +25,8 @@ $ git clone https://github.com/SublimeText/CTags CTags
 
 === OS X ===
 
-If anyone is having trouble getting the CTags -R flag to work on OSX, you are probably using the stock CTags installation.
+The stock version of ctags included in the OS X Developer tools does not work with this plugin. 
+You'll get an EnvironmentError in the Sublime Text Console as ctags complains about the `-R` flag.
 
 To get a proper copy of ctags, use one of the following options:
 * Using [[http://mxcl.github.com/homebrew/|Homebrew]]:
@@ -33,9 +34,16 @@ To get a proper copy of ctags, use one of the following options:
 * Using [[http://www.macports.org/|MacPorts]]:
 {{{port install ctags}}}
 
-*Make sure that Sublime Text is using the right version of CTags:*
-* If 'which ctags' doesn't point at ctags in '/usr/local/bin', make sure you add '/usr/local/bin' to your PATH ahead of the folder 'which ctags' reported.
-** Add or modify the 'export PATH=...' (e.g. in ~/.profile) to make the change permanent
+After you're done, you'll need to change the `command` setting to point to the new version of ctags. If you used Homebrew, add the following to your user settings for the CTags plugin (Preferences -> Package Settings > CTags -> Settings - User).
+
+    {
+        "command"   :  "/usr/local/bin/ctags -R -f .tags"
+    }
+
+If you used MacPorts, locate the path to the executable and modify it above.
+
+
+OS X apps don't inherit environment variables in OS X 10.8, so you typically can't solve this with ~/.profile, bash_profile, Environment.plist, /etc/paths, /etc/launchd.conf.
 
 === Linux ===
 
@@ -87,7 +95,7 @@ There's a CTags.sublime-settings file:
 {{{
 {
     "debug"           :  false,
-    "ctags_command"   :  "ctags -R -f .tags",
+    "command"   :  "ctags -R -f .tags",
     "filters"         :  {
         "source.python": {"type":"^i$"}
     },
