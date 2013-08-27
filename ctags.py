@@ -152,12 +152,13 @@ def get_tag_class(tag):
 
 def resort_ctags(tag_file):
     keys = {}
+    import codecs
 
-    with open(tag_file, encoding="utf-8") as fh:
+    with codecs.open(tag_file, encoding="utf-8") as fh:
         for l in fh:
             keys.setdefault(l.split('\t')[FILENAME], []).append(l)
 
-    with open(tag_file + '_sorted_by_file', 'w', encoding="utf-8") as fw:
+    with codecs.open(tag_file + '_sorted_by_file', 'w', encoding="utf-8") as fw:
         for k in sorted(keys):
             for line in keys[k]:
                 split = line.split('\t')
