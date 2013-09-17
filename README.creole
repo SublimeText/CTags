@@ -39,9 +39,10 @@ To get a proper copy of ctags, use one of the following options:
 
 === Linux ===
 
-To get a proper copy of ctags:
-* In a terminal session:
-{{{sudo apt-get install ctags}}}
+To get a proper copy of ctags install package {{{ctags}}} via normal package installer
+(works on all Debian, SuSE, and Fedora derived distros including Ubuntu, RHEL,
+CentOS, SLES, SLED, also Maegia, Mandriva, Arch Linux and others)
+
 
 === Windows ===
 
