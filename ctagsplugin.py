@@ -165,9 +165,10 @@ def find_tags_relative_to(file_name):
     if not file_name: return None
 
     dirs = dirname(normpath(file_name)).split(os.path.sep)
+    tags_filename = setting('tags_filename')
 
     while dirs:
-        joined = os.path.sep.join(dirs + ['.tags'])
+        joined = os.path.sep.join(dirs + [tags_filename])
         if os.path.exists(joined) and not os.path.isdir(joined): return joined
         else: dirs.pop()
 
@@ -195,8 +196,9 @@ def alternate_tags_paths(view, tags_file):
 
     # Ok, didn't found the .tags file under the viewed file.
     # Let's look in the currently openened folder
+    tags_filename = setting('tags_filename')
     for folder in view.window().folders():
-        search_paths.append(normpath(join(folder, '.tags')))
+        search_paths.append(normpath(join(folder, tags_filename)))
         for extrafile in setting('extra_tag_files'):
             search_paths.append(normpath(join(folder, extrafile)))
 
@@ -652,7 +654,7 @@ class rebuild_tags(sublime_plugin.TextCommand):
             status_message("Cannot build CTags: No file or folder open.")
             return
 
-        tag_files = [join(t, ".tags") for t in tag_dirs]
+        tag_files = [join(t, setting('tags_filename')) for t in tag_dirs]
 
         # Any .tags file found when walking up the directory tree has precedence
         def replace_with_parent_tags_if_exists(tag_file):
@@ -664,7 +666,9 @@ class rebuild_tags(sublime_plugin.TextCommand):
         if 0:  # not 1 or sublime.question_box(''ctags -R' in %s ?'% dirname(tag_file)):
             return
 
-        command = setting('command', setting('ctags_command'))
+        command = setting('command') % {
+            'tags_filename': setting('tags_filename')
+        }
         self.build_ctags(command, tag_files)
         GetAllCTagsList.ctags_list = []  # clear the cached ctags list
 
@@ -694,7 +698,7 @@ class CTagsAutoComplete(sublime_plugin.EventListener):
     def on_query_completions(self, view, prefix, locations):
         if setting('autocomplete'):
             prefix = prefix.strip().lower()
-            tags_path = view.window().folders()[0]+"/.tags"
+            tags_path = view.window().folders()[0] + setting('tags_filename')
 
             sub_results = [v.extract_completions(prefix) for v in sublime.active_window().views()]
             sub_results = [(item,item) for sublist in sub_results for item in sublist] #flatten
