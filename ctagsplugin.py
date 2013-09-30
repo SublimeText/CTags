@@ -698,7 +698,7 @@ class CTagsAutoComplete(sublime_plugin.EventListener):
     def on_query_completions(self, view, prefix, locations):
         if setting('autocomplete'):
             prefix = prefix.strip().lower()
-            tags_path = view.window().folders()[0] + setting('tags_filename')
+            tags_path = view.window().folders()[0] + '/' + setting('tags_filename')
 
             sub_results = [v.extract_completions(prefix) for v in sublime.active_window().views()]
             sub_results = [(item,item) for sublist in sub_results for item in sublist] #flatten
