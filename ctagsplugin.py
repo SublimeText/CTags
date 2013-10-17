@@ -708,7 +708,7 @@ class CTagsAutoComplete(sublime_plugin.EventListener):
                 tags = []
                 if (not view.window().folders() or not os.path.exists(tags_path)): #check if a project is open and the .tags file exists
                     return tags
-                f=os.popen("awk '{ print $1 }' '" + tags_path + "'")
+                f=os.popen("awk \"{ print $1 }\" \"" + tags_path + "\"") # Fix for window
                 for i in f.readlines():
                     tags.append([i.strip()])
                 tags = [(item,item) for sublist in tags for item in sublist] #flatten
