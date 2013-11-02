@@ -1,6 +1,15 @@
+#!/usr/bin/env python
+
+"""Unit tests for ctags.py"""
+
+from ctags import TagFile, SYMBOL, MATCHES_STARTWITH, FILENAME
+
+import unittest
+import codecs
+
 class CTagsTest(unittest.TestCase):
     # def test_all_search_strings_work(self):
-    #     # os.chdir(os.path.dirname(__file__))
+    #     os.chdir(os.path.dirname(__file__))
     #     tags = parse_tag_file('tags')
 
     #     failures = []
@@ -20,43 +29,36 @@ class CTagsTest(unittest.TestCase):
 
     def test_startswith(self):
         f = TagFile('tags', SYMBOL, MATCHES_STARTWITH)
-
-        # print '\nFCUKT', len(list(f.get('co')))
-        # print '\n'.join(list(f.get('co')))
         assert len(list(f.get('co'))) == 3
 
     def test_tags_files(self):
-        tests = [ ( r"tags", SYMBOL ),
-                  ( r"sorted_by_file_test_tags", FILENAME ),
-                  # ( r"C:\python25\lib\tags_sorted_by_file", FILENAME )
-                  ]
+        tests = [
+            (r'tags', SYMBOL),
+            (r'sorted_by_file_test_tags', FILENAME),
+        ]
 
         fails = []
 
         for tags_file, column_index in tests:
             tag_file = TagFile(tags_file, column_index)
 
-            with open(tags_file, 'r') as fh:
-                latest =  ''
-                lines  = []
+            with codecs.open(tags_file, 'r') as fh:
+                latest = ''
+                lines = []
 
                 for l in fh:
                     symbol = l.split('\t')[column_index]
-
                     if symbol != latest:
-
                         if latest:
                             tags = list(tag_file.get(latest))
                             if not lines == tags:
-                                fails.append( (tags_file, lines, tags) )
-
+                                fails.append((tags_file, lines, tags))
                             lines = []
-
                         latest = symbol
-
                     lines += [l]
 
         self.assertEquals(fails, [])
+
 
 if __name__ == '__main__':
     unittest.main()
