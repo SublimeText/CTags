@@ -17,19 +17,25 @@
 
     // Alter this value if your ctags command is not in the PATH, or if using
     // a different version of ctags to that in the path (i.e. for OSX)
-    "command": "ctags -R -f .tags",
+    "command": "",
 
-    // 
+    // Set to false to disable recursive search for ctag generation
+    "recursive" : true,
+
+    // Default read/write location of the tags file
+    "tag_file" : ".tags",
+
+    //
     "filters": {
         "source.python": {"type":"^i$"}
     },
 
-    // 
+    //
     "definition_filters": {
         "source.php": {"type":"^v$"}
     },
 
-    // 
+    //
     "definition_current_first": true,
 
     // Show the ctags menu in the context menus

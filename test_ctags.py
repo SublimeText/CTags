@@ -4,6 +4,8 @@
 
 from ctags import TagFile, SYMBOL, MATCHES_STARTWITH, FILENAME, build_ctags
 
+import os
+import tempfile
 import unittest
 import codecs
 
@@ -80,6 +82,137 @@ class CTagsTest(unittest.TestCase):
         else:
             raise "Should have died"
     '''
+
+    """Helper functions"""
+
+    def build_python_file(self):
+        """Build a simple Python "program" that ctags can use
+
+        :Returns:
+        Path to a constructed, valid Java source file
+        """
+        path = ''
+
+        # the file created here is locked while open, hence we can't delete
+        # similarly, ctags appears to require an extension hence the suffix
+        with tempfile.NamedTemporaryFile(delete=False, suffix='.py') as temp:
+            try:
+                path = temp.name  # store name for later use
+                temp.writelines([  # write a temp Python (duh!) "Hello, world"
+                    'def my_definition():\n',
+                    '\toutput = "Hello, world!"\n',
+                    '\tprint(output)\n'])
+            finally:
+                temp.close()
+
+        return path
+
+    def build_java_file(self):
+        """Build a slightly detailed Java "program" that ctags can use
+
+        Build a slightly more detailed program that 'build_python_file' does,
+        in order to test more advanced functionality of ctags.py, or ctags.exe
+
+        :Returns:
+        Path to a constructed, valid Java source file
+        """
+        path = ''
+
+        # the file created here is locked while open, hence we can't delete
+        # similarly, ctags appears to require an extension hence the suffix
+        with tempfile.NamedTemporaryFile(delete=False, suffix='.java') as temp:
+            try:
+                path = temp.name  # store name for later use
+                temp.writelines([  # write a temp Java "Hello, world"
+                    'public class DemoClass {\n',
+                    '\tpublic static void main(String args[]) {\n',
+                    '\t\tSystem.out.println("Hello, World");\n',
+                    '\n',
+                    '\t\tDemoClass demo = new DemoClass();\n',
+                    '\t\tSystem.out.printf("Sum %d\n", demo.getSum(5,6));\n',
+                    '\t}\n',
+                    '\n',
+                    '\tprivate int getSum(int a, int b) {\n',
+                    '\t\treturn (a + b);\n',
+                    '\t}\n',
+                    '}\n'])
+            finally:
+                temp.close()
+
+        return path
+
+    """Test functions"""
+
+    def setUp(self):
+        """Set up test environment
+
+        Ensures the ``ctags_not_on_path`` test is run first, and all other
+        tests are skipped if this fails. If ctags is not installed, no test
+        will pass
+        """
+        self.test_build_ctags__ctags_on_path()
+
+    def test_build_ctags__ctags_on_path(self):
+        """Checks that ``ctags`` is in ``PATH``"""
+        # build_ctags requires a real path, so we create a temporary directory
+        with tempfile.NamedTemporaryFile() as temp:
+            try:
+                ctags.build_ctags(path=temp.name)
+            except EnvironmentError:
+                self.fail('build_ctags() raised EnvironmentError. ctags not'
+                          ' on path')
+                # TODO skip all other test cases if this one fails
+
+    def test_build_ctags__custom_command(self):
+        """Checks for support of simple custom command to execute ctags"""
+        # build_ctags requires a real path, so we create a temporary directory
+        with tempfile.NamedTemporaryFile() as temp:
+            try:
+                ctags.build_ctags(path=temp.name, cmd='ctags')
+            except EnvironmentError:
+                self.fail('build_ctags() raised EnvironmentError. ctags not'
+                          ' on path')
+
+    def test_build_ctags__invalid_custom_command(self):
+        """Checks for failure for invalid custom command to execute ctags"""
+        # build_ctags requires a real path, so we create a temporary directory
+        with tempfile.NamedTemporaryFile() as temp:
+            with self.assertRaises(EnvironmentError):
+                ctags.build_ctags(path=temp.name, cmd='ccttaaggss')
+
+    def test_build_ctags__single_file(self):
+        """Test execution of ctags using a single temporary file"""
+        path = self.build_python_file()
+
+        tag_file = ctags.build_ctags(path=path)
+
+        with codecs.open(tag_file, encoding='utf-8') as output:
+            try:
+                content = output.readlines()
+                filename = os.path.basename(path)
+                assert(content[-1] ==
+                       'my_definition\t{0}\t/^def my_definition()'
+                       ':$/;"\tf\r\n'.format(filename))
+            finally:
+                output.close()
+                os.remove(path)  # Clean up
+
+    def test_build_ctags__custom_tag_file(self):
+        """Test execution of ctags using a custom tag file"""
+        path = self.build_python_file()
+
+        tag_file = ctags.build_ctags(path=path, tag_file='my_tag_file')
+
+        with codecs.open(tag_file, encoding='utf-8') as output:
+            try:
+                content = output.readlines()
+                filename = os.path.basename(path)
+                assert(content[-1] ==
+                       'my_definition\t{0}\t/^def my_definition()'
+                       ':$/;"\tf\r\n'.format(filename))
+            finally:
+                output.close()
+                os.remove(path)  # Clean up
 
     def test_post_process_tag__line_numbers(self):
         """Test ``post_process_tag`` with a line number ``excmd`` variable

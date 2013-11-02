@@ -261,15 +261,61 @@ def create_tag_path(tag):
 """Tag building/sorting functions"""
 
 
-def build_ctags(cmd, tag_file, env=None):
-    p = subprocess.Popen(cmd, cwd=os.path.dirname(tag_file), shell=True,
-                         env=env, stdout=subprocess.PIPE,
-                         stderr=subprocess.STDOUT)
+def build_ctags(path, tag_file=None, recursive=False, cmd=None, env=None):
+    """Execute the ``ctags`` command using ``Popen``
+
+    :Parameters:
+        - `path`: Path to file or directory (with all files) to generate
+            ctags for.
+        - `tag_file`: An absolute path and filename to use for the tag file.
+            Defaults to ``tags``
+        - `recursive`: Specify if search should be recursive in directory
+            given by path. This overrides filename specified by ``path``
+        - `env`: Environment variables to be used when executing ``ctags``
+
+    :Returns:
+        The original ``tag_file`` filename
+    """
+    # build the CTags command
+    if cmd:
+        cmd = [cmd]
+    else:
+        cmd = ['ctags']
+
+    if not os.path.exists(path):
+        raise IOError('\'path\' is not at valid directory or file path, or '
+                      'is not accessible')
+
+    #TODO this can break on some platforms, http://stackoverflow.com/q/8384737
+    cwd = os.path.dirname(path)
+
+    if tag_file:
+        cmd.append('-f {0}'.format(tag_file))
+
+    if recursive:  # ignore any file specified in path if recursive set
+        cmd.append('-R')
+    elif os.path.isfile(path):
+        filename = os.path.basename(path)
+        cmd.append(filename)
+    else:  # search all files in current directory
+        cmd.append('*')
+
+    # execute the command
+    p = subprocess.Popen(cmd, cwd=cwd, shell=True, env=env,
+                         stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+
     ret = p.wait()
 
     if ret:
         raise EnvironmentError((cmd, ret, p.stdout.read()))
 
+    if not tag_file:  # Exuberant ctags defaults to ``tags`` filename.
+        tag_file = os.path.join(cwd, 'tags')
+    else:
+        if os.path.dirname(tag_file) != cwd:
+            tag_file = os.path.join(cwd, tag_file)
+
+    # re-sort ctag file in filename order to improve search performance
     resort_ctags(tag_file)
 
     return tag_file
