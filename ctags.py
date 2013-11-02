@@ -11,7 +11,9 @@ import mmap
 
 from os.path import dirname
 
-"""Contants"""
+"""
+Contants
+"""
 
 TAGS_RE = re.compile(
     '(?P<symbol>[^\t]+)\t'
@@ -37,7 +39,11 @@ PATH_IGNORE_FIELDS = ('file', 'access', 'signature',
 TAG_PATH_SPLITTERS = ('/', '.', '::', ':')
 
 
-"""Functions"""
+"""
+Functions
+"""
+
+"""Helper functions"""
 
 
 def cmp(a, b):
@@ -53,6 +59,8 @@ def splits(string, *splitters):
     else:
         if string:
             yield string
+
+"""Tag processing functions"""
 
 
 def parse_tag_lines(lines, order_by='symbol', tag_class=None, filters=[]):
@@ -85,10 +93,6 @@ def unescape_ex(ex):
     return re.sub(r"\\(\$|/|\^|\\)", r'\1', ex)
 
 
-def process_ex_cmd(ex):
-    return ex if ex.isdigit() else unescape_ex(ex[2:-2])
-
-
 def post_process_tag(search_obj):
     tag = search_obj.groupdict()
 
@@ -105,21 +109,12 @@ def post_process_tag(search_obj):
     return tag
 
 
+def process_ex_cmd(ex):
+    return ex if ex.isdigit() else unescape_ex(ex[2:-2])
+
+
 def process_fields(fields):
     return dict(f.split(':', 1) for f in fields.split('\t'))
-
-
-class Tag(dict):
-    def __init__(self, *args, **kw):
-        dict.__init__(self, *args, **kw)
-        self.__dict__ = self
-
-
-def parse_tag_file(tag_file):
-    with open(tag_file) as tf:
-        tags = parse_tag_lines(tf)
-
-    return tags
 
 
 def create_tag_path(tag):
@@ -146,10 +141,20 @@ def create_tag_path(tag):
 
     tag['tag_path'] = tuple(splitup)
 
+"""Tag building/sorting functions"""
 
-def get_tag_class(tag):
-    cls = tag.get('function', '').split('.')[:1]
-    return cls and cls[0] or tag.get('class') or tag.get('struct')
+
+def build_ctags(cmd, tag_file, env=None):
+    p = subprocess.Popen(cmd, cwd=dirname(tag_file), shell=1, env=env,
+                         stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    ret = p.wait()
+
+    if ret:
+        raise EnvironmentError((cmd, ret, p.stdout.read()))
+
+    resort_ctags(tag_file)
+
+    return tag_file
 
 
 def resort_ctags(tag_file):
@@ -167,17 +172,13 @@ def resort_ctags(tag_file):
                 fw.write('\t'.join(split))
 
 
-def build_ctags(cmd, tag_file, env=None):
-    p = subprocess.Popen(cmd, cwd=dirname(tag_file), shell=1, env=env,
-                         stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-    ret = p.wait()
+"""Models"""
 
-    if ret:
-        raise EnvironmentError((cmd, ret, p.stdout.read()))
 
-    resort_ctags(tag_file)
-
-    return tag_file
+class Tag(dict):
+    def __init__(self, *args, **kw):
+        dict.__init__(self, *args, **kw)
+        self.__dict__ = self
 
 
 class TagFile(object):
