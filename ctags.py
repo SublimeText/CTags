@@ -92,7 +92,7 @@ def parse_tag_lines(lines, order_by='symbol', tag_class=None, filters=[]):
 
         tag = search_obj.groupdict()  # convert regex search result to dict
 
-        tag = post_process_tag(search_obj)
+        tag = post_process_tag(tag)
 
         if tag_class is not None:  # if 'casting' to a class
             tag = tag_class(tag)
@@ -119,33 +119,33 @@ def post_process_tag(tag):
     Break these down further as seen below::
 
         =========== = ============= =========================================
-        original    → new           meaning/example
+        original    > new           meaning/example
         =========== = ============= =========================================
-        symbol      → symbol        symbol name (i.e. class, variable)
-        filename    → filename      file containing symbol
-        .           → tag_path      tuple of (filename, [class], symbol)
-        ex_command  → ex_command    line number or regex used to find symbol
-        type        → type          type of symbol (i.e. class, method)
-        fields      → fields        string of fields
-        .           → [field_keys]  list of parsed field keys
-        .           → [field_one]   parsed field element one
-        .           → [...]         additional parsed field element
+        symbol      > symbol        symbol name (i.e. class, variable)
+        filename    > filename      file containing symbol
+        .           > tag_path      tuple of (filename, [class], symbol)
+        ex_command  > ex_command    line number or regex used to find symbol
+        type        > type          type of symbol (i.e. class, method)
+        fields      > fields        string of fields
+        .           > [field_keys]  list of parsed field keys
+        .           > [field_one]   parsed field element one
+        .           > [...]         additional parsed field element
         =========== = ============= =========================================
 
     Example::
 
         =========== = ============= =========================================
-        original    → new           example
+        original    > new           example
         =========== = ============= =========================================
-        symbol      → symbol        'getSum'
-        filename    → filename      'DemoClass.java'
-        .           → tag_path      ('DemoClass.java', 'DemoClass', 'getSum')
-        ex_command  → ex_command    '\tprivate int getSum(int a, int b) {'
-        type        → type          'm'
-        fields      → fields        'class:DemoClass\tfile:'
-        .           → field_keys    ['class', 'file']
-        .           → class         'DemoClass'
-        .           → file          ''
+        symbol      > symbol        'getSum'
+        filename    > filename      'DemoClass.java'
+        .           > tag_path      ('DemoClass.java', 'DemoClass', 'getSum')
+        ex_command  > ex_command    '\tprivate int getSum(int a, int b) {'
+        type        > type          'm'
+        fields      > fields        'class:DemoClass\tfile:'
+        .           > field_keys    ['class', 'file']
+        .           > class         'DemoClass'
+        .           > file          ''
         =========== = ============= =========================================
 
     :Parameters:
@@ -154,55 +154,109 @@ def post_process_tag(tag):
     :Returns:
         A dict containing the processed tag
     """
-    fields = tag.get('fields')
+    tag.update(process_fields(tag))
 
-    if fields:
-        fields_dict = process_fields(fields)
-        tag.update(fields_dict)
-        tag['field_keys'] = sorted(fields_dict.keys())
+    tag['ex_command'] = process_ex_cmd(tag)
 
-    tag['ex_command'] = process_ex_cmd(tag['ex_command'])
-
-    create_tag_path(tag)
+    tag.update(create_tag_path(tag))
 
     return tag
 
 
-def unescape_ex(ex):
-    return re.sub(r"\\(\$|/|\^|\\)", r'\1', ex)
+def process_ex_cmd(tag):
+    """Process the 'ex_command' element of a tag dictionary.
+
+    Process the ex_command string - a line number or regex used to find symbol
+    declaration - by unescaping the regex where used.
+
+    :Parameters:
+        - `tag`: A dict containing a tag
+
+    :Returns:
+        A updated 'ex_command' dictionary entry
+    """
+    ex_cmd = tag.get('ex_command')
+
+    if ex_cmd.isdigit():  # if a line number, do nothing
+        return ex_cmd
+    else:                 # else a regex, so unescape
+        return re.sub(r"\\(\$|/|\^|\\)", r'\1', ex_cmd[2:-2])  # unescape regex
 
 
-def process_ex_cmd(ex):
-    return ex if ex.isdigit() else unescape_ex(ex[2:-2])
+def process_fields(tag):
+    """Process the 'field' element of a tag dictionary.
 
+    Process the fields string - a comma-separated string of "key-value" pairs
+    - by generating key-value pairs and appending them to the tag dictionary.
+    Also append a list of keys for said pairs.
 
-def process_fields(fields):
-    return dict(f.split(':', 1) for f in fields.split('\t'))
+    :Parameters:
+        - `tag`: A dict containing a tag
+
+    :Returns:
+        A dict containing the key-value pairs from the field element, plus a
+        list of keys for said pairs
+    """
+    fields = tag.get('fields')
+
+    if not fields:  # do nothing
+        return {}
+
+    # split the fields string into a dictionary of key-value pairs
+    result = dict(f.split(':', 1) for f in fields.split('\t'))
+
+    # append all keys to the dictionary
+    result['field_keys'] = sorted(result.keys())
+
+    return result
 
 
 def create_tag_path(tag):
-    symbol = tag.get('symbol')
-    field_keys = tag.get('field_keys', [])[:]
+    """Create a tag path entry for a tag dictionary.
 
+    Creates a tag path entry for a tag dictionary from the field key-value
+    pairs. Uses format::
+
+        [function] [class] [struct] [additional entries] symbol
+
+    Where ``additional entries`` is any field key-value pair not found in
+    ``PATH_IGNORE_FIELDS``
+
+    :Parameters:
+        - `tag`: A dict containing a tag
+
+    :Returns:
+        A dict containing the 'tag_path' entry
+    """
+    field_keys = tag.get('field_keys', [])[:]
     fields = []
-    for i, field in enumerate(PATH_ORDER):
+    tag_path = ''
+
+    # sort field arguments related to path order in correct order
+    for field in PATH_ORDER:
         if field in field_keys:
             fields.append(field)
             field_keys.pop(field_keys.index(field))
 
+    # append all remaining field arguments
     fields.extend(field_keys)
 
-    tag_path = ''
+    # convert list of fields to dot-joined string, dropping any "ignore" fields
     for field in fields:
         if field not in PATH_IGNORE_FIELDS:
             tag_path += (tag.get(field) + '.')
 
-    tag_path += symbol
+    # append symbol as last item in string
+    tag_path += tag.get('symbol')
 
+    # split string on seperators and append tag filename to resulting list
     splitup = ([tag.get('filename')] +
                list(splits(tag_path, *TAG_PATH_SPLITTERS)))
 
-    tag['tag_path'] = tuple(splitup)
+    # convert list to tuple
+    result = {'tag_path': tuple(splitup)}
+
+    return result
 
 """Tag building/sorting functions"""
 
@@ -222,6 +276,27 @@ def build_ctags(cmd, tag_file, env=None):
 
 
 def resort_ctags(tag_file):
+    """Rearrange ctags file for speed.
+
+    Resorts (re-sort) a CTag file in order of file. This improves searching
+    performance. The algorithm works as so:
+
+    For each line in the tag file
+        Read the file name (``file_name``) the tag belongs to
+        If not exists, create an empty array and store in the dictionary with
+            the file name as key
+        Save the line to this list
+    Create a new ``[tagfile]_sorted_by_file`` file
+    For each key in the sorted dictionary
+        For each line in the list indicated by the key
+            Split the line on tab character
+            Remove the prepending ``.\`` from the ``file_name`` part of the
+                tag
+            Join the line again and write the ``sorted_by_file`` file
+
+    :Parameters:
+        - `tag_file`: The location of the tagfile to be sorted
+    """
     keys = {}
 
     with codecs.open(tag_file, encoding='utf-8') as fh:
@@ -236,7 +311,9 @@ def resort_ctags(tag_file):
                 fw.write('\t'.join(split))
 
 
-"""Models"""
+"""
+Models
+"""
 
 
 class Tag(dict):
