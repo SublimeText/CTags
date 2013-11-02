@@ -45,10 +45,12 @@ Functions
 
 
 def cmp(a, b):
+    """Compare two strings, and return a numerical value of comparison"""
     return (str(a) > str(b)) - (str(a) < str(b))
 
 
 def splits(string, *splitters):
+    """Split a string on a number of splitters"""
     if splitters:
         split = string.split(splitters[0])
         for s in split:
@@ -62,24 +64,46 @@ def splits(string, *splitters):
 
 
 def parse_tag_lines(lines, order_by='symbol', tag_class=None, filters=[]):
+    """Parse and sort a list of tags.
+
+    Parse and sort a list of tags one by using a combination of regexen and
+    Python functions. The end result is a dictionary containing all 'tags' or
+    entries found in the list of tags, sorted and filtered in a manner
+    specified by the user.
+
+    :Parameters:
+        - `lines`: List of tag lines from a tagfile
+        - `order_by`: Element by which the result should be sorted
+        - `tag_class`: A Class to wrap around the resulting dictionary
+        - `filters`: Filters to apply to resulting dictionary
+
+    :Returns:
+        A tag object or dictionary containing a sorted, filtered version of
+        the original input tag lines
+    """
     tags_lookup = {}
 
-    for l in lines:
-        search_obj = TAGS_RE.search(l)
+    for line in lines:
+        skip = False
+        search_obj = TAGS_RE.search(line)
+
         if not search_obj:
             continue
 
+        tag = search_obj.groupdict()  # convert regex search result to dict
+
         tag = post_process_tag(search_obj)
-        if tag_class is not None:
+
+        if tag_class is not None:  # if 'casting' to a class
             tag = tag_class(tag)
 
-        skip = False
+        # apply filters, filtering out any matching entries
         for f in filters:
             for k, v in list(f.items()):
                 if re.match(v, tag[k]):
                     skip = True
 
-        if skip:
+        if skip:  # if a filter was matched, ignore line (filter out)
             continue
 
         tags_lookup.setdefault(tag[order_by], []).append(tag)
@@ -87,14 +111,51 @@ def parse_tag_lines(lines, order_by='symbol', tag_class=None, filters=[]):
     return tags_lookup
 
 
-def unescape_ex(ex):
-    return re.sub(r"\\(\$|/|\^|\\)", r'\1', ex)
+def post_process_tag(tag):
+    """Process 'EX Command'-related elements of a tag.
 
+    Process all 'EX Command'-related elements. The 'Ex Command' element has
+    previously been split into the 'fields', 'type' and 'ex_command' elements.
+    Break these down further as seen below::
 
-def post_process_tag(search_obj):
-    tag = search_obj.groupdict()
+        =========== = ============= =========================================
+        original    → new           meaning/example
+        =========== = ============= =========================================
+        symbol      → symbol        symbol name (i.e. class, variable)
+        filename    → filename      file containing symbol
+        .           → tag_path      tuple of (filename, [class], symbol)
+        ex_command  → ex_command    line number or regex used to find symbol
+        type        → type          type of symbol (i.e. class, method)
+        fields      → fields        string of fields
+        .           → [field_keys]  list of parsed field keys
+        .           → [field_one]   parsed field element one
+        .           → [...]         additional parsed field element
+        =========== = ============= =========================================
 
+    Example::
+
+        =========== = ============= =========================================
+        original    → new           example
+        =========== = ============= =========================================
+        symbol      → symbol        'getSum'
+        filename    → filename      'DemoClass.java'
+        .           → tag_path      ('DemoClass.java', 'DemoClass', 'getSum')
+        ex_command  → ex_command    '\tprivate int getSum(int a, int b) {'
+        type        → type          'm'
+        fields      → fields        'class:DemoClass\tfile:'
+        .           → field_keys    ['class', 'file']
+        .           → class         'DemoClass'
+        .           → file          ''
+        =========== = ============= =========================================
+
+    :Parameters:
+        - `tag`: A dict containing the unprocessed tag
+
+    :Returns:
+        A dict containing the processed tag
+    """
     fields = tag.get('fields')
+
     if fields:
         fields_dict = process_fields(fields)
         tag.update(fields_dict)
@@ -105,6 +166,10 @@ def post_process_tag(search_obj):
     create_tag_path(tag)
 
     return tag
+
+
+def unescape_ex(ex):
+    return re.sub(r"\\(\$|/|\^|\\)", r'\1', ex)
 
 
 def process_ex_cmd(ex):
@@ -175,13 +240,24 @@ def resort_ctags(tag_file):
 
 
 class Tag(dict):
+    """Model an individual tag entry"""
     def __init__(self, *args, **kw):
+        """Initialise Tag object"""
         dict.__init__(self, *args, **kw)
         self.__dict__ = self
 
 
 class TagFile(object):
+    """Model a tag file.
+
+    This doesn't actually hold a entire tag file, due in part to the sheer
+    size of some tag files (> 100 MB files are possible). Instead, it acts
+    as a 'wrapper' of sorts around a file, providing functionality like
+    searching for a retrieving tags, finding tags based on given criteria
+    (prefix, suffix, exact), getting the directory of a tag and so forth
+    """
     def __init__(self, p, column, match_as=None):
+        """Initialise TagFile object"""
         self.p = p
         self.column = column
         if isinstance(match_as, str):
@@ -190,6 +266,11 @@ class TagFile(object):
         self.match_as = match_as or self.exact_matches
 
     def __getitem__(self, index):
+        """Provide sequence-type interface to tag file.
+
+        Allow tag file to be read like a list, i.e. ``for item in self:`` or
+        ``self[key]``
+        """
         self.fh.seek(index)
         self.fh.readline()
         try:
@@ -199,9 +280,16 @@ class TagFile(object):
             return ''
 
     def __len__(self):
+        """Get size of tag file in bytes"""
         return os.stat(self.p).st_size
 
+    @property
+    def dir(self):
+        """Get directory of tag file"""
+        return os.path.dirname(self.p)
+
     def get(self, *tags):
+        """Get a tag from the tag file"""
         with open(self.p, 'r+') as fh:
             if tags:
                 self.fh = mmap.mmap(fh.fileno(), 0)
@@ -219,6 +307,7 @@ class TagFile(object):
                     yield l
 
     def get_by_suffix(self, suffix):
+        """Get a tag with the given from the tag file"""
         with open(self.p, 'r+') as fh:
             self.fh = mmap.mmap(fh.fileno(), 0)
 
@@ -254,19 +343,17 @@ class TagFile(object):
             else:
                 break
 
-    @property
-    def dir(self):
-        return os.path.dirname(self.p)
-
     def tag_class(self):
         return type('Tag', (Tag,), dict(root_dir=self.dir))
 
-    def get_tags_dict_by_suffix(self, suffix, **kw):
-        filters = kw.get('filters', [])
-        return parse_tag_lines(self.get_by_suffix(suffix),
-                               tag_class=self.tag_class(), filters=filters)
-
     def get_tags_dict(self, *tags, **kw):
+        """Return the tags from a tag file as a dict"""
         filters = kw.get('filters', [])
         return parse_tag_lines(self.get(*tags),
+                               tag_class=self.tag_class(), filters=filters)
+
+    def get_tags_dict_by_suffix(self, suffix, **kw):
+        """Return the tags with the given suffix of a tag file as a dict"""
+        filters = kw.get('filters', [])
+        return parse_tag_lines(self.get_by_suffix(suffix),
                                tag_class=self.tag_class(), filters=filters)
