@@ -9,8 +9,6 @@ import subprocess
 import bisect
 import mmap
 
-from os.path import dirname
-
 """
 Contants
 """
@@ -145,8 +143,9 @@ def create_tag_path(tag):
 
 
 def build_ctags(cmd, tag_file, env=None):
-    p = subprocess.Popen(cmd, cwd=dirname(tag_file), shell=1, env=env,
-                         stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    p = subprocess.Popen(cmd, cwd=os.path.dirname(tag_file), shell=True,
+                         env=env, stdout=subprocess.PIPE,
+                         stderr=subprocess.STDOUT)
     ret = p.wait()
 
     if ret:
@@ -257,7 +256,7 @@ class TagFile(object):
 
     @property
     def dir(self):
-        return dirname(self.p)
+        return os.path.dirname(self.p)
 
     def tag_class(self):
         return type('Tag', (Tag,), dict(root_dir=self.dir))
