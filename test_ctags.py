@@ -83,7 +83,9 @@ class CTagsTest(unittest.TestCase):
             raise "Should have died"
     '''
 
-    """Helper functions"""
+    """
+    Helper functions
+    """
 
     def build_python_file(self):
         """Build a simple Python "program" that ctags can use
@@ -141,7 +143,9 @@ class CTagsTest(unittest.TestCase):
 
         return path
 
-    """Test functions"""
+    """
+    Test functions
+    """
 
     def setUp(self):
         """Set up test environment
@@ -152,20 +156,23 @@ class CTagsTest(unittest.TestCase):
         """
         self.test_build_ctags__ctags_on_path()
 
+    """build ctags"""
+
     def test_build_ctags__ctags_on_path(self):
         """Checks that ``ctags`` is in ``PATH``"""
-        # build_ctags requires a real path, so we create a temporary directory
+        # build_ctags requires a real path, so we create a temporary file as a
+        # cross-platform way to get the temp directory
         with tempfile.NamedTemporaryFile() as temp:
             try:
                 ctags.build_ctags(path=temp.name)
             except EnvironmentError:
                 self.fail('build_ctags() raised EnvironmentError. ctags not'
                           ' on path')
-                # TODO skip all other test cases if this one fails
 
     def test_build_ctags__custom_command(self):
         """Checks for support of simple custom command to execute ctags"""
-        # build_ctags requires a real path, so we create a temporary directory
+        # build_ctags requires a real path, so we create a temporary file as a
+        # cross-platform way to get the temp directory
         with tempfile.NamedTemporaryFile() as temp:
             try:
                 ctags.build_ctags(path=temp.name, cmd='ctags')
@@ -175,7 +182,8 @@ class CTagsTest(unittest.TestCase):
 
     def test_build_ctags__invalid_custom_command(self):
         """Checks for failure for invalid custom command to execute ctags"""
-        # build_ctags requires a real path, so we create a temporary directory
+        # build_ctags requires a real path, so we create a temporary file as a
+        # cross-platform way to get the temp directory
         with tempfile.NamedTemporaryFile() as temp:
             with self.assertRaises(EnvironmentError):
                 ctags.build_ctags(path=temp.name, cmd='ccttaaggss')
@@ -213,6 +221,8 @@ class CTagsTest(unittest.TestCase):
             finally:
                 output.close()
                 os.remove(path)  # Clean up
+
+    """post_process_tag"""
 
     def test_post_process_tag__line_numbers(self):
         """Test ``post_process_tag`` with a line number ``excmd`` variable

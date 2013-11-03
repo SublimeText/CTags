@@ -21,7 +21,7 @@ from collections import defaultdict
 import sublime
 import sublime_plugin
 
-from sublime import status_message
+from sublime import status_message, error_message
 
 ################################## APP IMPORTS #################################
 sublime_version = 2
@@ -467,7 +467,7 @@ def ctags_goto_command(jump_directly_if_one=False):
     return wrapper
 
 def check_if_building(self, **args):
-    if rebuild_tags.build_ctags.func.running:
+    if RebuildTags.build_ctags.func.running:
         status_message('Please wait while tags are built')
 
     else:  return True
@@ -633,54 +633,69 @@ class ShowSymbols(sublime_plugin.TextCommand):
 
 ################################# REBUILD CTAGS ################################
 
-class rebuild_tags(sublime_plugin.TextCommand):
-    def run(self, edit, **args):
-        view=self.view
+class RebuildTags(sublime_plugin.TextCommand):
+    """Handler for the 'rebuild_tags' command.
 
-        tag_dirs = []
+    Command (re)builds tag files for the open file or folder(s), reading
+    relevant settings from the settings file.
+    """
+    def run(self, edit, **args):
+        """Handler for rebuild_tags command"""
+        paths = []
+
+        # user has requested to rebuild tags for the specific folders (via
+        # context menu in Folders pane)
         if "dirs" in args:
-            # User has requested to rebuild CTags for the specific folders (via context menu in Folders pane)
-            tag_dirs.extend(args["dirs"])
-        elif view.file_name() is not None:
+            paths.extend(args["dirs"])
+        # file open, rebuild tags relative to the file
+        elif self.view.file_name() is not None:
             # Rebuild and rebuild tags relative to the currently opened file
-            tag_dir = find_top_folder(view, view.file_name())
-            tag_dirs.append(tag_dir)
-        elif len(view.window().folders()) > 0:
+            paths.append(self.view.file_name())
+        # no file is open, build tags for all opened folders
+        elif len(self.view.window().folders()) > 0:
             # No file is open, rebuild tags for all opened folders
-            tag_dirs.extend(view.window().folders())
+            paths.extend(self.view.window().folders())
+        # no file or folder open, return
         else:
             status_message("Cannot build CTags: No file or folder open.")
             return
 
-        tag_files = [join(t, ".tags") for t in tag_dirs]
-
-        # Any .tags file found when walking up the directory tree has precedence
-        def replace_with_parent_tags_if_exists(tag_file):
-            parent_tag_file = find_tags_relative_to(tag_file)
-            return parent_tag_file if parent_tag_file else tag_file
-        tag_files = set(map(replace_with_parent_tags_if_exists, tag_files))
-
-        # TODO: replace with sublime.ok_cancel_dialog or maybe just delete?
-        if 0:  # not 1 or sublime.question_box(''ctags -R' in %s ?'% dirname(tag_file)):
-            return
-
         command = setting('command', setting('ctags_command'))
-        self.build_ctags(command, tag_files)
-        GetAllCTagsList.ctags_list = []  # clear the cached ctags list
+        recursive = setting('recursive')
+        tag_file = setting('tag_file')
 
-    @threaded(msg="Already running CTags!")
-    def build_ctags(self, cmd, tag_files):
+        self.build_ctags(paths, tag_file, recursive, command)
+
+    @threaded(msg='Already running CTags!')
+    def build_ctags(self, paths, tag_file, recursive, command):
+        """Build tags for the open file or folder(s)"""
+        def tags_building(tag_file):
+            """Display 'Building CTags' message in all views"""
+            print(('Building CTags for %s: Please be patient' % tag_file))
+            in_main(lambda: status_message('Building CTags for {0}: Please be'
+                                           ' patient'.format(tag_file)))()
 
         def tags_built(tag_file):
+            """Display 'Finished Building CTags' message in all views"""
             print(('Finished building %s' % tag_file))
-            in_main(lambda: status_message('Finished building %s' % tag_file))()
+            in_main(lambda: status_message('Finished building {0}'
+                                           .format(tag_file)))()
             in_main(lambda: tags_cache[dirname(tag_file)].clear())()
 
-        for tag_file in tag_files:
-            print(('Re/Building CTags for %s: Please be patient' % tag_file))
-            in_main(lambda: status_message('Re/Building CTags for %s: Please be patient' % tag_file))()
-            ctags.build_ctags(cmd, tag_file)
-            tags_built(tag_file)
+        for path in paths:
+            tags_building(path)
+            try:
+                result = ctags.build_ctags(path=path, tag_file=tag_file,
+                                           recursive=recursive, cmd=command)
+            except EnvironmentError as e:
+                error_message(str(e[0][2]).rstrip())  # show error message
+                return
+            except IOError as e:
+                error_message(str(e).rstrip())
+                return
+            tags_built(result)
+
+        GetAllCTagsList.ctags_list = []  # clear the cached ctags list
 
 ################################# AUTOCOMPLETE #################################
 
