@@ -10,7 +10,6 @@ import re
 import string
 import threading
 
-from contextlib import contextmanager
 from itertools import chain
 from operator import itemgetter as iget
 from collections import defaultdict
@@ -225,7 +224,7 @@ def alternate_tags_paths(view, tags_file):
                 if sublime.platform() == platform:
                     search_paths.append(path)
     except Exception as e:
-        print (e)
+        print(e)
 
     if os.path.exists(tags_paths):
         for extrafile in setting('extra_tag_files'):
@@ -341,7 +340,8 @@ def scroll_to_tag(view, tag, hook=None):
 """Formatting helper functions"""
 
 
-def format_tag_for_quickopen(tag, file=1):
+def format_tag_for_quickopen(tag, show_path=True):
+    """Format a tag for the quickopen panel"""
     format = []
     tag = ctags.Tag(tag)
     f = ''
@@ -355,13 +355,14 @@ def format_tag_for_quickopen(tag, file=1):
     format = [(f or tag.symbol) % tag, tag.ex_command]
     format[1] = format[1].strip()
 
-    if file:
+    if show_path:
         format.insert(1, tag.filename)
 
     return format
 
 
-def prepared_4_quickpanel(formatter=format_tag_for_quickopen, path_cols=()):
+def prepare_for_quickpanel(formatter=format_tag_for_quickopen, path_cols=()):
+    """Prepare list of matching ctags for the quickpanel"""
     def compile_lists(sorter):
         args, display = [], []
 
@@ -369,7 +370,7 @@ def prepared_4_quickpanel(formatter=format_tag_for_quickopen, path_cols=()):
             display.append(formatter(t))
             args.append(t)
 
-        return args, display  # format_for_display(display,  paths=path_cols)
+        return args, display  # format_for_display(display, paths=path_cols)
 
     return compile_lists
 
@@ -590,7 +591,7 @@ class JumpToDefinition:
                             return False
             return True
 
-        @prepared_4_quickpanel()
+        @prepare_for_quickpanel()
         def sorted_tags():
             p_tags = list(filter(pass_def_filter, tags.get(symbol, [])))
             if not p_tags:
@@ -689,10 +690,10 @@ class ShowSymbols(sublime_plugin.TextCommand):
                     *files, filters=compile_filters(view))
 
         if key in tags_cache[base_path]:
-            print ('loading symbols from cache')
+            print('loading symbols from cache')
             tags = tags_cache[base_path][key]
         else:
-            print ('loading symbols from file')
+            print('loading symbols from file')
             tags = get_tags()
             tags_cache[base_path][key] = tags
 
@@ -707,9 +708,9 @@ class ShowSymbols(sublime_plugin.TextCommand):
 
         path_cols = (0, ) if len(files) > 1 or multi else ()
         formatting = functools.partial(format_tag_for_quickopen,
-                                       file=bool(path_cols))
+                                       show_path=bool(path_cols))
 
-        @prepared_4_quickpanel(formatting, path_cols=())
+        @prepare_for_quickpanel(formatting, path_cols=())
         def sorted_tags():
             return sorted(
                 chain(*(tags[k] for k in tags)), key=iget('tag_path'))
@@ -756,6 +757,7 @@ class RebuildTags(sublime_plugin.TextCommand):
     @threaded(msg='Already running CTags!')
     def build_ctags(self, paths, tag_file, recursive, command):
         """Build tags for the open file or folder(s)"""
+
         def tags_building(tag_file):
             """Display 'Building CTags' message in all views"""
             print(('Building CTags for %s: Please be patient' % tag_file))
@@ -852,7 +854,7 @@ class TestCtags(sublime_plugin.TextCommand):
         try:
             next(self.routine)
         except Exception as e:
-            print (e)
+            print(e)
             self.routine = None
 
     def co_routine(self, view):
@@ -861,7 +863,7 @@ class TestCtags(sublime_plugin.TextCommand):
         with codecs.open(tag_file, encoding='utf-8') as tf:
             tags = parse_tag_lines(tf, tag_class=Tag)
 
-        print ('Starting Test')
+        print('Starting Test')
 
         ex_failures = []
         line_failures = []
