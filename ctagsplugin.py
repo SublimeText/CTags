@@ -13,25 +13,22 @@ import threading
 from contextlib import contextmanager
 from itertools import chain
 from operator import itemgetter as iget
-from os.path import join, normpath, dirname
 from collections import defaultdict
 
 import sublime
 import sublime_plugin
 from sublime import status_message, error_message
 
-sublime_version = 2
-if int(sublime.version()) > 3000:
-    sublime_version = 3
-
-if sublime_version == 2:
+if sublime.version().startswith('2'):
     import ctags
     from ctags import (FILENAME, parse_tag_lines, PATH_ORDER, SYMBOL, Tag,
                        TagFile)
-elif sublime_version == 3:
-    from . import ctags
-    from .ctags import (FILENAME, parse_tag_lines, PATH_ORDER, SYMBOL, Tag,
-                        TagFile)
+    from helpers.edit import Edit
+else:  # safe to assume if not ST2 then ST3
+    from CTags import ctags
+    from CTags.ctags import (FILENAME, parse_tag_lines, PATH_ORDER, SYMBOL,
+                             Tag, TagFile)
+    from CTags.helpers.edit import Edit
 
 """
 Contants
@@ -50,7 +47,7 @@ RUBY_SCOPES = '.*(ruby|rails).*'
 
 ON_LOAD = sublime_plugin.all_callbacks['on_load']
 
-RE_SPECIAL_CHARS = re.compile(  # as “f
+RE_SPECIAL_CHARS = re.compile(
     '(\\\\|\\*|\\+|\\?|\\||\\{|\\}|\\[|\\]|\\(|\\)|\\^|\\$|\\.|\\#|\\ )')
 
 
@@ -128,14 +125,20 @@ def threaded(finish=None, msg='Thread already running'):
             else:
                 status_message(msg)
         threaded.func = func
+
         return threaded
+
     return decorator
 
 
 class one_shot(object):
     def __init__(self):
+        # append self to callbacks
         self.callbacks.append(self)
-        self.remove = lambda: self.callbacks.remove(self)
+
+    def remove(self):
+        # remove self from callbacks, hence disconnecting it
+        self.callbacks.remove(self)
 
 
 @contextmanager
@@ -147,21 +150,42 @@ def edition(view):
         view.end_edit(edit)
 
 
-def on_load(f=None, window=None, encoded_row_col=True, begin_edit=False):
+def on_load(path=None, window=None, encoded_row_col=True, begin_edit=False):
+    """Decorator to open or switch to a file.
+
+    Opens and calls the "decorated function" for the file specified by path,
+    or the current file if no path is specified. In the case of the former, if
+    the file is open in another tab that tab will gain focus, otherwise the
+    file will be opened in a new tab with a requisite delay to allow the file
+    to open. In the latter case, the "decorated function" will be called on
+    the currently open file.
+
+    :param path: path to a file
+    :param window: the window to open the file in
+    :param encoded_row_col: the ``sublime.ENCODED_POSITION`` flag for
+        ``sublime.Window.open_file``
+    :param begin_edit: if editing the file being opened
+
+    :returns: None
+    """
     window = window or sublime.active_window()
 
-    def wrapper(cb):
-        if not f:
-            return cb(window.active_view())
-        view = window.open_file(normpath(f), encoded_row_col)
+    def wrapper(f):
+        # if no path, tag is in current open file, return that
+        if not path:
+            return f(window.active_view())
+        # else, open the relevant file
+        view = window.open_file(os.path.normpath(path), encoded_row_col)
 
         def wrapped():
+            # if editing the open file
             if begin_edit:
                 with edition(view):
-                    cb(view)
+                    f(view)
             else:
-                cb(view)
+                f(view)
 
+        # if buffer is still loading, wait for it to complete then proceed
         if view.is_loading():
             class set_on_load(one_shot):
                 callbacks = ON_LOAD
@@ -170,22 +194,22 @@ def on_load(f=None, window=None, encoded_row_col=True, begin_edit=False):
                     try:
                         wrapped()
                     finally:
+                        # disconnect callback
                         self.remove()
+
             set_on_load()
+        # else just proceed (file was likely open already in another tab)
         else:
             wrapped()
+
     return wrapper
-
-
-def view_fn(v):
-    return v.file_name() or '.'
 
 
 def find_tags_relative_to(file_name):
     if not file_name:
         return None
 
-    dirs = dirname(normpath(file_name)).split(os.path.sep)
+    dirs = os.path.dirname(os.path.normpath(file_name)).split(os.path.sep)
 
     while dirs:
         joined = os.path.sep.join(dirs + ['.tags'])
@@ -215,14 +239,20 @@ def alternate_tags_paths(view, tags_file):
 
     if os.path.exists(tags_paths):
         for extrafile in setting('extra_tag_files'):
-            search_paths.append(normpath(join(dirname(tags_file), extrafile)))
+            search_paths.append(
+                os.path.normpath(
+                    os.path.join(os.path.dirname(tags_file), extrafile)))
 
     # ok, didn't found the .tags file under the viewed file.
     # let's look in the currently openened folder
     for folder in view.window().folders():
-        search_paths.append(normpath(join(folder, '.tags')))
+        search_paths.append(
+            os.path.normpath(
+                os.path.join(folder, '.tags')))
         for extrafile in setting('extra_tag_files'):
-            search_paths.append(normpath(join(folder, extrafile)))
+            search_paths.append(
+                os.path.normpath(
+                    os.path.join(folder, extrafile)))
 
     return set(p for p in search_paths if p and os.path.exists(p))
 
@@ -302,7 +332,7 @@ def follow_tag_path(view, tag_path, pattern):
 
 
 def scroll_to_tag(view, tag, hook=None):
-    @on_load(join(tag.root_dir, tag.filename))
+    @on_load(os.path.join(tag.root_dir, tag.filename))
     def and_then(view):
         if tag.ex_command.isdigit():
             look_from = view.text_point(int(tag.ex_command)-1, 0)
@@ -379,7 +409,7 @@ def files_to_search(view, tags_file, multiple=True):
     if not fn:
         return
 
-    tag_dir = normpath(dirname(tags_file))
+    tag_dir = os.path.normpath(os.path.dirname(tags_file))
 
     common_prefix = commonfolder([tag_dir, fn])
     files = [fn[len(common_prefix)+1:]]
@@ -497,7 +527,7 @@ def show_tag_panel(view, result, jump_directly_if_one):
                 scroll_to_tag(view, args[i])
 
         if jump_directly_if_one and len(args) == 1:
-            on_select()
+            on_select(0)
         else:
             view.window().show_quick_panel(display, on_select)
 
@@ -747,7 +777,7 @@ class RebuildTags(sublime_plugin.TextCommand):
             print(('Finished building %s' % tag_file))
             in_main(lambda: status_message('Finished building {0}'
                                            .format(tag_file)))()
-            in_main(lambda: tags_cache[dirname(tag_file)].clear())()
+            in_main(lambda: tags_cache[os.path.dirname(tag_file)].clear())()
 
         for path in paths:
             tags_building(path)
@@ -848,7 +878,7 @@ class TestCtags(sublime_plugin.TextCommand):
 
         for symbol, tag_list in list(tags.items()):
             for tag in tag_list:
-                tag.root_dir = dirname(tag_file)
+                tag.root_dir = os.path.dirname(tag_file)
 
                 def hook(av):
                     test_context = av.sel()[0]

@@ -2,14 +2,21 @@
 
 """Unit tests for ctags.py"""
 
-from ctags import TagFile, SYMBOL, MATCHES_STARTWITH, FILENAME, build_ctags
 
 import os
+import sys
 import tempfile
 import unittest
 import codecs
 
-import ctags
+if sys.version_info >= (3, 0):
+    from . import ctags
+    from .ctags import (SYMBOL, MATCHES_STARTWITH, FILENAME, build_ctags,
+                        TagFile)
+else:
+    import ctags
+    from ctags import (SYMBOL, MATCHES_STARTWITH, FILENAME, build_ctags,
+                       TagFile)
 
 
 class CTagsTest(unittest.TestCase):
