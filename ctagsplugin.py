@@ -113,8 +113,7 @@ def threaded(finish=None, msg='Thread already running'):
 
                     if finish:
                         sublime.set_timeout(
-                            functools.partial(finish, args[0], *result), 0
-                        )
+                            functools.partial(finish, args[0], *result), 0)
                 finally:
                     func.running = 0
             if not func.running:
@@ -129,25 +128,6 @@ def threaded(finish=None, msg='Thread already running'):
         return threaded
 
     return decorator
-
-
-class one_shot(object):
-    def __init__(self):
-        # append self to callbacks
-        self.callbacks.append(self)
-
-    def remove(self):
-        # remove self from callbacks, hence disconnecting it
-        self.callbacks.remove(self)
-
-
-@contextmanager
-def edition(view):
-    edit = view.begin_edit()
-    try:
-        yield
-    finally:
-        view.end_edit(edit)
 
 
 def on_load(path=None, window=None, encoded_row_col=True, begin_edit=False):
@@ -180,17 +160,27 @@ def on_load(path=None, window=None, encoded_row_col=True, begin_edit=False):
         def wrapped():
             # if editing the open file
             if begin_edit:
-                with edition(view):
+                with Edit(view):
                     f(view)
             else:
                 f(view)
 
         # if buffer is still loading, wait for it to complete then proceed
         if view.is_loading():
-            class set_on_load(one_shot):
+
+            class set_on_load():
                 callbacks = ON_LOAD
 
+                def __init__(self):
+                    # append self to callbacks
+                    self.callbacks.append(self)
+
+                def remove(self):
+                    # remove self from callbacks, hence disconnecting it
+                    self.callbacks.remove(self)
+
                 def on_load(self, view):
+                    # on file loading
                     try:
                         wrapped()
                     finally:
@@ -212,7 +202,7 @@ def find_tags_relative_to(file_name):
     dirs = os.path.dirname(os.path.normpath(file_name)).split(os.path.sep)
 
     while dirs:
-        joined = os.path.sep.join(dirs + ['.tags'])
+        joined = os.path.sep.join(dirs + [setting('tag_file')])
         if os.path.exists(joined) and not os.path.isdir(joined):
             return joined
         else:
@@ -243,12 +233,12 @@ def alternate_tags_paths(view, tags_file):
                 os.path.normpath(
                     os.path.join(os.path.dirname(tags_file), extrafile)))
 
-    # ok, didn't found the .tags file under the viewed file.
-    # let's look in the currently openened folder
+    # ok, didn't found the tags file under the viewed file.
+    # let's look in the currently opened folder
     for folder in view.window().folders():
         search_paths.append(
             os.path.normpath(
-                os.path.join(folder, '.tags')))
+                os.path.join(folder, setting('tag_file'))))
         for extrafile in setting('extra_tag_files'):
             search_paths.append(
                 os.path.normpath(
@@ -319,7 +309,7 @@ def follow_tag_path(view, tag_path, pattern):
 
     start_at = max(regions, key=lambda r: r.begin()).begin() - 1
 
-    # Find the ex_command pattern
+    # find the ex_command pattern
     pattern_region = find_source(
         view, '^' + escape_regex(pattern), start_at, flags=0)
 
@@ -810,7 +800,7 @@ class CTagsAutoComplete(sublime_plugin.EventListener):
     def on_query_completions(self, view, prefix, locations):
         if setting('autocomplete'):
             prefix = prefix.strip().lower()
-            tags_path = view.window().folders()[0] + '/.tags'
+            tags_path = view.window().folders()[0] + '/' + setting('tag_file')
 
             sub_results = [v.extract_completions(prefix)
                            for v in sublime.active_window().views()]
@@ -826,7 +816,7 @@ class CTagsAutoComplete(sublime_plugin.EventListener):
             else:
                 tags = []
 
-                # check if a project is open and the .tags file exists
+                # check if a project is open and the tags file exists
                 if not (view.window().folders() and os.path.exists(tags_path)):
                     return tags
 
@@ -907,10 +897,11 @@ class TestCtags(sublime_plugin.TextCommand):
         tags_tested = sum(len(v) for v in list(tags.values())) - len(failures)
 
         view = sublime.active_window().new_file()
-        edit = view.begin_edit()
-        view.insert(edit, view.size(), '%s Tags Tested OK\n' % tags_tested)
-        view.insert(edit, view.size(), '%s Tags Failed' % len(failures))
-        view.end_edit(edit)
+
+        with Edit(view) as edit:
+            edit.insert(view.size(), '%s Tags Tested OK\n' % tags_tested)
+            edit.insert(view.size(), '%s Tags Failed' % len(failures))
+
         view.set_scratch(True)
         view.set_name('CTags Test Results')
 
