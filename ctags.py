@@ -397,7 +397,8 @@ class TagFile(object):
         self.fh.seek(index)
         self.fh.readline()
         try:
-            return self.fh.readline().split(b'\t')[self.column]
+            line = self.fh.readline().decode('utf-8', 'replace')
+            return line.split('\t')[self.column]
         # Ask forgiveness not permission
         except IndexError:
             return ''
@@ -413,12 +414,12 @@ class TagFile(object):
 
     def get(self, *tags):
         """Get a tag from the tag file"""
-        with open(self.p, 'r+') as fh:
+        with codecs.open(self.p, 'r+', encoding='utf-8') as fh:
             if tags:
                 self.fh = mmap.mmap(fh.fileno(), 0)
 
                 for tag in (t.encode() for t in tags):
-                    b4 = bisect.bisect_left(self, tag)
+                    b4 = bisect.bisect_left(self, str(tag))
                     fh.seek(b4)
 
                     for l in self.match_as(fh, tag):
@@ -431,7 +432,7 @@ class TagFile(object):
 
     def get_by_suffix(self, suffix):
         """Get a tag with the given from the tag file"""
-        with open(self.p, 'r+') as fh:
+        with codecs.open(self.p, 'r+', encoding='utf-8') as fh:
             self.fh = mmap.mmap(fh.fileno(), 0)
 
             for l in fh:
@@ -461,7 +462,7 @@ class TagFile(object):
             if comp == -1:
                 continue
 
-            if field.startswith(tag):
+            if field.startswith(tag.decode('utf-8')):
                 yield l
             else:
                 break

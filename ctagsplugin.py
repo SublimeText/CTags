@@ -3,6 +3,7 @@
 """A ctags plugin for Sublime Text 2/3"""
 
 import functools
+import codecs
 import os
 import pprint
 import re
@@ -201,7 +202,8 @@ def alternate_tags_paths(view, tags_file):
     search_paths = [tags_file]
 
     if os.path.exists(tags_paths):
-        search_paths.extend(open(tags_paths).read().split('\n'))
+        search_paths.extend(
+            codecs.open(tags_paths, encoding='utf-8').read().split('\n'))
 
     try:
         for (selector, platform), path in setting('extra_tag_paths'):
@@ -788,8 +790,7 @@ class CTagsAutoComplete(sublime_plugin.EventListener):
             if GetAllCTagsList.ctags_list:
                 results = [sublist for sublist in GetAllCTagsList.ctags_list
                            if sublist[0].lower().startswith(prefix)]
-                results = list(set(results).union(set(sub_results)))
-                results.sort()
+                results = sorted(set(results).union(set(sub_results)))
 
                 return results
             else:
@@ -806,8 +807,7 @@ class CTagsAutoComplete(sublime_plugin.EventListener):
 
                 tags = [(item, item) for sublist in tags
                         for item in sublist]  # flatten
-                tags = list(set(tags))  # make unique
-                tags.sort()
+                tags = sorted(set(tags))  # make unique
                 GetAllCTagsList.ctags_list = tags
                 results = [sublist for sublist in GetAllCTagsList.ctags_list
                            if sublist[0].lower().startswith(prefix)]
@@ -838,7 +838,7 @@ class TestCtags(sublime_plugin.TextCommand):
     def co_routine(self, view):
         tag_file = find_tags_relative_to(view.file_name())
 
-        with open(tag_file) as tf:
+        with codecs.open(tag_file, encoding='utf-8') as tf:
             tags = parse_tag_lines(tf, tag_class=Tag)
 
         print ('Starting Test')
