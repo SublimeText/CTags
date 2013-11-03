@@ -63,24 +63,6 @@ class CTagsTest(unittest.TestCase):
                     lines += [l]
 
         self.assertEquals(fails, [])
-
-    def test_build_ctags__ctags_not_on_path():
-        try:
-            build_ctags(['ctags.exe -R'], r'C:\Users\nick\AppData\Roaming\Sublime Text 2\Packages\CTags\tags', env={})
-        except Exception as e:
-            print ('OK')
-            print (e)
-        else:
-            raise "Should have died"
-
-    def test_build_ctags__dodgy_command():
-        try:
-            build_ctags(['ctags', '--arsts'], r'C:\Users\nick\AppData\Roaming\Sublime Text 2\Packages\CTags\tags')
-        except Exception as e:
-            print ('OK')
-            print (e)
-        else:
-            raise "Should have died"
     '''
 
     """
