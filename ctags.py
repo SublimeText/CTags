@@ -84,7 +84,7 @@ def parse_tag_lines(lines, order_by='symbol', tag_class=None, filters=[]):
     :param filters: filters to apply to resulting dictionary
 
     :returns: tag object or dictionary containing a sorted, filtered version
-            of the original input tag lines
+        of the original input tag lines
     """
     tags_lookup = {}
 
@@ -194,7 +194,7 @@ def process_fields(tag):
     :param tag: dict containing a tag
 
     :returns: dict containing the key-value pairs from the field element, plus
-              a list of keys for said pairs
+        a list of keys for said pairs
     """
     fields = tag.get('fields')
 
@@ -263,11 +263,10 @@ def build_ctags(path, tag_file=None, recursive=False, cmd=None, env=None):
     """Execute the ``ctags`` command using ``Popen``
 
     :param path: path to file or directory (with all files) to generate
-            ctags for.
-    :param tag_file: absolute path and filename to use for the tag file.
-            Defaults to ``tags``
+        ctags for.
+    :param tag_file: filename to use for the tag file. Defaults to ``tags``
     :param recursive: specify if search should be recursive in directory
-            given by path. This overrides filename specified by ``path``
+        given by path. This overrides filename specified by ``path``
     :param env: environment variables to be used when executing ``ctags``
 
     :returns: original ``tag_file`` filename

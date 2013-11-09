@@ -67,12 +67,20 @@ Functions
 
 
 def get_settings():
-    """Load settings"""
+    """Load settings
+
+    :returns: dictionary containing settings"""
     return sublime.load_settings("CTags.sublime-settings")
 
 
-def get_setting(key, default=None, view=None):
-    """Load individual setting"""
+def get_setting(key, default=None):
+    """Load individual setting
+
+    :param key: setting key to get value for
+    :param default: default value to return if no value found
+
+    :returns: value for ``key`` if ``key`` exists, else ``default``
+    """
     return get_settings().get(key, default)
 
 setting = get_setting
@@ -197,11 +205,18 @@ def on_load(path=None, window=None, encoded_row_col=True, begin_edit=False):
     return wrapper
 
 
-def find_tags_relative_to(file_name, tag_file):
-    if not file_name:
+def find_tags_relative_to(path, tag_file):
+    """Find the tagfile relative to a file path.
+
+    :param path: path to a file
+    :param tag_file: name of tag file
+
+    :returns: path of deepest tag file with name of ``tag_file``
+    """
+    if not path:
         return None
 
-    dirs = os.path.dirname(os.path.normpath(file_name)).split(os.path.sep)
+    dirs = os.path.dirname(os.path.normpath(path)).split(os.path.sep)
 
     while dirs:
         joined = os.path.sep.join(dirs + [tag_file])
@@ -214,7 +229,19 @@ def find_tags_relative_to(file_name, tag_file):
     return None
 
 
-def alternate_tags_paths(view, tags_file):
+def get_alternate_tags_paths(view, tags_file):
+    """Search for additional tag files.
+
+    Search for additional tag files to use, including those define by a
+    ``search_paths`` file, the ``extra_tag_path`` setting and the
+    ``extra_tag_files`` setting. This is mostly used for including library tag
+    files.
+
+    :param view: sublime text view
+    :param tags_file: path to a tag file
+
+    :returns: list of valid, existing paths to additional tag files to search
+    """
     tags_paths = '%s_search_paths' % tags_file
     search_paths = [tags_file]
 
@@ -254,7 +281,7 @@ def get_common_ancestor_folder(path, folders):
     """Get common ancestor for a file and a list of folders.
 
     :param path: path to file
-    :folders: list of folder paths
+    :param folders: list of folder paths
 
     :returns: path to common ancestor for files and folders file
     """
@@ -342,7 +369,13 @@ def scroll_to_tag(view, tag, hook=None):
 
 
 def format_tag_for_quickopen(tag, show_path=True):
-    """Format a tag for the quickopen panel"""
+    """Format a tag for use in quickopen panel.
+
+    :param tag: tag to display in quickopen
+    :param show_path: show path to file containing tag in quickopen
+
+    :returns: formatted tag
+    """
     format = []
     tag = ctags.Tag(tag)
     f = ''
@@ -362,8 +395,13 @@ def format_tag_for_quickopen(tag, show_path=True):
     return format
 
 
-def prepare_for_quickpanel(formatter=format_tag_for_quickopen, path_cols=()):
-    """Prepare list of matching ctags for the quickpanel"""
+def prepare_for_quickpanel(formatter=format_tag_for_quickopen):
+    """Prepare list of matching ctags for the quickpanel.
+
+    :param formatter: formatter function to apply to tag
+
+    :returns: tuple containing tag and formatted string representation of tag
+    """
     def compile_lists(sorter):
         args, display = [], []
 
@@ -371,7 +409,7 @@ def prepare_for_quickpanel(formatter=format_tag_for_quickopen, path_cols=()):
             display.append(formatter(t))
             args.append(t)
 
-        return args, display  # format_for_display(display, paths=path_cols)
+        return args, display
 
     return compile_lists
 
@@ -379,21 +417,33 @@ def prepare_for_quickpanel(formatter=format_tag_for_quickopen, path_cols=()):
 """File collection helper functions"""
 
 
-def get_rel_path_to_source(file_name, tag_file, multiple=True):
-    """Get relative path from tag_file to source file"""
+def get_rel_path_to_source(path, tag_file, multiple=True):
+    """Get relative path from tag_file to source file.
+
+    :param path: path to a source file
+    :param tag_file: path to a tag file
+    :param multiple: if multiple tag files open
+
+    :returns: list containing relative path from tag_file to source file
+    """
     if multiple:
         return []
 
     tag_dir = os.path.dirname(tag_file)  # get tag directory
-    common_prefix = os.path.commonprefix([tag_dir, file_name])
-    relative_path = os.path.relpath(file_name, common_prefix)
+    common_prefix = os.path.commonprefix([tag_dir, path])
+    relative_path = os.path.relpath(path, common_prefix)
 
     return [relative_path]
 
 
-def get_current_file_suffix(file_name):
-    """Get file extension"""
-    file_prefix, file_suffix = os.path.splitext(file_name)
+def get_current_file_suffix(path):
+    """Get file extension
+
+    :param path: path to a source file
+
+    :returns: file extension for file
+    """
+    file_prefix, file_suffix = os.path.splitext(path)
 
     return file_suffix
 
@@ -412,6 +462,15 @@ def different_mod_area(f1, f2, r1, r2):
 
 
 class JumpBack(sublime_plugin.WindowCommand):
+    """Provide ``jump_back`` command.
+
+    Command "jumps back" to a previous point in the code - either a
+    modification or the previous code point before a tag navigated or "jumped"
+    to.
+
+    This is functionality supported natively by ST3 but not by ST2. It is
+    therefore included for legacy purposes.
+    """
     def is_enabled(self, to=None):
         if to == 'last_modification':
             return len(self.mods) > 1
@@ -479,6 +538,15 @@ class JumpBack(sublime_plugin.WindowCommand):
 
 
 class JumpBackListener(sublime_plugin.EventListener):
+    """Maintain a list of edit points to jump back to.
+
+    Maintains a list of the last x edit points (points where a character is
+    added, removed or modified) in order to allow the user to correctly
+    "jump back" to a previous point in the code.
+
+    This is functionality supported natively by ST3 but not by ST2. It is
+    therefore included for legacy purposes.
+    """
     def on_modified(self, view):
         sel = view.sel()
         if len(sel):
@@ -490,6 +558,11 @@ class JumpBackListener(sublime_plugin.EventListener):
 
 
 def show_tag_panel(view, result, jump_directly):
+    """Handle tag navigation command.
+
+    Jump directly to a tag entry, or show a quick panel with a list of
+    matching tags
+    """
     if result not in (True, False, None):
         args, display = result
         if not args:
@@ -507,6 +580,10 @@ def show_tag_panel(view, result, jump_directly):
 
 
 def ctags_goto_command(jump_directly=False):
+    """Decorator to goto a ctag entry.
+
+    Allow jump to a ctags entry, directly or otherwise
+    """
     def wrapper(f):
         def command(self, edit, **args):
             view = self.view
@@ -525,6 +602,7 @@ def ctags_goto_command(jump_directly=False):
 
 
 def check_if_building(self, **args):
+    """Check if ctags are currently being built"""
     if RebuildTags.build_ctags.func.running:
         status_message('Please wait while tags are built')
     else:
@@ -553,10 +631,11 @@ def compile_definition_filters(view):
 
 
 class JumpToDefinition:
+    """Provider for NavigateToDefinition and SearchForDefinition commands"""
     @staticmethod
     def run(symbol, view, tags_file):
         tags = {}
-        for tags_file in alternate_tags_paths(view, tags_file):
+        for tags_file in get_alternate_tags_paths(view, tags_file):
             tags = (TagFile(tags_file, SYMBOL)
                     .get_tags_dict(symbol, filters=compile_filters(view)))
             if tags:
@@ -587,6 +666,11 @@ class JumpToDefinition:
 
 
 class NavigateToDefinition(sublime_plugin.TextCommand):
+    """Provider for the ``navigate_to_definition`` command.
+
+    Command navigates to the definition for a symbol in the open file(s) or
+    folder(s).
+    """
     is_enabled = check_if_building
 
     def __init__(self, args):
@@ -608,6 +692,11 @@ class NavigateToDefinition(sublime_plugin.TextCommand):
 
 
 class SearchForDefinition(sublime_plugin.WindowCommand):
+    """Provider for the ``search_for_definition`` command.
+
+    Command searches for definition for a symbol in the open file(s) or
+    folder(s).
+    """
     is_enabled = check_if_building
 
     def is_visible(self):
@@ -642,6 +731,10 @@ tags_cache = defaultdict(dict)
 
 
 class ShowSymbols(sublime_plugin.TextCommand):
+    """Provider for the ``show_symbols`` command.
+
+    Command shows all symbols for the open file(s) or folder(s).
+    """
     is_enabled = check_if_building
 
     def is_visible(self):
@@ -699,7 +792,7 @@ class ShowSymbols(sublime_plugin.TextCommand):
         formatting = functools.partial(format_tag_for_quickopen,
                                        show_path=bool(path_cols))
 
-        @prepare_for_quickpanel(formatting, path_cols=())
+        @prepare_for_quickpanel(formatting)
         def sorted_tags():
             return sorted(
                 chain(*(tags[k] for k in tags)), key=iget('tag_path'))
@@ -711,13 +804,13 @@ class ShowSymbols(sublime_plugin.TextCommand):
 
 
 class RebuildTags(sublime_plugin.TextCommand):
-    """Handler for the 'rebuild_tags' command.
+    """Provider for the ``rebuild_tags`` command.
 
-    Command (re)builds tag files for the open file or folder(s), reading
+    Command (re)builds tag files for the open file(s) or folder(s), reading
     relevant settings from the settings file.
     """
     def run(self, edit, **args):
-        """Handler for rebuild_tags command"""
+        """Handler for ``rebuild_tags`` command"""
         paths = []
 
         # user has requested to rebuild tags for the specific folders (via
@@ -745,7 +838,17 @@ class RebuildTags(sublime_plugin.TextCommand):
 
     @threaded(msg='Already running CTags!')
     def build_ctags(self, paths, tag_file, recursive, command):
-        """Build tags for the open file or folder(s)"""
+        """Build tags for the open file or folder(s)
+
+        :param paths: paths to build ctags for
+        :param tag_file: file name to use for tags file
+        :param tag_file: filename to use for the tag file. Defaults to ``tags``
+        :param recursive: specify if search should be recursive in directory
+            given by path. This overrides filename specified by ``path``
+        :param env: environment variables to be used when executing ``ctags``
+
+        :returns: None
+        """
 
         def tags_building(tag_file):
             """Display 'Building CTags' message in all views"""
