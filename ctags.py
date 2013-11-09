@@ -41,6 +41,7 @@ TAG_PATH_SPLITTERS = ('/', '.', '::', ':')
 Functions
 """
 
+
 """Helper functions"""
 
 
@@ -50,7 +51,12 @@ def cmp(a, b):
 
 
 def splits(string, *splitters):
-    """Split a string on a number of splitters"""
+    """Split a string on a number of splitters.
+
+    :param string: string to split
+    :param splitters: characters to split string on
+
+    :returns: ``string`` split on characters in ``string``"""
     if splitters:
         split = string.split(splitters[0])
         for s in split:
@@ -59,6 +65,7 @@ def splits(string, *splitters):
     else:
         if string:
             yield string
+
 
 """Tag processing functions"""
 
@@ -71,15 +78,13 @@ def parse_tag_lines(lines, order_by='symbol', tag_class=None, filters=[]):
     entries found in the list of tags, sorted and filtered in a manner
     specified by the user.
 
-    :Parameters:
-        - `lines`: List of tag lines from a tagfile
-        - `order_by`: Element by which the result should be sorted
-        - `tag_class`: A Class to wrap around the resulting dictionary
-        - `filters`: Filters to apply to resulting dictionary
+    :param lines: list of tag lines from a tagfile
+    :param order_by: element by which the result should be sorted
+    :param tag_class: a Class to wrap around the resulting dictionary
+    :param filters: filters to apply to resulting dictionary
 
-    :Returns:
-        A tag object or dictionary containing a sorted, filtered version of
-        the original input tag lines
+    :returns: tag object or dictionary containing a sorted, filtered version
+            of the original input tag lines
     """
     tags_lookup = {}
 
@@ -148,11 +153,9 @@ def post_process_tag(tag):
         .           > file          ''
         =========== = ============= =========================================
 
-    :Parameters:
-        - `tag`: A dict containing the unprocessed tag
+    :param tag: dict containing the unprocessed tag
 
-    :Returns:
-        A dict containing the processed tag
+    :returns: dict containing the processed tag
     """
     tag.update(process_fields(tag))
 
@@ -169,11 +172,9 @@ def process_ex_cmd(tag):
     Process the ex_command string - a line number or regex used to find symbol
     declaration - by unescaping the regex where used.
 
-    :Parameters:
-        - `tag`: A dict containing a tag
+    :param tag: dict containing a tag
 
-    :Returns:
-        A updated 'ex_command' dictionary entry
+    :returns: updated 'ex_command' dictionary entry
     """
     ex_cmd = tag.get('ex_command')
 
@@ -190,12 +191,10 @@ def process_fields(tag):
     - by generating key-value pairs and appending them to the tag dictionary.
     Also append a list of keys for said pairs.
 
-    :Parameters:
-        - `tag`: A dict containing a tag
+    :param tag: dict containing a tag
 
-    :Returns:
-        A dict containing the key-value pairs from the field element, plus a
-        list of keys for said pairs
+    :returns: dict containing the key-value pairs from the field element, plus
+              a list of keys for said pairs
     """
     fields = tag.get('fields')
 
@@ -222,11 +221,9 @@ def create_tag_path(tag):
     Where ``additional entries`` is any field key-value pair not found in
     ``PATH_IGNORE_FIELDS``
 
-    :Parameters:
-        - `tag`: A dict containing a tag
+    :param tag: dict containing a tag
 
-    :Returns:
-        A dict containing the 'tag_path' entry
+    :returns: dict containing the 'tag_path' entry
     """
     field_keys = tag.get('field_keys', [])[:]
     fields = []
@@ -258,23 +255,22 @@ def create_tag_path(tag):
 
     return result
 
+
 """Tag building/sorting functions"""
 
 
 def build_ctags(path, tag_file=None, recursive=False, cmd=None, env=None):
     """Execute the ``ctags`` command using ``Popen``
 
-    :Parameters:
-        - `path`: Path to file or directory (with all files) to generate
+    :param path: path to file or directory (with all files) to generate
             ctags for.
-        - `tag_file`: An absolute path and filename to use for the tag file.
+    :param tag_file: absolute path and filename to use for the tag file.
             Defaults to ``tags``
-        - `recursive`: Specify if search should be recursive in directory
+    :param recursive: specify if search should be recursive in directory
             given by path. This overrides filename specified by ``path``
-        - `env`: Environment variables to be used when executing ``ctags``
+    :param env: environment variables to be used when executing ``ctags``
 
-    :Returns:
-        The original ``tag_file`` filename
+    :returns: original ``tag_file`` filename
     """
     # build the CTags command
     if cmd:
@@ -340,8 +336,9 @@ def resort_ctags(tag_file):
                 tag
             Join the line again and write the ``sorted_by_file`` file
 
-    :Parameters:
-        - `tag_file`: The location of the tagfile to be sorted
+    :param tag_file: The location of the tagfile to be sorted
+
+    :returns: None
     """
     keys = {}
 
