@@ -267,8 +267,15 @@ def reached_top_level_folders(folders, oldpath, path):
     return False
 
 
-def find_top_folder(folders, filename):
-    path = os.path.dirname(filename)
+def get_common_ancestor_folder(path, folders):
+    """Get common ancestor for a file and a list of folders.
+
+    :param path: path to file
+    :folders: list of folder paths
+
+    :returns: path to common ancestor for files and folders file
+    """
+    path = os.path.dirname(path)
 
     # we don't have any folders open, return the folder this file is in
     if len(folders) == 0:
@@ -400,6 +407,7 @@ def get_rel_path_to_source(file_name, tag_file, multiple=True):
 
 
 def get_current_file_suffix(file_name):
+    """Get file extension"""
     file_prefix, file_suffix = os.path.splitext(file_name)
 
     return file_suffix
@@ -673,7 +681,8 @@ class ShowSymbols(sublime_plugin.TextCommand):
 
         tags_file = tags_file + '_sorted_by_file'
 
-        base_path = find_top_folder(view.window().folders(), view.file_name())
+        base_path = get_common_ancestor_folder(
+            view.file_name(), view.window().folders())
 
         def get_tags():
             loaded = TagFile(tags_file, FILENAME)

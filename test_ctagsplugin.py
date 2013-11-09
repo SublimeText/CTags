@@ -143,45 +143,45 @@ class CTagsPluginTest(unittest.TestCase):
         self.remove_tmp_files([parent_path, parent_tag_file])
         self.remove_tmp_directory(child_dir)
 
-    """find_top_folder"""
+    """get_common_ancestor_folder"""
 
-    def test_find_top_folder__current_folder_open(self):
+    def test_get_common_ancestor_folder__current_folder_open(self):
         parent_dir = '/c/users'
 
         temp = parent_dir + '/example.py'
 
-        path = ctagsplugin.find_top_folder([parent_dir], temp)
+        path = ctagsplugin.get_common_ancestor_folder(temp, [parent_dir])
 
         # should return parent of the two child directories the deepest common
         # folder
         self.assertEquals(path, parent_dir)
 
-    def test_find_top_folder__single_ancestor_folder_open(self):
+    def test_get_common_ancestor_folder__single_ancestor_folder_open(self):
         parent_dir = '/c/users'
         child_dir = parent_dir + '/child'
 
         temp = child_dir + '/example.py'
 
-        path = ctagsplugin.find_top_folder([parent_dir], temp)
+        path = ctagsplugin.get_common_ancestor_folder(temp, [parent_dir])
 
         # should return parent of the two child directories the deepest common
         # folder
         self.assertEquals(path, parent_dir)
 
-    def test_find_top_folder__single_sibling_folder_open(self):
+    def test_get_common_ancestor_folder__single_sibling_folder_open(self):
         parent_dir = '/c/users'
         child_a_dir = parent_dir + '/child_a'
         child_b_dir = parent_dir + '/child_b'
 
         temp = child_b_dir + '/example.py'
 
-        path = ctagsplugin.find_top_folder([child_a_dir], temp)
+        path = ctagsplugin.get_common_ancestor_folder(temp, [child_a_dir])
 
         # should return parent of the two child directories the deepest common
         # folder
         self.assertEquals(path, parent_dir)
 
-    def test_find_top_folder__single_child_folder_open(self):
+    def test_get_common_ancestor_folder__single_child_folder_open(self):
         parent_dir = '/c/users'
         child_dir = parent_dir + '/child'
         grandchild_dir = child_dir + '/grandchild'
@@ -189,7 +189,7 @@ class CTagsPluginTest(unittest.TestCase):
         temp = child_dir + '/example.py'
 
         # create temporary folders and files
-        path = ctagsplugin.find_top_folder([grandchild_dir], temp)
+        path = ctagsplugin.get_common_ancestor_folder(temp, [grandchild_dir])
 
         # should return child directory as the deepest common folder
         self.assertEquals(path, child_dir)
