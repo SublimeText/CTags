@@ -67,18 +67,12 @@ Functions
 
 
 def get_settings():
+    """Load settings"""
     return sublime.load_settings("CTags.sublime-settings")
 
 
 def get_setting(key, default=None, view=None):
-    try:
-        if view is None:
-            view = sublime.active_window().active_view()
-        s = view.settings()
-        if s.has('ctags_%s' % key):
-            return s.get('ctags_%s' % key)
-    except:
-        pass
+    """Load individual setting"""
     return get_settings().get(key, default)
 
 setting = get_setting
