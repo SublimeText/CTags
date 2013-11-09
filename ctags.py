@@ -307,7 +307,7 @@ def build_ctags(path, tag_file=None, recursive=False, cmd=None, env=None):
     ret = p.wait()
 
     if ret:
-        raise EnvironmentError((cmd, ret, p.stdout.read()))
+        raise EnvironmentError(ret, p.stdout.read())
 
     if not tag_file:  # Exuberant ctags defaults to ``tags`` filename.
         tag_file = os.path.join(cwd, 'tags')

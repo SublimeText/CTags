@@ -777,7 +777,8 @@ class RebuildTags(sublime_plugin.TextCommand):
                 result = ctags.build_ctags(path=path, tag_file=tag_file,
                                            recursive=recursive, cmd=command)
             except EnvironmentError as e:
-                error_message(str(e[0][2]).rstrip())  # show error message
+                str_err = ' '.join(e.strerror.decode('utf-8').splitlines())
+                error_message(str_err)  # show error message
                 return
             except IOError as e:
                 error_message(str(e).rstrip())
