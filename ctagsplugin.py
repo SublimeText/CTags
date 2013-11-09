@@ -256,17 +256,6 @@ def alternate_tags_paths(view, tags_file):
     return set(p for p in search_paths if p and os.path.exists(p))
 
 
-def reached_top_level_folders(folders, oldpath, path):
-    if oldpath == path:
-        return True
-    for folder in folders:
-        if folder[:len(path)] == path:
-            return True
-        if path == os.path.dirname(folder):
-            return True
-    return False
-
-
 def get_common_ancestor_folder(path, folders):
     """Get common ancestor for a file and a list of folders.
 
@@ -275,17 +264,19 @@ def get_common_ancestor_folder(path, folders):
 
     :returns: path to common ancestor for files and folders file
     """
+    old_path = ''  # must initialise to nothing due to lack of do...while
     path = os.path.dirname(path)
 
-    # we don't have any folders open, return the folder this file is in
-    if len(folders) == 0:
-        return path
+    while path != old_path:  # prevent continuing past root directory
+        matches = [path for x in folders if x.startswith(path)]
 
-    oldpath = ''
-    while not reached_top_level_folders(folders, oldpath, path):
-        oldpath = path
-        path = os.path.dirname(path)
-    return path
+        if matches:
+            return max(matches)  # in case of multiple matches, return closest
+
+        old_path = path
+        path = os.path.dirname(path)  # go up one level
+
+    return path  # return the root directory
 
 
 """Scrolling functions"""
