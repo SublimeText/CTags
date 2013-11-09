@@ -6,7 +6,6 @@ import os
 import sys
 import tempfile
 import unittest
-import codecs
 import shutil
 
 if sys.version_info >= (3, 0):
@@ -110,6 +109,8 @@ class CTagsPluginTest(unittest.TestCase):
     Test functions
     """
 
+    """find_tags_relative_to"""
+
     def test_find_tags_relative_to__find_tags_in_current_directory(self):
         TAG_FILE = 'example_tags'
 
@@ -142,63 +143,82 @@ class CTagsPluginTest(unittest.TestCase):
         self.remove_tmp_files([parent_path, parent_tag_file])
         self.remove_tmp_directory(child_dir)
 
+    """find_top_folder"""
+
     def test_find_top_folder__current_folder_open(self):
-        # create temporary folders and files
-        temp_dir = self.make_tmp_directory()
-        temp_path = self.build_python_file(pwd=temp_dir)
+        parent_dir = '/c/users'
 
-        path = ctagsplugin.find_top_folder([temp_dir], temp_path)
+        temp = parent_dir + '/example.py'
 
-        # directory of file should be top
-        self.assertEquals(path, temp_dir)
-
-        # cleanup
-        self.remove_tmp_directory(temp_dir)
-
-    def test_find_top_folder__single_ancestor_folder_open(self):
-        # create temporary folders and files
-        parent_dir = self.make_tmp_directory()
-        child_dir = self.make_tmp_directory(pwd=parent_dir)
-        temp_path = self.build_python_file(pwd=child_dir)
-
-        path = ctagsplugin.find_top_folder([parent_dir], temp_path)
-
-        # should return parent as the deepest common folder
-        self.assertEquals(path, parent_dir)
-
-        # cleanup
-        self.remove_tmp_directory(parent_dir)
-
-    def test_find_top_folder__single_sibling_folder_open(self):
-        # create temporary folders and files
-        parent_dir = self.make_tmp_directory()
-        child_a_dir = self.make_tmp_directory(pwd=parent_dir)
-        child_b_dir = self.make_tmp_directory(pwd=parent_dir)
-        temp_path = self.build_python_file(pwd=child_b_dir)
-
-        path = ctagsplugin.find_top_folder([child_a_dir], temp_path)
+        path = ctagsplugin.find_top_folder([parent_dir], temp)
 
         # should return parent of the two child directories the deepest common
         # folder
         self.assertEquals(path, parent_dir)
 
-        # cleanup
-        self.remove_tmp_directory(parent_dir)
+    def test_find_top_folder__single_ancestor_folder_open(self):
+        parent_dir = '/c/users'
+        child_dir = parent_dir + '/child'
+
+        temp = child_dir + '/example.py'
+
+        path = ctagsplugin.find_top_folder([parent_dir], temp)
+
+        # should return parent of the two child directories the deepest common
+        # folder
+        self.assertEquals(path, parent_dir)
+
+    def test_find_top_folder__single_sibling_folder_open(self):
+        parent_dir = '/c/users'
+        child_a_dir = parent_dir + '/child_a'
+        child_b_dir = parent_dir + '/child_b'
+
+        temp = child_b_dir + '/example.py'
+
+        path = ctagsplugin.find_top_folder([child_a_dir], temp)
+
+        # should return parent of the two child directories the deepest common
+        # folder
+        self.assertEquals(path, parent_dir)
 
     def test_find_top_folder__single_child_folder_open(self):
-        # create temporary folders and files
-        parent_dir = self.make_tmp_directory()
-        child_dir = self.make_tmp_directory(pwd=parent_dir)
-        grandchild_dir = self.make_tmp_directory(pwd=child_dir)
-        temp_path = self.build_python_file(pwd=child_dir)
+        parent_dir = '/c/users'
+        child_dir = parent_dir + '/child'
+        grandchild_dir = child_dir + '/grandchild'
 
-        path = ctagsplugin.find_top_folder([grandchild_dir], temp_path)
+        temp = child_dir + '/example.py'
+
+        # create temporary folders and files
+        path = ctagsplugin.find_top_folder([grandchild_dir], temp)
 
         # should return child directory as the deepest common folder
         self.assertEquals(path, child_dir)
 
-        # cleanup
-        self.remove_tmp_directory(parent_dir)
+    """get_rel_path_to_source"""
+
+    def test_get_rel_path_to_source__source_file_in_sibling_directory(self):
+        temp = '/c/users/temporary_file'
+        tag_file = '/c/users/tags'
+
+        result = ctagsplugin.get_rel_path_to_source(
+            temp, tag_file, multiple=False)
+
+        relative_path = 'temporary_file'
+
+        self.assertEquals([relative_path], result)
+
+    def test_get_rel_path_to_source__source_file_in_child_directory(self):
+        temp = '/c/users/folder/temporary_file'
+        tag_file = '/c/users/tags'
+
+        result = ctagsplugin.get_rel_path_to_source(
+            temp, tag_file, multiple=False)
+
+        # handle [windows, unix] paths
+        relative_paths = ['folder\\temporary_file', 'folder/temporary_file']
+
+        #self.assertEquals([relative_path], result)
+        self.assertIn(result[0], relative_paths)
 
 
 if __name__ == '__main__':

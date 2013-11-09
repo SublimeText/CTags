@@ -387,30 +387,16 @@ def prepare_for_quickpanel(formatter=format_tag_for_quickopen, path_cols=()):
 """File collection helper functions"""
 
 
-def commonfolder(m):
-    if not m:
-        return ''
-
-    s1 = min(m).split(os.path.sep)
-    s2 = max(m).split(os.path.sep)
-
-    for i, c in enumerate(s1):
-        if c != s2[i]:
-            return os.path.sep.join(s1[:i])
-
-    return os.path.sep.join(s1)
-
-
-def files_to_search(file_name, tags_file, multiple=True):
+def get_rel_path_to_source(file_name, tag_file, multiple=True):
+    """Get relative path from tag_file to source file"""
     if multiple:
         return []
 
-    tag_dir = os.path.normpath(os.path.dirname(tags_file))
-    common_prefix = commonfolder([tag_dir, file_name])
+    tag_dir = os.path.dirname(tag_file)  # get tag directory
+    common_prefix = os.path.commonprefix([tag_dir, file_name])
+    relative_path = os.path.relpath(file_name, common_prefix)
 
-    files = [file_name[len(common_prefix)+1:]]
-
-    return files
+    return [relative_path]
 
 
 def get_current_file_suffix(file_name):
@@ -676,7 +662,8 @@ class ShowSymbols(sublime_plugin.TextCommand):
         lang = args.get('type') == 'lang'
 
         if view.file_name():
-            files = files_to_search(view.file_name(), tags_file, multi)
+            files = get_rel_path_to_source(
+                view.file_name(), tags_file, multi)
 
         if lang:
             suffix = get_current_file_suffix(view.file_name())
