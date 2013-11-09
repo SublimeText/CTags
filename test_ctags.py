@@ -2,7 +2,6 @@
 
 """Unit tests for ctags.py"""
 
-
 import os
 import sys
 import tempfile
@@ -188,7 +187,7 @@ class CTagsTest(unittest.TestCase):
                        ':$/;"\tf\r\n'.format(filename))
             finally:
                 output.close()
-                os.remove(path)  # Clean up
+                os.remove(path)  # clean up
 
     def test_build_ctags__custom_tag_file(self):
         """Test execution of ctags using a custom tag file"""
@@ -205,7 +204,7 @@ class CTagsTest(unittest.TestCase):
                        ':$/;"\tf\r\n'.format(filename))
             finally:
                 output.close()
-                os.remove(path)  # Clean up
+                os.remove(path)  # clean up
 
     """post_process_tag"""
 

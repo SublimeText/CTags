@@ -14,9 +14,18 @@ from itertools import chain
 from operator import itemgetter as iget
 from collections import defaultdict
 
-import sublime
-import sublime_plugin
-from sublime import status_message, error_message
+try:
+    import sublime
+    import sublime_plugin
+    from sublime import status_message, error_message
+except ImportError:  # running tests
+    import sys
+
+    from tests.sublime_fake import sublime
+    from tests.sublime_fake import sublime_plugin
+
+    sys.modules['sublime'] = sublime
+    sys.modules['sublime_plugin'] = sublime_plugin
 
 if sublime.version().startswith('2'):
     import ctags
@@ -194,14 +203,15 @@ def on_load(path=None, window=None, encoded_row_col=True, begin_edit=False):
     return wrapper
 
 
-def find_tags_relative_to(file_name):
+def find_tags_relative_to(file_name, tag_file):
     if not file_name:
         return None
 
     dirs = os.path.dirname(os.path.normpath(file_name)).split(os.path.sep)
 
     while dirs:
-        joined = os.path.sep.join(dirs + [setting('tag_file')])
+        joined = os.path.sep.join(dirs + [tag_file])
+
         if os.path.exists(joined) and not os.path.isdir(joined):
             return joined
         else:
@@ -257,8 +267,7 @@ def reached_top_level_folders(folders, oldpath, path):
     return False
 
 
-def find_top_folder(view, filename):
-    folders = view.window().folders()
+def find_top_folder(folders, filename):
     path = os.path.dirname(filename)
 
     # we don't have any folders open, return the folder this file is in
@@ -392,27 +401,22 @@ def commonfolder(m):
     return os.path.sep.join(s1)
 
 
-def files_to_search(view, tags_file, multiple=True):
+def files_to_search(file_name, tags_file, multiple=True):
     if multiple:
         return []
 
-    fn = view.file_name()
-    if not fn:
-        return
-
     tag_dir = os.path.normpath(os.path.dirname(tags_file))
+    common_prefix = commonfolder([tag_dir, file_name])
 
-    common_prefix = commonfolder([tag_dir, fn])
-    files = [fn[len(common_prefix)+1:]]
+    files = [file_name[len(common_prefix)+1:]]
 
     return files
 
 
-def get_current_file_suffix(view):
-    current = view.file_name()
-    fileName, fileExtension = os.path.splitext(current)
+def get_current_file_suffix(file_name):
+    file_prefix, file_suffix = os.path.splitext(file_name)
 
-    return fileExtension
+    return file_suffix
 
 
 """
@@ -527,7 +531,8 @@ def ctags_goto_command(jump_directly=False):
     def wrapper(f):
         def command(self, edit, **args):
             view = self.view
-            tags_file = find_tags_relative_to(view.file_name())
+            tags_file = find_tags_relative_to(
+                view.file_name(), setting('tag_file'))
 
             if not tags_file:
                 status_message('Can\'t find any relevant tags file')
@@ -635,7 +640,8 @@ class SearchForDefinition(sublime_plugin.WindowCommand):
 
     def on_done(self, symbol):
         view = self.window.active_view()
-        tags_file = find_tags_relative_to(view.file_name())
+        tags_file = find_tags_relative_to(
+            view.file_name(), setting('tag_file'))
 
         if not tags_file:
             status_message('Can\'t find any relevant tags file')
@@ -668,17 +674,19 @@ class ShowSymbols(sublime_plugin.TextCommand):
             return
         multi = args.get('type') == 'multi'
         lang = args.get('type') == 'lang'
-        files = files_to_search(view, tags_file, multi)
+
+        if view.file_name():
+            files = files_to_search(view.file_name(), tags_file, multi)
 
         if lang:
-            suffix = get_current_file_suffix(view)
+            suffix = get_current_file_suffix(view.file_name())
             key = suffix
         else:
             key = ','.join(files)
 
         tags_file = tags_file + '_sorted_by_file'
 
-        base_path = find_top_folder(view, view.file_name())
+        base_path = find_top_folder(view.window().folders(), view.file_name())
 
         def get_tags():
             loaded = TagFile(tags_file, FILENAME)
@@ -859,7 +867,8 @@ class TestCtags(sublime_plugin.TextCommand):
             self.routine = None
 
     def co_routine(self, view):
-        tag_file = find_tags_relative_to(view.file_name())
+        tag_file = find_tags_relative_to(
+            view.file_name(), setting('tag_file'))
 
         with codecs.open(tag_file, encoding='utf-8') as tf:
             tags = parse_tag_lines(tf, tag_class=Tag)
