@@ -506,7 +506,7 @@ class JumpBackListener(sublime_plugin.EventListener):
 """CTags commands"""
 
 
-def show_tag_panel(view, result, jump_directly_if_one):
+def show_tag_panel(view, result, jump_directly):
     if result not in (True, False, None):
         args, display = result
         if not args:
@@ -517,13 +517,13 @@ def show_tag_panel(view, result, jump_directly_if_one):
                 JumpBack.append(view)
                 scroll_to_tag(view, args[i])
 
-        if jump_directly_if_one and len(args) == 1:
+        if jump_directly and len(args) == 1:
             on_select(0)
         else:
             view.window().show_quick_panel(display, on_select)
 
 
-def ctags_goto_command(jump_directly_if_one=False):
+def ctags_goto_command(jump_directly=False):
     def wrapper(f):
         def command(self, edit, **args):
             view = self.view
@@ -534,7 +534,7 @@ def ctags_goto_command(jump_directly_if_one=False):
                 return
 
             result = f(self, self.view, args, tags_file)
-            show_tag_panel(self.view, result, jump_directly_if_one)
+            show_tag_panel(self.view, result, jump_directly)
 
         return command
     return wrapper
@@ -613,7 +613,7 @@ class NavigateToDefinition(sublime_plugin.TextCommand):
     def is_visible(self):
         return setting('show_context_menus')
 
-    @ctags_goto_command(jump_directly_if_one=True)
+    @ctags_goto_command(jump_directly=True)
     def run(self, view, args, tags_file):
         region = view.sel()[0]
         if region.begin() == region.end():  # point
