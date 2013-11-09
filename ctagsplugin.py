@@ -245,10 +245,12 @@ def get_alternate_tags_paths(view, tags_file):
     tags_paths = '%s_search_paths' % tags_file
     search_paths = [tags_file]
 
+    # read and add additional tag file paths from file
     if os.path.exists(tags_paths):
         search_paths.extend(
             codecs.open(tags_paths, encoding='utf-8').read().split('\n'))
 
+    # read and add additional tag file paths from 'extra_tag_paths' setting
     try:
         for (selector, platform), path in setting('extra_tag_paths'):
             if view.match_selector(view.sel()[0].begin(), selector):
@@ -263,7 +265,7 @@ def get_alternate_tags_paths(view, tags_file):
                 os.path.normpath(
                     os.path.join(os.path.dirname(tags_file), extrafile)))
 
-    # ok, didn't found the tags file under the viewed file.
+    # ok, didn't find the tags file under the viewed file.
     # let's look in the currently opened folder
     for folder in view.window().folders():
         search_paths.append(
@@ -464,33 +466,59 @@ def different_mod_area(f1, f2, r1, r2):
 class JumpBack(sublime_plugin.WindowCommand):
     """Provide ``jump_back`` command.
 
-    Command "jumps back" to a previous point in the code - either a
-    modification or the previous code point before a tag navigated or "jumped"
-    to.
+    Command "jumps back" to the previous code point before a tag was navigated
+    or "jumped" to.
 
     This is functionality supported natively by ST3 but not by ST2. It is
     therefore included for legacy purposes.
     """
-    def is_enabled(self, to=None):
-        if to == 'last_modification':
-            return len(self.mods) > 1
+    last = []
+
+    def is_enabled(self):
         return len(self.last) > 0
 
-    def is_visible(self, to=None):
+    def is_visible(self):
         return setting('show_context_menus')
 
-    last = []
-    mods = []
-
-    def run(self, to=None):
-        if to == 'last_modification' and self.mods:
-            return self.lastModifications()
-
+    def run(self):
         if not JumpBack.last:
             return status_message('JumpBack buffer empty')
 
         f, sel = JumpBack.last.pop()
         self.jump(f, eval(sel))
+
+    def jump(self, fn, sel):
+        @on_load(fn, begin_edit=True)
+        def and_then(view):
+            select(view, sublime.Region(*sel))
+
+    @classmethod
+    def append(cls, view):
+        """Append a file name to a a list"""
+        fn = view.file_name()
+        if fn:
+            cls.last.append((fn, repr(view.sel()[0])))
+
+
+class JumpBackToLastModification(sublime_plugin.WindowCommand):
+    """Provide ``jump_back_to_last_modification`` command.
+
+    Command "jumps back" to a previous modification point
+
+    This is functionality supported natively by ST3 but not by ST2. It is
+    therefore included for legacy purposes.
+    """
+    mods = []
+
+    def is_enabled(self):
+        return len(self.mods) > 1
+
+    def is_visible(self):
+        return setting('show_context_menus')
+
+    def run(self):
+        if self.mods:
+            return self.lastModifications()
 
     def lastModifications(self):
         # c)urrent v)iew, r)egion and f)ile
@@ -499,7 +527,7 @@ class JumpBack(sublime_plugin.WindowCommand):
         cf = cv.file_name()
 
         # very latest, s)tarting modification
-        sf, sr = JumpBack.mods.pop(0)
+        sf, sr = JumpBackToLastModification.mods.pop(0)
 
         if sf is None:
             return
@@ -510,18 +538,18 @@ class JumpBack(sublime_plugin.WindowCommand):
         # default j)ump f)ile and r)egion
         jf, jr = sf, sr
 
-        if JumpBack.mods:
-            for i, (f, r) in enumerate(JumpBack.mods):
+        if JumpBackToLastModification.mods:
+            for i, (f, r) in enumerate(JumpBackToLastModification.mods):
                 region = eval(r)
                 if different_mod_area(sf, f, sr, region):
                     break
 
-            del JumpBack.mods[:i]
+            del JumpBackToLastModification.mods[:i]
             if not in_different_mod_area:
                 jf, jr = f, region
 
-        if in_different_mod_area or not JumpBack.mods:
-            JumpBack.mods.insert(0, (jf, repr(jr)))
+        if in_different_mod_area or not JumpBackToLastModification.mods:
+            JumpBackToLastModification.mods.insert(0, (jf, repr(jr)))
 
         self.jump(jf, jr)
 
@@ -529,12 +557,6 @@ class JumpBack(sublime_plugin.WindowCommand):
         @on_load(fn, begin_edit=True)
         def and_then(view):
             select(view, sublime.Region(*sel))
-
-    @classmethod
-    def append(cls, view):
-        fn = view.file_name()
-        if fn:
-            cls.last.append((fn, repr(view.sel()[0])))
 
 
 class JumpBackListener(sublime_plugin.EventListener):
@@ -550,8 +572,9 @@ class JumpBackListener(sublime_plugin.EventListener):
     def on_modified(self, view):
         sel = view.sel()
         if len(sel):
-            JumpBack.mods.insert(0, (view.file_name(), repr(sel[0])))
-            del JumpBack.mods[100:]
+            JumpBackToLastModification.mods.insert(
+                0, (view.file_name(), repr(sel[0])))
+            del JumpBackToLastModification.mods[100:]
 
 
 """CTags commands"""
@@ -830,7 +853,7 @@ class RebuildTags(sublime_plugin.TextCommand):
             status_message('Cannot build CTags: No file or folder open.')
             return
 
-        command = setting('command', setting('ctags_command'))
+        command = setting('command')
         recursive = setting('recursive')
         tag_file = setting('tag_file')
 
@@ -865,16 +888,20 @@ class RebuildTags(sublime_plugin.TextCommand):
 
         for path in paths:
             tags_building(path)
+
             try:
                 result = ctags.build_ctags(path=path, tag_file=tag_file,
                                            recursive=recursive, cmd=command)
             except EnvironmentError as e:
-                str_err = ' '.join(e.strerror.decode('utf-8').splitlines())
+                if not isinstance(e.strerror, str):
+                    str_err = ' '.join(e.strerror.decode('utf-8').splitlines())
+
                 error_message(str_err)  # show error message
                 return
             except IOError as e:
                 error_message(str(e).rstrip())
                 return
+
             tags_built(result)
 
         GetAllCTagsList.ctags_list = []  # clear the cached ctags list
