@@ -15,64 +15,12 @@ else:
 
 
 class CTagsTest(unittest.TestCase):
-    # def test_all_search_strings_work(self):
-    #     os.chdir(os.path.dirname(__file__))
-    #     tags = parse_tag_file('tags')
-
-    #     failures = []
-
-    #     for symbol, tag_list in tags.iteritems():
-    #         for tag in (Tag(t) for t in tag_list):
-    #             if not tag.ex_command.isdigit():
-    #                 with open(tag.filename, 'r+') as fh:
-    #                     mapped = mmap.mmap(fh.fileno(), 0)
-    #                     if not mapped.find(tag.ex_command):
-    #                         failures += [tag.ex_command]
-
-    #     for f in failures:
-    #         print f
-
-    #     self.assertEqual(len(failures), 0, 'update tag files and try again')
-    '''
-    def test_startswith(self):
-        f = TagFile('tags', SYMBOL, MATCHES_STARTWITH)
-        assert len(list(f.get('co'))) == 3
-
-    def test_tags_files(self):
-        tests = [
-            (r'tags', SYMBOL),
-            (r'sorted_by_file_test_tags', FILENAME),
-        ]
-
-        fails = []
-
-        for tags_file, column_index in tests:
-            tag_file = TagFile(tags_file, column_index)
-
-            with codecs.open(tags_file, 'r') as fh:
-                latest = ''
-                lines = []
-
-                for l in fh:
-                    symbol = l.split('\t')[column_index]
-                    if symbol != latest:
-                        if latest:
-                            tags = list(tag_file.get(latest))
-                            if not lines == tags:
-                                fails.append((tags_file, lines, tags))
-                            lines = []
-                        latest = symbol
-                    lines += [l]
-
-        self.assertEquals(fails, [])
-    '''
-
     """
     Helper functions
     """
 
     def build_python_file(self):
-        """Build a simple Python "program" that ctags can use
+        """Build a simple Python "program" that ctags can use.
 
         :Returns:
         Path to a constructed, valid Java source file
@@ -94,7 +42,7 @@ class CTagsTest(unittest.TestCase):
         return path
 
     def build_java_file(self):
-        """Build a slightly detailed Java "program" that ctags can use
+        """Build a slightly detailed Java "program" that ctags can use.
 
         Build a slightly more detailed program that 'build_python_file' does,
         in order to test more advanced functionality of ctags.py, or ctags.exe
@@ -132,7 +80,7 @@ class CTagsTest(unittest.TestCase):
     """
 
     def setUp(self):
-        """Set up test environment
+        """Set up test environment.
 
         Ensures the ``ctags_not_on_path`` test is run first, and all other
         tests are skipped if this fails. If ctags is not installed, no test
@@ -209,7 +157,7 @@ class CTagsTest(unittest.TestCase):
     """post_process_tag"""
 
     def test_post_process_tag__line_numbers(self):
-        """Test ``post_process_tag`` with a line number ``excmd`` variable
+        """Test ``post_process_tag`` with a line number ``excmd`` variable.
 
         Test function with an sample tag from a Python file. This in turn tests
         the supporting functions.
@@ -234,7 +182,7 @@ class CTagsTest(unittest.TestCase):
         self.assertEquals(result, expected_output)
 
     def test_post_process_tag__regex_no_fields(self):
-        """Test ``post_process_tag`` with a regex ``excmd`` variable
+        """Test ``post_process_tag`` with a regex ``excmd`` variable.
 
         Test function with an sample tag from a Python file. This in turn tests
         the supporting functions.
@@ -259,7 +207,7 @@ class CTagsTest(unittest.TestCase):
         self.assertEquals(result, expected_output)
 
     def test_post_process_tag__fields(self):
-        """Test ``post_process_tag`` with a number of ``field`` variables
+        """Test ``post_process_tag`` with a number of ``field`` variables.
 
         Test function with an sample tag from a Java file. This in turn tests
         the supporting functions.
