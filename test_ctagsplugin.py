@@ -3,15 +3,20 @@
 """Unit tests for ctagsplugin.py"""
 
 import os
-import sys
 import tempfile
 import unittest
 import shutil
 
-if sys.version_info >= (3, 0):
-    from . import ctagsplugin
-    from . import ctags
-else:
+try:
+    import sublime
+
+    if sublime.version == '3':
+        from . import ctagsplugin
+        from . import ctags
+    else:
+        import ctagsplugin
+        import ctags
+except:
     import ctagsplugin
     import ctags
 
@@ -31,9 +36,10 @@ class CTagsPluginTest(unittest.TestCase):
         return tmp_dir
 
     def build_python_file(self, pwd=None):
-        """Build a simple Python "program" that ctags can use
+        """Build a simple Python "program" that ctags can use.
 
-        :returns: Path to a constructed, valid Java source file
+        :Returns:
+        Path to a constructed, valid Java source file
         """
         path = ''
 
@@ -43,22 +49,23 @@ class CTagsPluginTest(unittest.TestCase):
                 delete=False, suffix='.py', dir=pwd) as temp:
             try:
                 path = temp.name  # store name for later use
-                temp.writelines([  # write a temp Python (duh!) "Hello, world"
-                    'def my_definition():\n',
-                    '\toutput = "Hello, world!"\n',
-                    '\tprint(output)\n'])
+                temp.writelines([
+                    b'def my_definition():\n',
+                    b'\toutput = "Hello, world!"\n',
+                    b'\tprint(output)\n'])
             finally:
                 temp.close()
 
         return path
 
     def build_java_file(self, pwd=None):
-        """Build a slightly detailed Java "program" that ctags can use
+        """Build a slightly detailed Java "program" that ctags can use.
 
         Build a slightly more detailed program that 'build_python_file' does,
         in order to test more advanced functionality of ctags.py, or ctags.exe
 
-        :returns: Path to a constructed, valid Java source file
+        :Returns:
+        Path to a constructed, valid Java source file
         """
         path = ''
 
@@ -68,19 +75,19 @@ class CTagsPluginTest(unittest.TestCase):
                 delete=False, suffix='.java', dir=pwd) as temp:
             try:
                 path = temp.name  # store name for later use
-                temp.writelines([  # write a temp Java "Hello, world"
-                    'public class DemoClass {\n',
-                    '\tpublic static void main(String args[]) {\n',
-                    '\t\tSystem.out.println("Hello, World");\n',
-                    '\n',
-                    '\t\tDemoClass demo = new DemoClass();\n',
-                    '\t\tSystem.out.printf("Sum %d\n", demo.getSum(5,6));\n',
-                    '\t}\n',
-                    '\n',
-                    '\tprivate int getSum(int a, int b) {\n',
-                    '\t\treturn (a + b);\n',
-                    '\t}\n',
-                    '}\n'])
+                temp.writelines([
+                    b'public class DemoClass {\n',
+                    b'\tpublic static void main(String args[]) {\n',
+                    b'\t\tSystem.out.println("Hello, World");\n',
+                    b'\n',
+                    b'\t\tDemoClass demo = new DemoClass();\n',
+                    b'\t\tSystem.out.printf("Sum %d\n", demo.getSum(5,6));\n',
+                    b'\t}\n',
+                    b'\n',
+                    b'\tprivate int getSum(int a, int b) {\n',
+                    b'\t\treturn (a + b);\n',
+                    b'\t}\n',
+                    b'}\n'])
             finally:
                 temp.close()
 
@@ -118,7 +125,7 @@ class CTagsPluginTest(unittest.TestCase):
         tag_file = ctags.build_ctags(path=current_path, tag_file=TAG_FILE)
 
         # should find tag file in current directory
-        self.assertEquals(
+        self.assertEqual(
             ctagsplugin.find_tags_relative_to(current_path, TAG_FILE),
             tag_file)
 
@@ -135,7 +142,7 @@ class CTagsPluginTest(unittest.TestCase):
         child_path = self.build_python_file(pwd=child_dir)
 
         # should find tag file in parent directory
-        self.assertEquals(
+        self.assertEqual(
             ctagsplugin.find_tags_relative_to(child_path, TAG_FILE),
             parent_tag_file)
 
@@ -154,7 +161,7 @@ class CTagsPluginTest(unittest.TestCase):
 
         # should return parent of the two child directories the deepest common
         # folder
-        self.assertEquals(path, parent_dir)
+        self.assertEqual(path, parent_dir)
 
     def test_get_common_ancestor_folder__single_ancestor_folder_open(self):
         parent_dir = '/c/users'
@@ -166,7 +173,7 @@ class CTagsPluginTest(unittest.TestCase):
 
         # should return parent of the two child directories the deepest common
         # folder
-        self.assertEquals(path, parent_dir)
+        self.assertEqual(path, parent_dir)
 
     def test_get_common_ancestor_folder__single_sibling_folder_open(self):
         parent_dir = '/c/users'
@@ -179,7 +186,7 @@ class CTagsPluginTest(unittest.TestCase):
 
         # should return parent of the two child directories the deepest common
         # folder
-        self.assertEquals(path, parent_dir)
+        self.assertEqual(path, parent_dir)
 
     def test_get_common_ancestor_folder__single_child_folder_open(self):
         parent_dir = '/c/users'
@@ -192,7 +199,7 @@ class CTagsPluginTest(unittest.TestCase):
         path = ctagsplugin.get_common_ancestor_folder(temp, [grandchild_dir])
 
         # should return child directory as the deepest common folder
-        self.assertEquals(path, child_dir)
+        self.assertEqual(path, child_dir)
 
     """get_rel_path_to_source"""
 
@@ -205,7 +212,7 @@ class CTagsPluginTest(unittest.TestCase):
 
         relative_path = 'temporary_file'
 
-        self.assertEquals([relative_path], result)
+        self.assertEqual([relative_path], result)
 
     def test_get_rel_path_to_source__source_file_in_child_directory(self):
         temp = '/c/users/folder/temporary_file'
