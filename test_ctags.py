@@ -3,14 +3,18 @@
 """Unit tests for ctags.py"""
 
 import os
-import sys
 import tempfile
 import unittest
 import codecs
 
-if sys.version_info >= (3, 0):
-    from . import ctags
-else:
+try:
+    import sublime
+
+    if sublime.version == '3':
+        from . import ctags
+    else:
+        import ctags
+except:
     import ctags
 
 
@@ -32,10 +36,10 @@ class CTagsTest(unittest.TestCase):
         with tempfile.NamedTemporaryFile(delete=False, suffix='.py') as temp:
             try:
                 path = temp.name  # store name for later use
-                temp.writelines([  # write a temp Python (duh!) "Hello, world"
-                    'def my_definition():\n',
-                    '\toutput = "Hello, world!"\n',
-                    '\tprint(output)\n'])
+                temp.writelines([
+                    b'def my_definition():\n',
+                    b'\toutput = "Hello, world!"\n',
+                    b'\tprint(output)\n'])
             finally:
                 temp.close()
 
@@ -57,19 +61,19 @@ class CTagsTest(unittest.TestCase):
         with tempfile.NamedTemporaryFile(delete=False, suffix='.java') as temp:
             try:
                 path = temp.name  # store name for later use
-                temp.writelines([  # write a temp Java "Hello, world"
-                    'public class DemoClass {\n',
-                    '\tpublic static void main(String args[]) {\n',
-                    '\t\tSystem.out.println("Hello, World");\n',
-                    '\n',
-                    '\t\tDemoClass demo = new DemoClass();\n',
-                    '\t\tSystem.out.printf("Sum %d\n", demo.getSum(5,6));\n',
-                    '\t}\n',
-                    '\n',
-                    '\tprivate int getSum(int a, int b) {\n',
-                    '\t\treturn (a + b);\n',
-                    '\t}\n',
-                    '}\n'])
+                temp.writelines([
+                    b'public class DemoClass {\n',
+                    b'\tpublic static void main(String args[]) {\n',
+                    b'\t\tSystem.out.println("Hello, World");\n',
+                    b'\n',
+                    b'\t\tDemoClass demo = new DemoClass();\n',
+                    b'\t\tSystem.out.printf("Sum %d\n", demo.getSum(5,6));\n',
+                    b'\t}\n',
+                    b'\n',
+                    b'\tprivate int getSum(int a, int b) {\n',
+                    b'\t\treturn (a + b);\n',
+                    b'\t}\n',
+                    b'}\n'])
             finally:
                 temp.close()
 
@@ -130,12 +134,14 @@ class CTagsTest(unittest.TestCase):
             try:
                 content = output.readlines()
                 filename = os.path.basename(path)
-                assert(content[-1] ==
-                       'my_definition\t{0}\t/^def my_definition()'
-                       ':$/;"\tf\r\n'.format(filename))
+                self.assertEqual(
+                    content[-1],
+                    'my_definition\t{0}\t/^def my_definition()'
+                    ':$/;"\tf\r\n'.format(filename))
             finally:
                 output.close()
                 os.remove(path)  # clean up
+                os.remove(tag_file)
 
     def test_build_ctags__custom_tag_file(self):
         """Test execution of ctags using a custom tag file"""
@@ -147,12 +153,14 @@ class CTagsTest(unittest.TestCase):
             try:
                 content = output.readlines()
                 filename = os.path.basename(path)
-                assert(content[-1] ==
-                       'my_definition\t{0}\t/^def my_definition()'
-                       ':$/;"\tf\r\n'.format(filename))
+                self.assertEqual(
+                    content[-1],
+                    'my_definition\t{0}\t/^def my_definition()'
+                    ':$/;"\tf\r\n'.format(filename))
             finally:
                 output.close()
                 os.remove(path)  # clean up
+                os.remove(tag_file)
 
     """post_process_tag"""
 
@@ -179,7 +187,7 @@ class CTagsTest(unittest.TestCase):
 
         result = ctags.post_process_tag(tag)
 
-        self.assertEquals(result, expected_output)
+        self.assertEqual(result, expected_output)
 
     def test_post_process_tag__regex_no_fields(self):
         """Test ``post_process_tag`` with a regex ``excmd`` variable.
@@ -204,7 +212,7 @@ class CTagsTest(unittest.TestCase):
 
         result = ctags.post_process_tag(tag)
 
-        self.assertEquals(result, expected_output)
+        self.assertEqual(result, expected_output)
 
     def test_post_process_tag__fields(self):
         """Test ``post_process_tag`` with a number of ``field`` variables.
@@ -232,7 +240,7 @@ class CTagsTest(unittest.TestCase):
 
         result = ctags.post_process_tag(tag)
 
-        self.assertEquals(result, expected_output)
+        self.assertEqual(result, expected_output)
 
 
 if __name__ == '__main__':
