@@ -36,6 +36,7 @@ To get a proper copy of ctags, use one of the following options:
 *Make sure that Sublime Text is using the right version of CTags:*
 * If 'which ctags' doesn't point at ctags in '/usr/local/bin', make sure you add '/usr/local/bin' to your PATH ahead of the folder 'which ctags' reported.
 ** Add or modify the 'export PATH=...' (e.g. in ~/.profile) to make the change permanent
+* If Sublime Text is still running the wrong version of ctags and you have Xcode / Apple Developer Tools installed, you will need to set {{{"ctags_command"   :  "/usr/local/bin/ctags -R -f .tags"}}} in your Sublime Text preferences (see "Other Settings" below)
 
 === Linux ===
 
