@@ -461,6 +461,12 @@ class TagFile(object):
 
         :returns: matching tags
         """
+        if not tags:
+            while self.mapped.tell() < self.mapped.size():
+                result = Tag(self.mapped.readline().strip(), self.column)
+                yield(result)
+            return
+
         for key in tags:
             leftIndex = bisect.bisect_left(self, key)
             if exact_match:

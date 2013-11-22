@@ -768,6 +768,7 @@ class ShowSymbols(sublime_plugin.TextCommand):
     def run(self, view, args, tags_file):
         if not tags_file:
             return
+
         multi = args.get('type') == 'multi'
         lang = args.get('type') == 'lang'
 
@@ -782,7 +783,6 @@ class ShowSymbols(sublime_plugin.TextCommand):
             key = ','.join(files)
 
         tags_file = tags_file + '_sorted_by_file'
-
         base_path = get_common_ancestor_folder(
             view.file_name(), view.window().folders())
 
@@ -791,6 +791,9 @@ class ShowSymbols(sublime_plugin.TextCommand):
                 if lang:
                     return tagfile.get_tags_dict_by_suffix(
                         suffix, filters=compile_filters(view))
+                elif multi:
+                    return tagfile.get_tags_dict(
+                        filters=compile_filters(view))
                 else:
                     return tagfile.get_tags_dict(
                         *files, filters=compile_filters(view))
@@ -807,14 +810,15 @@ class ShowSymbols(sublime_plugin.TextCommand):
 
         if not tags:
             if multi:
-                view.run_command('show_symbols', {'type': 'multi'})
+                sublime.status_message(
+                    'No symbols found **FOR CURRENT FOLDERS**; Try Rebuild?')
             else:
                 sublime.status_message(
                     'No symbols found **FOR CURRENT FILE**; Try Rebuild?')
 
         path_cols = (0, ) if len(files) > 1 or multi else ()
-        formatting = functools.partial(format_tag_for_quickopen,
-                                       show_path=bool(path_cols))
+        formatting = functools.partial(
+            format_tag_for_quickopen, show_path=bool(path_cols))
 
         @prepare_for_quickpanel(formatting)
         def sorted_tags():
