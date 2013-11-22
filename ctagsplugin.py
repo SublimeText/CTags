@@ -29,13 +29,13 @@ except ImportError:  # running tests
 
 if sublime.version().startswith('2'):
     import ctags
-    from ctags import (FILENAME, parse_tag_lines, PATH_ORDER, SYMBOL, Tag,
-                       TagFile)
+    from ctags import (FILENAME, parse_tag_lines, PATH_ORDER, SYMBOL,
+                       TagElements, TagFile)
     from helpers.edit import Edit
 else:  # safe to assume if not ST2 then ST3
     from CTags import ctags
     from CTags.ctags import (FILENAME, parse_tag_lines, PATH_ORDER, SYMBOL,
-                             Tag, TagFile)
+                             TagElements, TagFile)
     from CTags.helpers.edit import Edit
 
 """
@@ -379,7 +379,7 @@ def format_tag_for_quickopen(tag, show_path=True):
     :returns: formatted tag
     """
     format = []
-    tag = ctags.Tag(tag)
+    tag = ctags.TagElements(tag)
     f = ''
 
     for field in getattr(tag, 'field_keys', []):
@@ -659,8 +659,9 @@ class JumpToDefinition:
     def run(symbol, view, tags_file):
         tags = {}
         for tags_file in get_alternate_tags_paths(view, tags_file):
-            tags = (TagFile(tags_file, SYMBOL)
-                    .get_tags_dict(symbol, filters=compile_filters(view)))
+            with TagFile(tags_file, SYMBOL) as tagfile:
+                tags = tagfile.get_tags_dict(
+                    symbol, filters=compile_filters(view))
             if tags:
                 break
 
@@ -786,13 +787,13 @@ class ShowSymbols(sublime_plugin.TextCommand):
             view.file_name(), view.window().folders())
 
         def get_tags():
-            loaded = TagFile(tags_file, FILENAME)
-            if lang:
-                return loaded.get_tags_dict_by_suffix(
-                    suffix, filters=compile_filters(view))
-            else:
-                return loaded.get_tags_dict(
-                    *files, filters=compile_filters(view))
+            with TagFile(tags_file, FILENAME) as tagfile:
+                if lang:
+                    return tagfile.get_tags_dict_by_suffix(
+                        suffix, filters=compile_filters(view))
+                else:
+                    return tagfile.get_tags_dict(
+                        *files, filters=compile_filters(view))
 
         if key in tags_cache[base_path]:
             print('loading symbols from cache')
@@ -982,7 +983,7 @@ class TestCtags(sublime_plugin.TextCommand):
             view.file_name(), setting('tag_file'))
 
         with codecs.open(tag_file, encoding='utf-8') as tf:
-            tags = parse_tag_lines(tf, tag_class=Tag)
+            tags = parse_tag_lines(tf, tag_class=TagElements)
 
         print('Starting Test')
 

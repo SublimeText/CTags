@@ -45,11 +45,6 @@ Functions
 """Helper functions"""
 
 
-def cmp(a, b):
-    """Compare two strings, and return a numerical value of comparison"""
-    return (str(a) > str(b)) - (str(a) < str(b))
-
-
 def splits(string, *splitters):
     """Split a string on a number of splitters.
 
@@ -90,6 +85,10 @@ def parse_tag_lines(lines, order_by='symbol', tag_class=None, filters=[]):
 
     for line in lines:
         skip = False
+
+        if isinstance(line, Tag):  # handle both text and tag objects
+            line = line.line
+
         search_obj = TAGS_RE.search(line)
 
         if not search_obj:
@@ -320,20 +319,22 @@ def resort_ctags(tag_file):
     """Rearrange ctags file for speed.
 
     Resorts (re-sort) a CTag file in order of file. This improves searching
-    performance. The algorithm works as so:
+    performance when searching tags by file as a binary search can be used.
 
-    For each line in the tag file
-        Read the file name (``file_name``) the tag belongs to
-        If not exists, create an empty array and store in the dictionary with
-            the file name as key
-        Save the line to this list
-    Create a new ``[tagfile]_sorted_by_file`` file
-    For each key in the sorted dictionary
-        For each line in the list indicated by the key
-            Split the line on tab character
-            Remove the prepending ``.\`` from the ``file_name`` part of the
-                tag
-            Join the line again and write the ``sorted_by_file`` file
+    The algorithm works as so:
+
+        For each line in the tag file
+            Read the file name (``file_name``) the tag belongs to
+            If not exists, create an empty array and store in the
+                dictionary with the file name as key
+            Save the line to this list
+        Create a new ``[tagfile]_sorted_by_file`` file
+        For each key in the sorted dictionary
+            For each line in the list indicated by the key
+                Split the line on tab character
+                Remove the prepending ``.\`` from the ``file_name`` part of
+                    the                   tag
+                Join the line again and write the ``sorted_by_file`` file
 
     :param tag_file: The location of the tagfile to be sorted
 
@@ -358,12 +359,33 @@ Models
 """
 
 
-class Tag(dict):
-    """Model an individual tag entry"""
+class TagElements(dict):
+    """Model the entries of a tag file"""
     def __init__(self, *args, **kw):
         """Initialise Tag object"""
         dict.__init__(self, *args, **kw)
         self.__dict__ = self
+
+
+class Tag(object):
+    """Model a tag.
+
+    This exists mainly to enable different types of sorting.
+    """
+    def __init__(self, line, column=0):
+        if isinstance(line, bytes):  # python 3 compatability
+            line = line.decode('utf-8', 'replace')
+        self.line = line
+        self.column = column
+
+    def __lt__(self, other):
+        return self.line.split('\t')[self.column] < other
+
+    def __gt__(self, other):
+        return self.line.split('\t')[self.column] > other
+
+    def __getitem__(self, index):
+        return self.line.split('\t')[index]
 
 
 class TagFile(object):
@@ -373,107 +395,119 @@ class TagFile(object):
     size of some tag files (> 100 MB files are possible). Instead, it acts
     as a 'wrapper' of sorts around a file, providing functionality like
     searching for a retrieving tags, finding tags based on given criteria
-    (prefix, suffix, exact), getting the directory of a tag and so forth
+    (prefix, suffix, exact), getting the directory of a tag and so forth.
     """
-    def __init__(self, p, column, match_as=None):
-        """Initialise TagFile object"""
-        self.p = p
-        self.column = column
-        if isinstance(match_as, str):
-            match_as = getattr(self, match_as)
+    def __init__(self, path, column):
+        """Initialise object.
 
-        self.match_as = match_as or self.exact_matches
+        The file indicated by ``path`` must be sorted by values in the column
+        indicated by ``column``.
+
+        :param path: path to a tag file
+        :param column: column to search on
+
+        :returns: None
+        """
+        self.path = path
+        self.column = column
 
     def __getitem__(self, index):
-        """Provide sequence-type interface to tag file.
+        """Provide sequence-type interface to tag file."""
+        self.mapped.seek(index)
+        result = self.mapped.readline()
 
-        Allow tag file to be read like a list, i.e. ``for item in self:`` or
-        ``self[key]``
-        """
-        self.fh.seek(index)
-        self.fh.readline()
-        try:
-            line = self.fh.readline().decode('utf-8', 'replace')
-            return line.split('\t')[self.column]
-        # Ask forgiveness not permission
-        except IndexError:
-            return ''
+        if index != 0:  # handle first line
+            result = self.mapped.readline()  # get a complete line
+
+        result = result.strip()
+
+        return Tag(result, self.column)
 
     def __len__(self):
         """Get size of tag file in bytes"""
-        return os.stat(self.p).st_size
+        return len(self.mapped)
+
+    def __enter__(self):
+        """Open file on enter when using ``with`` keyword"""
+        self.open()
+        return self
+
+    def __exit__(self, type, value, traceback):
+        """Close file on exit when using ``with`` keyword"""
+        self.close()
 
     @property
     def dir(self):
         """Get directory of tag file"""
-        return os.path.dirname(self.p)
+        return os.path.dirname(self.path)
 
-    def get(self, *tags):
-        """Get a tag from the tag file"""
-        with codecs.open(self.p, 'r+', encoding='utf-8') as fh:
-            if tags:
-                self.fh = mmap.mmap(fh.fileno(), 0)
+    def open(self):
+        """Open file"""
+        self.file_o = codecs.open(self.path, 'r+b', encoding='ascii')
+        self.mapped = mmap.mmap(self.file_o.fileno(), 0,
+                                access=mmap.ACCESS_READ)
 
-                for tag in (t.encode() for t in tags):
-                    b4 = bisect.bisect_left(self, str(tag))
-                    fh.seek(b4)
+    def close(self):
+        """Close file"""
+        self.mapped.close()
+        self.file_o.close()
 
-                    for l in self.match_as(fh, tag):
-                        yield l
+    def search(self, exact_match=True, *tags):
+        """Search for one or more tags in the tag file.
 
-                self.fh.close()
+        Search a tag file for given tags using a binary search.
+
+        :param exact_match: if search should be an exact or partial match
+
+        :returns: matching tags
+        """
+        for key in tags:
+            leftIndex = bisect.bisect_left(self, key)
+            if exact_match:
+                result = self[leftIndex]
+                while result[result.column] == key:
+                    yield(result)
+                    result = Tag(self.mapped.readline().strip(), self.column)
             else:
-                for l in fh.readlines():
-                    yield l
+                result = self[leftIndex]
+                while result[result.column].startswith(key):
+                    yield(result)
+                    result = Tag(self.mapped.readline().strip(), self.column)
 
-    def get_by_suffix(self, suffix):
-        """Get a tag with the given from the tag file"""
-        with codecs.open(self.p, 'r+', encoding='utf-8') as fh:
-            self.fh = mmap.mmap(fh.fileno(), 0)
+    def search_by_suffix(self, suffix):
+        """Search for one or more tags with the given suffix in the tag file.
 
-            for l in fh:
-                if l.split('\t')[self.column].endswith(suffix):
-                    yield l
-                else:
-                    continue
+        Search a tag file for given tags with the given suffix, using a linear
+        search. Note that this linear search requires the entire file be
+        searched making it slow. Hence, it should be avoided if possible.
 
-            self.fh.close()
+        :param suffix: suffix to search for
 
-    def exact_matches(self, iterator, tag):
-        for l in iterator:
-            comp = cmp(l.split('\t')[self.column], tag.decode())
-
-            if comp == -1:
-                continue
-            elif comp:
-                break
-
-            yield l
-
-    def starts_with(self, iterator, tag):
-        for l in iterator:
-            field = l.split('\t')[self.column]
-            comp = cmp(field, tag.decode())
-
-            if comp == -1:
-                continue
-
-            if field.startswith(tag.decode('utf-8')):
-                yield l
+        :returns: matching tags
+        """
+        for line in self.file_o:
+            if line.split('\t')[self.column].endswith(suffix):
+                yield Tag(line)
             else:
-                break
+                continue
 
     def tag_class(self):
-        return type('Tag', (Tag,), dict(root_dir=self.dir))
+        """Default class to wrap tag in.
+
+        Allows wrapping of a parsed tag dict in a class, so elements can be
+        accessed as class variables (i.e. ``class.variable``, rather than
+        ``dict['variable'])
+        """
+        return type('TagElements', (TagElements,), dict(root_dir=self.dir))
 
     def get_tags_dict(self, *tags, **kw):
         """Return the tags from a tag file as a dict"""
         filters = kw.get('filters', [])
-        return parse_tag_lines(self.get(*tags),
+        return parse_tag_lines(self.search(exact_match=True, *tags),
                                tag_class=self.tag_class(), filters=filters)
 
     def get_tags_dict_by_suffix(self, suffix, **kw):
         """Return the tags with the given suffix of a tag file as a dict"""
         filters = kw.get('filters', [])
-        return parse_tag_lines(self.get_by_suffix(suffix),
+        return parse_tag_lines(self.search_by_suffix(suffix),
                                tag_class=self.tag_class(), filters=filters)
