@@ -10,7 +10,7 @@ import codecs
 try:
     import sublime
 
-    if sublime.version == '3':
+    if int(sublime.version()) > 3000:
         from . import ctags
     else:
         import ctags

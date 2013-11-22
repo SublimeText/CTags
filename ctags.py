@@ -373,7 +373,7 @@ class Tag(object):
     This exists mainly to enable different types of sorting.
     """
     def __init__(self, line, column=0):
-        if isinstance(line, bytes):  # python 3 compatability
+        if isinstance(line, bytes):  # python 3 compatibility
             line = line.decode('utf-8', 'replace')
         self.line = line
         self.column = column
@@ -503,7 +503,7 @@ class TagFile(object):
     def get_tags_dict(self, *tags, **kw):
         """Return the tags from a tag file as a dict"""
         filters = kw.get('filters', [])
-        return parse_tag_lines(self.search(exact_match=True, *tags),
+        return parse_tag_lines(self.search(True, *tags),
                                tag_class=self.tag_class(), filters=filters)
 
     def get_tags_dict_by_suffix(self, suffix, **kw):

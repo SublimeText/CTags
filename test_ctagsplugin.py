@@ -10,7 +10,7 @@ import shutil
 try:
     import sublime
 
-    if sublime.version == '3':
+    if int(sublime.version()) > 3000:
         from . import ctagsplugin
         from . import ctags
     else:
