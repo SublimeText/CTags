@@ -35,7 +35,6 @@ elif sublime_version == 3:
     from . import ctags
     from .ctags import (FILENAME, parse_tag_lines, PATH_ORDER, SYMBOL, Tag, TagFile)
 
-
 ################################### SETTINGS ###################################
 
 def get_settings():
@@ -186,7 +185,7 @@ def alternate_tags_paths(view, tags_file):
                  sublime.platform() == platform ):
                 search_paths.append(path)
     except Exception as e:
-        print (e)
+        print(e)
 
     if os.path.exists(tags_paths):
         for extrafile in setting('extra_tag_files'):
@@ -469,8 +468,9 @@ def ctags_goto_command(jump_directly_if_one=False):
 def check_if_building(self, **args):
     if rebuild_tags.build_ctags.func.running:
         status_message('Please wait while tags are built')
-
-    else:  return True
+        return False
+    else:
+        return True
 
 def compile_filters(view):
     filters = []
@@ -520,6 +520,8 @@ class JumpToDefinition:
             if not p_tags:
                 status_message('Can\'t find "%s"' % symbol)
             p_tags = sorted(p_tags, key=iget('tag_path'))
+            if setting('definition_current_first', False):
+                p_tags = sorted(p_tags, key=lambda tag: normpath(tag.tag_path[0]) == current_file)
             return p_tags
 
         return sorted_tags
@@ -540,6 +542,9 @@ class NavigateToDefinition(sublime_plugin.TextCommand):
         region = view.sel()[0]
         if region.begin() == region.end(): #point
           region = view.word(region)
+          if self.scopes.match(view.scope_name(view.sel()[0].b)) is not None:
+            if self.endings.match(view.substr(sublime.Region(region.end(), region.end()+1))) is not None:
+              region = sublime.Region(region.begin(), region.end()+1)
         symbol = view.substr(region)
         return JumpToDefinition.run(symbol, view, tags_file)
 
@@ -600,7 +605,7 @@ class ShowSymbols(sublime_plugin.TextCommand):
         def get_tags():
             loaded = TagFile(tags_file, FILENAME)
             if lang: return loaded.get_tags_dict_by_suffix(suffix, filters=compile_filters(view))
-            else: 
+            else:
                 return loaded.get_tags_dict(*files, filters=compile_filters(view))
 
         if key in tags_cache[base_path]:
@@ -672,12 +677,12 @@ class rebuild_tags(sublime_plugin.TextCommand):
     def build_ctags(self, cmd, tag_files):
 
         def tags_built(tag_file):
-            print(('Finished building %s' % tag_file))
+            print('Finished building %s' % tag_file)
             in_main(lambda: status_message('Finished building %s' % tag_file))()
             in_main(lambda: tags_cache[dirname(tag_file)].clear())()
 
         for tag_file in tag_files:
-            print(('Re/Building CTags for %s: Please be patient' % tag_file))
+            print('Re/Building CTags for %s: Please be patient' % tag_file)
             in_main(lambda: status_message('Re/Building CTags for %s: Please be patient' % tag_file))()
             ctags.build_ctags(cmd, tag_file)
             tags_built(tag_file)
@@ -735,7 +740,7 @@ class test_ctags(sublime_plugin.TextCommand):
         try:
             next(self.routine)
         except Exception as e:
-            print (e)
+            print(e)
             self.routine = None
 
     def co_routine(self, view):
@@ -744,7 +749,7 @@ class test_ctags(sublime_plugin.TextCommand):
         with open(tag_file) as tf:
             tags = parse_tag_lines(tf, tag_class=Tag)
 
-        print ('Starting Test')
+        print('Starting Test')
 
         ex_failures = []
         line_failures = []

@@ -111,7 +111,7 @@ class Tag(dict):
 ################################################################################
 
 def parse_tag_file(tag_file):
-    with open(tag_file) as tf:
+    with open(tag_file, encoding="utf-8") as tf:
         tags = parse_tag_lines(tf)
 
     return tags
@@ -187,7 +187,7 @@ def test_build_ctags__ctags_not_on_path():
         print ('OK')
         print (e)
     else:
-        raise "Should have died"
+        raise Exception("Should have died")
     # EnvironmentError: (['ctags.exe -R'], 1, '\'"ctags.exe -R"\' is not recognized as an internal or external command,\r\noperable program or batch file.\r\n')
 
 def test_build_ctags__dodgy_command():
@@ -197,7 +197,7 @@ def test_build_ctags__dodgy_command():
         print ('OK')
         print (e)
     else:
-        raise "Should have died"
+        raise Exception("Should have died")
 
 ################################################################################
 
@@ -213,7 +213,8 @@ class TagFile(object):
     def __getitem__(self, index):
         self.fh.seek(index)
         self.fh.readline()
-        try:  return self.fh.readline().split(b'\t')[self.column]
+        l = self.fh.readline().decode('utf-8', 'replace') 
+        try:  return l.split('\t')[self.column]
         # Ask forgiveness not permission
         except IndexError:
             return ''
@@ -222,14 +223,13 @@ class TagFile(object):
         return os.stat(self.p).st_size
 
     def get(self, *tags):
-        with open(self.p, 'r+') as fh:
+        with open(self.p, 'r+', encoding="utf-8") as fh:
             if tags:
                 self.fh = mmap.mmap(fh.fileno(), 0)
 
                 for tag in (t.encode() for t in tags):
-                    b4 = bisect.bisect_left(self, tag)
+                    b4 = bisect.bisect_left(self, str(tag))
                     fh.seek(b4)
-
                     for l in self.match_as(fh, tag):
                         yield l
 
@@ -239,7 +239,7 @@ class TagFile(object):
                     yield l
 
     def get_by_suffix(self, suffix):
-        with open(self.p, 'r+') as fh:
+        with open(self.p, 'r+', encoding="utf-8") as fh:
             self.fh = mmap.mmap(fh.fileno(), 0)
 
             for l in fh:
@@ -251,21 +251,13 @@ class TagFile(object):
 
     def exact_matches(self, iterator, tag):
         for l in iterator:
-            comp = cmp(l.split('\t')[self.column], tag.decode())
-
-            if    comp == -1:    continue
-            elif  comp:          break
-
-            yield l
+            field = l.split('\t')[self.column]
+            if field == tag.decode("utf-8"): yield l
 
     def starts_with(self, iterator, tag):
         for l in iterator:
             field = l.split('\t')[self.column]
-            comp = cmp(field, tag.decode())
-
-            if comp == -1: continue
-
-            if field.startswith(tag): yield l
+            if field.startswith(tag.decode("utf-8")): yield l
             else: break
 
     @property
@@ -299,7 +291,7 @@ class CTagsTest(unittest.TestCase):
     #     for symbol, tag_list in tags.iteritems():
     #         for tag in (Tag(t) for t in tag_list):
     #             if not tag.ex_command.isdigit():
-    #                 with open(tag.filename, 'r+') as fh:
+    #                 with open(tag.filename, 'r+', encoding="utf-8") as fh:
     #                     mapped = mmap.mmap(fh.fileno(), 0)
     #                     if not mapped.find(tag.ex_command):
     #                         failures += [tag.ex_command]
@@ -327,7 +319,7 @@ class CTagsTest(unittest.TestCase):
         for tags_file, column_index in tests:
             tag_file = TagFile(tags_file, column_index)
 
-            with open(tags_file, 'r') as fh:
+            with open(tags_file, 'r', encoding="utf-8") as fh:
                 latest =  ''
                 lines  = []
 
