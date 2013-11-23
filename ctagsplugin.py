@@ -447,9 +447,13 @@ def show_tag_panel(view, result, jump_directly_if_one):
                 JumpBack.append(view)
                 scroll_to_tag(view, args[i])
 
+        # encoding for issue #143
+        display_encoded = []
+        for d in display:
+            display_encoded.append([item.decode('utf-8') for item in d])
         ( on_select(0) if   jump_directly_if_one and len(args) == 1
                        else view.window().show_quick_panel (
-                                          display, on_select ) )
+                                          display_encoded, on_select ) )
 
 def ctags_goto_command(jump_directly_if_one=False):
     def wrapper(f):
