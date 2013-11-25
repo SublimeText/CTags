@@ -177,8 +177,8 @@ Command                         Key Binding       Alt Binding  Mouse Binding
 ==============================  ================  ===========  ======================
 rebuild_ctags                   ctrl+t, ctrl+r
 navigate_to_definition          ctrl+t, ctrl+t    ctrl+>       ctrl+shift+left_click
-jump_back                       ctrl+t, ctrl+b    ctrl+<       ctrl+shift+right_click
-jump_back to_last_modification  ctrl+t, ctrl+m
+jump_prev                       ctrl+t, ctrl+b    ctrl+<       ctrl+shift+right_click
+jump_prev_to_last_modification  ctrl+t, ctrl+m
 show_symbols                    alt+s
 show_symbols (multi)            alt+shift+s
 show_symbols (suffix)           ctrl+alt+shift+s

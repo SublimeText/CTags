@@ -12,7 +12,7 @@ import threading
 
 from itertools import chain
 from operator import itemgetter as iget
-from collections import defaultdict
+from collections import defaultdict, deque
 
 try:
     import sublime
@@ -67,14 +67,15 @@ Functions
 
 
 def get_settings():
-    """Load settings
+    """Load settings.
 
-    :returns: dictionary containing settings"""
+    :returns: dictionary containing settings
+    """
     return sublime.load_settings("CTags.sublime-settings")
 
 
 def get_setting(key, default=None):
-    """Load individual setting
+    """Load individual setting.
 
     :param key: setting key to get value for
     :param default: default value to return if no value found
@@ -454,7 +455,7 @@ def get_current_file_suffix(path):
 Sublime Commands
 """
 
-"""Jumpback Commands"""
+"""JumpPrev Commands"""
 
 
 def different_mod_area(f1, f2, r1, r2):
@@ -463,7 +464,7 @@ def different_mod_area(f1, f2, r1, r2):
     return not same_file or not same_region
 
 
-class JumpBack(sublime_plugin.WindowCommand):
+class JumpPrev(sublime_plugin.WindowCommand):
     """Provide ``jump_back`` command.
 
     Command "jumps back" to the previous code point before a tag was navigated
@@ -472,35 +473,37 @@ class JumpBack(sublime_plugin.WindowCommand):
     This is functionality supported natively by ST3 but not by ST2. It is
     therefore included for legacy purposes.
     """
-    last = []
+    buf = deque(maxlen=100)  # virtually a "ring buffer"
 
     def is_enabled(self):
-        return len(self.last) > 0
+        # disable if nothing in the buffer
+        return len(self.buf) > 0
 
     def is_visible(self):
         return setting('show_context_menus')
 
     def run(self):
-        if not JumpBack.last:
-            return status_message('JumpBack buffer empty')
+        if not self.buf:
+            return status_message('JumpPrev buffer empty')
 
-        f, sel = JumpBack.last.pop()
-        self.jump(f, eval(sel))
+        file_name, sel = self.buf.pop()
+        self.jump(file_name, sel)
 
     def jump(self, fn, sel):
         @on_load(fn, begin_edit=True)
         def and_then(view):
-            select(view, sublime.Region(*sel))
+            select(view, sel)
 
     @classmethod
     def append(cls, view):
-        """Append a file name to a a list"""
+        """Append a code point to the list"""
         fn = view.file_name()
         if fn:
-            cls.last.append((fn, repr(view.sel()[0])))
+            sel = [s for s in view.sel()][0]
+            cls.buf.append((fn, sel))
 
 
-class JumpBackToLastModification(sublime_plugin.WindowCommand):
+class JumpPrevToLastModification(sublime_plugin.WindowCommand):
     """Provide ``jump_back_to_last_modification`` command.
 
     Command "jumps back" to a previous modification point
@@ -527,7 +530,7 @@ class JumpBackToLastModification(sublime_plugin.WindowCommand):
         cf = cv.file_name()
 
         # very latest, s)tarting modification
-        sf, sr = JumpBackToLastModification.mods.pop(0)
+        sf, sr = JumpPrevToLastModification.mods.pop(0)
 
         if sf is None:
             return
@@ -538,18 +541,18 @@ class JumpBackToLastModification(sublime_plugin.WindowCommand):
         # default j)ump f)ile and r)egion
         jf, jr = sf, sr
 
-        if JumpBackToLastModification.mods:
-            for i, (f, r) in enumerate(JumpBackToLastModification.mods):
+        if JumpPrevToLastModification.mods:
+            for i, (f, r) in enumerate(JumpPrevToLastModification.mods):
                 region = eval(r)
                 if different_mod_area(sf, f, sr, region):
                     break
 
-            del JumpBackToLastModification.mods[:i]
+            del JumpPrevToLastModification.mods[:i]
             if not in_different_mod_area:
                 jf, jr = f, region
 
-        if in_different_mod_area or not JumpBackToLastModification.mods:
-            JumpBackToLastModification.mods.insert(0, (jf, repr(jr)))
+        if in_different_mod_area or not JumpPrevToLastModification.mods:
+            JumpPrevToLastModification.mods.insert(0, (jf, repr(jr)))
 
         self.jump(jf, jr)
 
@@ -559,7 +562,7 @@ class JumpBackToLastModification(sublime_plugin.WindowCommand):
             select(view, sublime.Region(*sel))
 
 
-class JumpBackListener(sublime_plugin.EventListener):
+class JumpPrevListener(sublime_plugin.EventListener):
     """Maintain a list of edit points to jump back to.
 
     Maintains a list of the last x edit points (points where a character is
@@ -572,9 +575,9 @@ class JumpBackListener(sublime_plugin.EventListener):
     def on_modified(self, view):
         sel = view.sel()
         if len(sel):
-            JumpBackToLastModification.mods.insert(
+            JumpPrevToLastModification.mods.insert(
                 0, (view.file_name(), repr(sel[0])))
-            del JumpBackToLastModification.mods[100:]
+            del JumpPrevToLastModification.mods[100:]
 
 
 """CTags commands"""
@@ -593,7 +596,7 @@ def show_tag_panel(view, result, jump_directly):
 
         def on_select(i):
             if i != -1:
-                JumpBack.append(view)
+                JumpPrev.append(view)
                 scroll_to_tag(view, args[i])
 
         if jump_directly and len(args) == 1:

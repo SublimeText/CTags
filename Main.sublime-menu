@@ -16,7 +16,7 @@
                 "command": "navigate_to_definition"
               },
               {
-                "command": "jump_back"
+                "command": "jump_prev"
               },
               {
                 "command": "rebuild_tags"

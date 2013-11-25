@@ -12,15 +12,15 @@
     "keys": ["ctrl+t", "ctrl+y"]
   },
   {
-    "command": "jump_back",
+    "command": "jump_prev",
     "keys": ["ctrl+t", "ctrl+b"]
   },
   {
-    "command": "jump_back",
+    "command": "jump_prev",
     "keys": ["ctrl+shift+comma"]
   },
   {
-    "command": "jump_back_to_last_modification",
+    "command": "jump_prev_to_last_modification",
     "keys": ["ctrl+t", "ctrl+m"]
   },
   {
