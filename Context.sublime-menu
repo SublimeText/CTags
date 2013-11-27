@@ -11,10 +11,5 @@
     "command": "jump_prev",
     "args": {},
     "caption": "Jump Back"
-  },
-  {
-    "command": "jump_prev_to_last_modification",
-    "args": {},
-    "caption": "Jump Back to Last Modification"
   }
 ]

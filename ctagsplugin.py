@@ -458,12 +458,6 @@ Sublime Commands
 """JumpPrev Commands"""
 
 
-def different_mod_area(f1, f2, r1, r2):
-    same_file = f1 == f2
-    same_region = abs(r1[0] - r2[0]) < 40
-    return not same_file or not same_region
-
-
 class JumpPrev(sublime_plugin.WindowCommand):
     """Provide ``jump_back`` command.
 
@@ -501,83 +495,6 @@ class JumpPrev(sublime_plugin.WindowCommand):
         if fn:
             sel = [s for s in view.sel()][0]
             cls.buf.append((fn, sel))
-
-
-class JumpPrevToLastModification(sublime_plugin.WindowCommand):
-    """Provide ``jump_back_to_last_modification`` command.
-
-    Command "jumps back" to a previous modification point
-
-    This is functionality supported natively by ST3 but not by ST2. It is
-    therefore included for legacy purposes.
-    """
-    mods = []
-
-    def is_enabled(self):
-        return len(self.mods) > 1
-
-    def is_visible(self):
-        return setting('show_context_menus')
-
-    def run(self):
-        if self.mods:
-            return self.lastModifications()
-
-    def lastModifications(self):
-        # c)urrent v)iew, r)egion and f)ile
-        cv = sublime.active_window().active_view()
-        cr = eval(repr(cv.sel()[0]))
-        cf = cv.file_name()
-
-        # very latest, s)tarting modification
-        sf, sr = JumpPrevToLastModification.mods.pop(0)
-
-        if sf is None:
-            return
-        sr = eval(sr)
-
-        in_different_mod_area = different_mod_area(sf, cf, cr, sr)
-
-        # default j)ump f)ile and r)egion
-        jf, jr = sf, sr
-
-        if JumpPrevToLastModification.mods:
-            for i, (f, r) in enumerate(JumpPrevToLastModification.mods):
-                region = eval(r)
-                if different_mod_area(sf, f, sr, region):
-                    break
-
-            del JumpPrevToLastModification.mods[:i]
-            if not in_different_mod_area:
-                jf, jr = f, region
-
-        if in_different_mod_area or not JumpPrevToLastModification.mods:
-            JumpPrevToLastModification.mods.insert(0, (jf, repr(jr)))
-
-        self.jump(jf, jr)
-
-    def jump(self, fn, sel):
-        @on_load(fn, begin_edit=True)
-        def and_then(view):
-            select(view, sublime.Region(*sel))
-
-
-class JumpPrevListener(sublime_plugin.EventListener):
-    """Maintain a list of edit points to jump back to.
-
-    Maintains a list of the last x edit points (points where a character is
-    added, removed or modified) in order to allow the user to correctly
-    "jump back" to a previous point in the code.
-
-    This is functionality supported natively by ST3 but not by ST2. It is
-    therefore included for legacy purposes.
-    """
-    def on_modified(self, view):
-        sel = view.sel()
-        if len(sel):
-            JumpPrevToLastModification.mods.insert(
-                0, (view.file_name(), repr(sel[0])))
-            del JumpPrevToLastModification.mods[100:]
 
 
 """CTags commands"""
