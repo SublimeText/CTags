@@ -4,15 +4,16 @@
     //
     // "settings":
     // {
-    //     "ctags_command": ""echo \":ctags .tags\" | ghci -v0 /path/to/Main.hs"
+    //     "ctags_command": ""echo \":ctags %(tags_filename)s\" | ghci -v0 /path/to/Main.hs"
     // }
     //
     // in your project settings, this will override the settings specified
     // in this file and in your user settings.
 
+    "tags_filename": ".tags",
     "debug"           :  false,
     "autocomplete": false,
-    "command"   :  "ctags -R -f .tags",
+    "command"   :  "ctags -R -f %(tags_filename)s",
     "filters"         :  {
         "source.python": {"type":"^i$"}
     },
