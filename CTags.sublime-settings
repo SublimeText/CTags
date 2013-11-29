@@ -1,26 +1,42 @@
+// Place your settings in the file "User/CTags.sublime-settings", which
+// overrides the settings in here.
 {
-    // All options in here can also be specified in your project settings
-    // with a prepended "ctags_" for example if you have
-    //
-    // "settings":
-    // {
-    //     "ctags_command": ""echo \":ctags .tags\" | ghci -v0 /path/to/Main.hs"
-    // }
-    //
-    // in your project settings, this will override the settings specified
-    // in this file and in your user settings.
+    // Enable debugging
+    "debug": false,
 
-    "debug"           :  false,
+    // Enable autocomplete
     "autocomplete": false,
-    "command"   :  "ctags -R -f .tags",
-    "filters"         :  {
+
+    // Alter this value if your ctags command is not in the PATH, or if using
+    // a different version of ctags to that in the path (i.e. for OSX)
+    "command": "",
+
+    // Set to false to disable recursive search for ctag generation
+    "recursive" : true,
+
+    // Default read/write location of the tags file
+    "tag_file" : ".tags",
+
+    //
+    "filters": {
         "source.python": {"type":"^i$"}
     },
+
+    //
     "definition_filters": {
         "source.php": {"type":"^v$"}
     },
+
+    //
     "definition_current_first": true,
+
+    // Show the ctags menu in the context menus
     "show_context_menus": true,
-    "extra_tag_paths" :  [ [["source.python", "windows"], "C:\\Python27\\Lib\\tags"]],
-    "extra_tag_files" : [".gemtags", "tags"]
+
+    // Paths to additional tag files to include in tag search. This is a list
+    // of items in the form [["language", "platform"], "path"]
+    "extra_tag_paths": [[["source.python", "windows"], "C:\\Python27\\Lib\\tags"]],
+
+    // Additional tag files to search
+    "extra_tag_files": [".gemtags", "tags"]
 }

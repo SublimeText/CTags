@@ -3,20 +3,13 @@
     "caption": "-"
   },
   {
-    "command": "navigate_to_definition", 
-    "args": {}, 
+    "command": "navigate_to_definition",
+    "args": {},
     "caption": "Navigate to Definition"
-  }, 
+  },
   {
-    "command": "jump_back", 
-    "args": {}, 
+    "command": "jump_prev",
+    "args": {},
     "caption": "Jump Back"
-  }, 
-  {
-    "command": "jump_back", 
-    "args": {
-      "to": "last_modification"
-    }, 
-    "caption": "Jump to Last Modification"
   }
 ]

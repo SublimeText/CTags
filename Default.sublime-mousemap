@@ -10,6 +10,6 @@
 		"button": "button2",
 		"count": 1,
 		"modifiers": ["ctrl","shift"],
-		"command": "jump_back"
+		"command": "jump_prev"
 	}
 ]

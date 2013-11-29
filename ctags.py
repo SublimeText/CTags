@@ -1,25 +1,19 @@
-################################################################################
-# coding: utf8
-################################################################################
+#!/usr/bin/env python
 
-# Std Libs
+"""A ctags wrapper, parser and sorter"""
 
-
+import codecs
 import re
-import unittest
 import os
 import subprocess
 import bisect
 import mmap
-import platform
-import sublime
 
-from os.path import dirname
+"""
+Contants
+"""
 
-################################################################################
-
-TAGS_RE = re.compile (
-
+TAGS_RE = re.compile(
     '(?P<symbol>[^\t]+)\t'
     '(?P<filename>[^\t]+)\t'
     '(?P<ex_command>.*?);"\t'
@@ -27,7 +21,7 @@ TAGS_RE = re.compile (
     '(?:\t(?P<fields>.*))?'
 )
 
-# Column indexes
+# column indexes
 SYMBOL = 0
 FILENAME = 1
 
@@ -37,415 +31,489 @@ PATH_ORDER = [
     'function', 'class', 'struct',
 ]
 
-PATH_IGNORE_FIELDS = ( 'file', 'access', 'signature',
-                       'language', 'line', 'inherits' )
+PATH_IGNORE_FIELDS = ('file', 'access', 'signature',
+                      'language', 'line', 'inherits')
 
 TAG_PATH_SPLITTERS = ('/', '.', '::', ':')
 
-################################################################################
-def cmp(a,b):
-    return (str(a) > str(b)) - (str(a) < str(b))
+
+"""
+Functions
+"""
+
+
+"""Helper functions"""
+
+
 def splits(string, *splitters):
+    """Split a string on a number of splitters.
+
+    :param string: string to split
+    :param splitters: characters to split string on
+
+    :returns: ``string`` split on characters in ``string``"""
     if splitters:
         split = string.split(splitters[0])
         for s in split:
             for c in splits(s, *splitters[1:]):
                 yield c
     else:
-        if string: yield string
+        if string:
+            yield string
 
-################################################################################
+
+"""Tag processing functions"""
+
 
 def parse_tag_lines(lines, order_by='symbol', tag_class=None, filters=[]):
+    """Parse and sort a list of tags.
+
+    Parse and sort a list of tags one by using a combination of regexen and
+    Python functions. The end result is a dictionary containing all 'tags' or
+    entries found in the list of tags, sorted and filtered in a manner
+    specified by the user.
+
+    :param lines: list of tag lines from a tagfile
+    :param order_by: element by which the result should be sorted
+    :param tag_class: a Class to wrap around the resulting dictionary
+    :param filters: filters to apply to resulting dictionary
+
+    :returns: tag object or dictionary containing a sorted, filtered version
+        of the original input tag lines
+    """
     tags_lookup = {}
 
-    for l in lines:
-        search_obj = TAGS_RE.search(l)
+    for line in lines:
+        skip = False
+
+        if isinstance(line, Tag):  # handle both text and tag objects
+            line = line.line
+
+        search_obj = TAGS_RE.search(line)
+
         if not search_obj:
             continue
 
-        tag = post_process_tag(search_obj)
-        if tag_class is not None: tag = tag_class(tag)
+        tag = search_obj.groupdict()  # convert regex search result to dict
 
-        skip = False
+        tag = post_process_tag(tag)
+
+        if tag_class is not None:  # if 'casting' to a class
+            tag = tag_class(tag)
+
+        # apply filters, filtering out any matching entries
         for f in filters:
             for k, v in list(f.items()):
                 if re.match(v, tag[k]):
                     skip = True
 
-        if skip: continue
+        if skip:  # if a filter was matched, ignore line (filter out)
+            continue
 
         tags_lookup.setdefault(tag[order_by], []).append(tag)
 
     return tags_lookup
 
-def unescape_ex(ex):
-    return re.sub(r"\\(\$|/|\^|\\)", r'\1', ex)
 
-def process_ex_cmd(ex):
-    return ex if ex.isdigit() else unescape_ex(ex[2:-2])
+def post_process_tag(tag):
+    """Process 'EX Command'-related elements of a tag.
 
-def post_process_tag(search_obj):
-    tag = search_obj.groupdict()
+    Process all 'EX Command'-related elements. The 'Ex Command' element has
+    previously been split into the 'fields', 'type' and 'ex_command' elements.
+    Break these down further as seen below::
 
-    fields = tag.get('fields')
-    if fields:
-        fields_dict = process_fields(fields)
-        tag.update(fields_dict)
-        tag['field_keys'] = sorted(fields_dict.keys())
+        =========== = ============= =========================================
+        original    > new           meaning/example
+        =========== = ============= =========================================
+        symbol      > symbol        symbol name (i.e. class, variable)
+        filename    > filename      file containing symbol
+        .           > tag_path      tuple of (filename, [class], symbol)
+        ex_command  > ex_command    line number or regex used to find symbol
+        type        > type          type of symbol (i.e. class, method)
+        fields      > fields        string of fields
+        .           > [field_keys]  list of parsed field keys
+        .           > [field_one]   parsed field element one
+        .           > [...]         additional parsed field element
+        =========== = ============= =========================================
 
-    tag['ex_command'] =   process_ex_cmd(tag['ex_command'])
+    Example::
 
-    create_tag_path(tag)
+        =========== = ============= =========================================
+        original    > new           example
+        =========== = ============= =========================================
+        symbol      > symbol        'getSum'
+        filename    > filename      'DemoClass.java'
+        .           > tag_path      ('DemoClass.java', 'DemoClass', 'getSum')
+        ex_command  > ex_command    '\tprivate int getSum(int a, int b) {'
+        type        > type          'm'
+        fields      > fields        'class:DemoClass\tfile:'
+        .           > field_keys    ['class', 'file']
+        .           > class         'DemoClass'
+        .           > file          ''
+        =========== = ============= =========================================
+
+    :param tag: dict containing the unprocessed tag
+
+    :returns: dict containing the processed tag
+    """
+    tag.update(process_fields(tag))
+
+    tag['ex_command'] = process_ex_cmd(tag)
+
+    tag.update(create_tag_path(tag))
 
     return tag
 
-def process_fields(fields):
-    return dict(f.split(':', 1) for f in fields.split('\t'))
 
-class Tag(dict):
-    def __init__(self, *args, **kw):
-        dict.__init__(self, *args, **kw)
-        self.__dict__ = self
+def process_ex_cmd(tag):
+    """Process the 'ex_command' element of a tag dictionary.
 
-################################################################################
+    Process the ex_command string - a line number or regex used to find symbol
+    declaration - by unescaping the regex where used.
 
-def parse_tag_file(tag_file):
-    with open(tag_file) as tf:
-        tags = parse_tag_lines(tf)
+    :param tag: dict containing a tag
 
-    return tags
+    :returns: updated 'ex_command' dictionary entry
+    """
+    ex_cmd = tag.get('ex_command')
 
-################################################################################
+    if ex_cmd.isdigit():  # if a line number, do nothing
+        return ex_cmd
+    else:                 # else a regex, so unescape
+        return re.sub(r"\\(\$|/|\^|\\)", r'\1', ex_cmd[2:-2])  # unescape regex
+
+
+def process_fields(tag):
+    """Process the 'field' element of a tag dictionary.
+
+    Process the fields string - a comma-separated string of "key-value" pairs
+    - by generating key-value pairs and appending them to the tag dictionary.
+    Also append a list of keys for said pairs.
+
+    :param tag: dict containing a tag
+
+    :returns: dict containing the key-value pairs from the field element, plus
+        a list of keys for said pairs
+    """
+    fields = tag.get('fields')
+
+    if not fields:  # do nothing
+        return {}
+
+    # split the fields string into a dictionary of key-value pairs
+    result = dict(f.split(':', 1) for f in fields.split('\t'))
+
+    # append all keys to the dictionary
+    result['field_keys'] = sorted(result.keys())
+
+    return result
+
 
 def create_tag_path(tag):
-    symbol     =  tag.get('symbol')
-    field_keys =  tag.get('field_keys', [])[:]
+    """Create a tag path entry for a tag dictionary.
 
+    Creates a tag path entry for a tag dictionary from the field key-value
+    pairs. Uses format::
+
+        [function] [class] [struct] [additional entries] symbol
+
+    Where ``additional entries`` is any field key-value pair not found in
+    ``PATH_IGNORE_FIELDS``
+
+    :param tag: dict containing a tag
+
+    :returns: dict containing the 'tag_path' entry
+    """
+    field_keys = tag.get('field_keys', [])[:]
     fields = []
-    for i, field in enumerate(PATH_ORDER):
+    tag_path = ''
+
+    # sort field arguments related to path order in correct order
+    for field in PATH_ORDER:
         if field in field_keys:
             fields.append(field)
             field_keys.pop(field_keys.index(field))
 
+    # append all remaining field arguments
     fields.extend(field_keys)
 
-    tag_path = ''
+    # convert list of fields to dot-joined string, dropping any "ignore" fields
     for field in fields:
         if field not in PATH_IGNORE_FIELDS:
             tag_path += (tag.get(field) + '.')
 
-    tag_path += symbol
+    # append symbol as last item in string
+    tag_path += tag.get('symbol')
 
+    # split string on seperators and append tag filename to resulting list
     splitup = ([tag.get('filename')] +
                list(splits(tag_path, *TAG_PATH_SPLITTERS)))
 
-    tag['tag_path'] = tuple(splitup)
+    # convert list to tuple
+    result = {'tag_path': tuple(splitup)}
 
-################################################################################
+    return result
 
-def get_tag_class(tag):
-    cls  = tag.get('function', '').split('.')[:1]
-    return cls and cls[0] or tag.get('class') or tag.get('struct')
 
-################################################################################
+"""Tag building/sorting functions"""
+
+
+def build_ctags(path, tag_file=None, recursive=False, cmd=None, env=None):
+    """Execute the ``ctags`` command using ``Popen``
+
+    :param path: path to file or directory (with all files) to generate
+        ctags for.
+    :param tag_file: filename to use for the tag file. Defaults to ``tags``
+    :param recursive: specify if search should be recursive in directory
+        given by path. This overrides filename specified by ``path``
+    :param env: environment variables to be used when executing ``ctags``
+
+    :returns: original ``tag_file`` filename
+    """
+    # build the CTags command
+    if cmd:
+        cmd = [cmd]
+    else:
+        cmd = ['ctags']
+
+    if not os.path.exists(path):
+        raise IOError('\'path\' is not at valid directory or file path, or '
+                      'is not accessible')
+
+    #TODO this can break on some platforms, http://stackoverflow.com/q/8384737
+    cwd = os.path.dirname(path)
+
+    if tag_file:
+        cmd.append('-f {0}'.format(tag_file))
+
+    if recursive:  # ignore any file specified in path if recursive set
+        cmd.append('-R')
+    elif os.path.isfile(path):
+        filename = os.path.basename(path)
+        cmd.append(filename)
+    else:  # search all files in current directory
+        cmd.append('*')
+
+    # execute the command
+    p = subprocess.Popen(cmd, cwd=cwd, shell=True, env=env,
+                         stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+
+    ret = p.wait()
+
+    if ret:
+        raise EnvironmentError(ret, p.stdout.read())
+
+    if not tag_file:  # Exuberant ctags defaults to ``tags`` filename.
+        tag_file = os.path.join(cwd, 'tags')
+    else:
+        if os.path.dirname(tag_file) != cwd:
+            tag_file = os.path.join(cwd, tag_file)
+
+    # re-sort ctag file in filename order to improve search performance
+    resort_ctags(tag_file)
+
+    return tag_file
+
 
 def resort_ctags(tag_file):
+    """Rearrange ctags file for speed.
+
+    Resorts (re-sort) a CTag file in order of file. This improves searching
+    performance when searching tags by file as a binary search can be used.
+
+    The algorithm works as so:
+
+        For each line in the tag file
+            Read the file name (``file_name``) the tag belongs to
+            If not exists, create an empty array and store in the
+                dictionary with the file name as key
+            Save the line to this list
+        Create a new ``[tagfile]_sorted_by_file`` file
+        For each key in the sorted dictionary
+            For each line in the list indicated by the key
+                Split the line on tab character
+                Remove the prepending ``.\`` from the ``file_name`` part of
+                    the                   tag
+                Join the line again and write the ``sorted_by_file`` file
+
+    :param tag_file: The location of the tagfile to be sorted
+
+    :returns: None
+    """
     keys = {}
-    import codecs
 
-    with codecs.open(tag_file, encoding="utf-8") as fh:
-        for l in fh:
-            keys.setdefault(l.split('\t')[FILENAME], []).append(l)
+    with codecs.open(tag_file, encoding='utf-8') as fh:
+        for line in fh:
+            keys.setdefault(line.split('\t')[FILENAME], []).append(line)
 
-    with codecs.open(tag_file + '_sorted_by_file', 'w', encoding="utf-8") as fw:
+    with codecs.open(tag_file+'_sorted_by_file', 'w', encoding='utf-8') as fw:
         for k in sorted(keys):
             for line in keys[k]:
                 split = line.split('\t')
                 split[FILENAME] = split[FILENAME].lstrip('.\\')
                 fw.write('\t'.join(split))
 
-def build_ctags(cmd, tag_file, env=None):
-    if platform.system() == "Windows":
-        ctags_path = str(sublime.packages_path())+"\\Ctags\\ctags58\\"
-        env = os.environ.copy()
-        env["PATH"] = ";".join([env["PATH"], ctags_path])
-    p = subprocess.Popen(cmd, cwd = dirname(tag_file), shell=1, env=env,
-                         stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-    ret = p.wait()
 
-    if ret: raise EnvironmentError((cmd, ret, p.stdout.read()))
-    # Faster than ctags.exe again:
-    resort_ctags(tag_file)
+"""
+Models
+"""
 
-    return tag_file
 
-def test_build_ctags__ctags_not_on_path():
-    try:
-        build_ctags(['ctags.exe -R'], r'C:\Users\nick\AppData\Roaming\Sublime Text 2\Packages\CTags\tags', env={})
-    except Exception as e:
-        print ('OK')
-        print (e)
-    else:
-        raise "Should have died"
-    # EnvironmentError: (['ctags.exe -R'], 1, '\'"ctags.exe -R"\' is not recognized as an internal or external command,\r\noperable program or batch file.\r\n')
+class TagElements(dict):
+    """Model the entries of a tag file"""
+    def __init__(self, *args, **kw):
+        """Initialise Tag object"""
+        dict.__init__(self, *args, **kw)
+        self.__dict__ = self
 
-def test_build_ctags__dodgy_command():
-    try:
-        build_ctags(['ctags', '--arsts'], r'C:\Users\nick\AppData\Roaming\Sublime Text 2\Packages\CTags\tags')
-    except Exception as e:
-        print ('OK')
-        print (e)
-    else:
-        raise "Should have died"
 
-################################################################################
+class Tag(object):
+    """Model a tag.
 
-class TagFile(object):
-    def __init__(self, p, column, match_as=None):
-        self.p = p
+    This exists mainly to enable different types of sorting.
+    """
+    def __init__(self, line, column=0):
+        if isinstance(line, bytes):  # python 3 compatibility
+            line = line.decode('utf-8', 'replace')
+        self.line = line
         self.column = column
-        if isinstance(match_as, str):
-            match_as = getattr(self, match_as)
 
-        self.match_as = match_as or self.exact_matches
+    def __lt__(self, other):
+        return self.line.split('\t')[self.column] < other
+
+    def __gt__(self, other):
+        return self.line.split('\t')[self.column] > other
 
     def __getitem__(self, index):
-        self.fh.seek(index)
-        self.fh.readline()
-        try:  return self.fh.readline().split(b'\t')[self.column]
-        # Ask forgiveness not permission
-        except IndexError:
-            return ''
+        return self.line.split('\t')[index]
+
+
+class TagFile(object):
+    """Model a tag file.
+
+    This doesn't actually hold a entire tag file, due in part to the sheer
+    size of some tag files (> 100 MB files are possible). Instead, it acts
+    as a 'wrapper' of sorts around a file, providing functionality like
+    searching for a retrieving tags, finding tags based on given criteria
+    (prefix, suffix, exact), getting the directory of a tag and so forth.
+    """
+    def __init__(self, path, column):
+        """Initialise object.
+
+        The file indicated by ``path`` must be sorted by values in the column
+        indicated by ``column``.
+
+        :param path: path to a tag file
+        :param column: column to search on
+
+        :returns: None
+        """
+        self.path = path
+        self.column = column
+
+    def __getitem__(self, index):
+        """Provide sequence-type interface to tag file."""
+        self.mapped.seek(index)
+        result = self.mapped.readline()
+
+        if index != 0:  # handle first line
+            result = self.mapped.readline()  # get a complete line
+
+        result = result.strip()
+
+        return Tag(result, self.column)
 
     def __len__(self):
-        return os.stat(self.p).st_size
+        """Get size of tag file in bytes"""
+        return len(self.mapped)
 
-    def get(self, *tags):
-        with open(self.p, 'r+') as fh:
-            if tags:
-                self.fh = mmap.mmap(fh.fileno(), 0)
+    def __enter__(self):
+        """Open file on enter when using ``with`` keyword"""
+        self.open()
+        return self
 
-                for tag in (t.encode() for t in tags):
-                    b4 = bisect.bisect_left(self, tag)
-                    fh.seek(b4)
-
-                    for l in self.match_as(fh, tag):
-                        yield l
-
-                self.fh.close()
-            else:
-                for l in fh.readlines():
-                    yield l
-
-    def get_by_suffix(self, suffix):
-        with open(self.p, 'r+') as fh:
-            self.fh = mmap.mmap(fh.fileno(), 0)
-
-            for l in fh:
-                if l.split('\t')[self.column].endswith(suffix): yield l
-                else: continue
-
-            self.fh.close()
-
-
-    def exact_matches(self, iterator, tag):
-        for l in iterator:
-            comp = cmp(l.split('\t')[self.column], tag.decode())
-
-            if    comp == -1:    continue
-            elif  comp:          break
-
-            yield l
-
-    def starts_with(self, iterator, tag):
-        for l in iterator:
-            field = l.split('\t')[self.column]
-            comp = cmp(field, tag.decode())
-
-            if comp == -1: continue
-
-            if field.startswith(tag): yield l
-            else: break
+    def __exit__(self, type, value, traceback):
+        """Close file on exit when using ``with`` keyword"""
+        self.close()
 
     @property
     def dir(self):
-        return dirname(self.p)
+        """Get directory of tag file"""
+        return os.path.dirname(self.path)
+
+    def open(self):
+        """Open file"""
+        self.file_o = codecs.open(self.path, 'r+b', encoding='ascii')
+        self.mapped = mmap.mmap(self.file_o.fileno(), 0,
+                                access=mmap.ACCESS_READ)
+
+    def close(self):
+        """Close file"""
+        self.mapped.close()
+        self.file_o.close()
+
+    def search(self, exact_match=True, *tags):
+        """Search for one or more tags in the tag file.
+
+        Search a tag file for given tags using a binary search.
+
+        :param exact_match: if search should be an exact or partial match
+
+        :returns: matching tags
+        """
+        if not tags:
+            while self.mapped.tell() < self.mapped.size():
+                result = Tag(self.mapped.readline().strip(), self.column)
+                yield(result)
+            return
+
+        for key in tags:
+            leftIndex = bisect.bisect_left(self, key)
+            if exact_match:
+                result = self[leftIndex]
+                while result[result.column] == key:
+                    yield(result)
+                    result = Tag(self.mapped.readline().strip(), self.column)
+            else:
+                result = self[leftIndex]
+                while result[result.column].startswith(key):
+                    yield(result)
+                    result = Tag(self.mapped.readline().strip(), self.column)
+
+    def search_by_suffix(self, suffix):
+        """Search for one or more tags with the given suffix in the tag file.
+
+        Search a tag file for given tags with the given suffix, using a linear
+        search. Note that this linear search requires the entire file be
+        searched making it slow. Hence, it should be avoided if possible.
+
+        :param suffix: suffix to search for
+
+        :returns: matching tags
+        """
+        for line in self.file_o:
+            if line.split('\t')[self.column].endswith(suffix):
+                yield Tag(line)
+            else:
+                continue
 
     def tag_class(self):
-        return type('Tag', (Tag,), dict(root_dir = self.dir))
+        """Default class to wrap tag in.
 
-    def get_tags_dict_by_suffix(self, suffix, **kw):
-        filters = kw.get('filters', [])
-        return parse_tag_lines( self.get_by_suffix(suffix),
-                                tag_class=self.tag_class(), filters=filters)
+        Allows wrapping of a parsed tag dict in a class, so elements can be
+        accessed as class variables (i.e. ``class.variable``, rather than
+        ``dict['variable'])
+        """
+        return type('TagElements', (TagElements,), dict(root_dir=self.dir))
 
     def get_tags_dict(self, *tags, **kw):
+        """Return the tags from a tag file as a dict"""
         filters = kw.get('filters', [])
-        return parse_tag_lines( self.get(*tags),
-                                tag_class=self.tag_class(), filters=filters)
+        return parse_tag_lines(self.search(True, *tags),
+                               tag_class=self.tag_class(), filters=filters)
 
-
-################################################################################
-
-
-class CTagsTest(unittest.TestCase):
-    # def test_all_search_strings_work(self):
-    #     # os.chdir(os.path.dirname(__file__))
-    #     tags = parse_tag_file('tags')
-
-    #     failures = []
-
-    #     for symbol, tag_list in tags.iteritems():
-    #         for tag in (Tag(t) for t in tag_list):
-    #             if not tag.ex_command.isdigit():
-    #                 with open(tag.filename, 'r+') as fh:
-    #                     mapped = mmap.mmap(fh.fileno(), 0)
-    #                     if not mapped.find(tag.ex_command):
-    #                         failures += [tag.ex_command]
-
-    #     for f in failures:
-    #         print f
-
-    #     self.assertEqual(len(failures), 0, 'update tag files and try again')
-
-    def test_startswith(self):
-        f = TagFile('tags', SYMBOL, MATCHES_STARTWITH)
-
-        # print '\nFCUKT', len(list(f.get('co')))
-        # print '\n'.join(list(f.get('co')))
-        assert len(list(f.get('co'))) == 3
-
-    def test_tags_files(self):
-        tests = [ ( r"tags", SYMBOL ),
-                  ( r"sorted_by_file_test_tags", FILENAME ),
-                  # ( r"C:\python25\lib\tags_sorted_by_file", FILENAME )
-                  ]
-
-        fails = []
-
-        for tags_file, column_index in tests:
-            tag_file = TagFile(tags_file, column_index)
-
-            with open(tags_file, 'r') as fh:
-                latest =  ''
-                lines  = []
-
-                for l in fh:
-                    symbol = l.split('\t')[column_index]
-
-                    if symbol != latest:
-
-                        if latest:
-                            tags = list(tag_file.get(latest))
-                            if not lines == tags:
-                                fails.append( (tags_file, lines, tags) )
-
-                            lines = []
-
-                        latest = symbol
-
-                    lines += [l]
-
-        self.assertEquals(fails, [])
-
-if __name__ == '__main__':
-    unittest.main()
-
-################################################################################
-# TAG FILE FORMAT
-
-# When not running in etags mode, each entry in the tag file consists of a
-# separate line, each looking like this in the most general case:
-
-# tag_name<TAB>file_name<TAB>ex_cmd;"<TAB>extension_fields
-
-# The fields and separators of these lines are specified as follows:
-
-# 1.
-
-#     tag name
-
-# 2.
-
-#     single tab character
-
-# 3.
-
-#     name of the file in which the object associated with the tag is located
-
-# 4.
-
-#     single tab character
-
-# 5.
-
-#     EX command used to locate the tag within the file; generally a search
-#     pattern (either /pattern/ or ?pattern?) or line number (see −−excmd). Tag
-#     file format 2 (see −−format) extends this EX command under certain
-#     circumstances to include a set of extension fields (described below)
-#     embedded in an EX comment immediately appended to the EX command, which
-#     leaves it backward-compatible with original vi(1) implementations.
-
-# A few special tags are written into the tag file for internal purposes. These
-# tags are composed in such a way that they always sort to the top of the file.
-# Therefore, the first two characters of these tags are used a magic number to
-# detect a tag file for purposes of determining whether a valid tag file is
-# being overwritten rather than a source file. Note that the name of each source
-# file will be recorded in the tag file exactly as it appears on the command
-# line.
-
-# Therefore, if the path you specified on the command line was relative to the
-# current directory, then it will be recorded in that same manner in the tag
-# file. See, however, the −−tag−relative option for how this behavior can be
-# modified.
-
-# Extension fields are tab-separated key-value pairs appended to the end of the
-# EX command as a comment, as described above. These key value pairs appear in
-# the general form "key:value". Their presence in the lines of the tag file are
-# controlled by the −−fields option. The possible keys and the meaning of their
-# values are as follows:
-
-# access
-
-#     Indicates the visibility of this class member, where value is specific to
-#     the language.
-
-# file
-
-#     Indicates that the tag has file-limited visibility. This key has no
-#     corresponding value.
-
-# kind
-
-#     Indicates the type, or kind, of tag. Its value is either one of the
-#     corresponding one-letter flags described under the various −−<LANG>−kinds
-#     options above, or a full name. It is permitted (and is, in fact, the
-#     default) for the key portion of this field to be omitted. The optional
-#     behaviors are controlled with the −−fields option.
-
-# implementation
-
-# When present, this indicates a limited implementation (abstract vs. concrete)
-# of a routine or class, where value is specific to the language ("virtual" or
-# "pure virtual" for C++; "abstract" for Java).
-
-# inherits
-
-#     When present, value. is a comma-separated list of classes from which this
-#     class is derived (i.e. inherits from).
-
-# signature
-
-#     When present, value is a language-dependent representation of the
-#     signature of a routine. A routine signature in its complete form specifies
-#     the return type of a routine and its formal argument list. This extension
-#     field is presently supported only for C-based languages and does not
-#     include the return type.
-
-# In addition, information on the scope of the tag definition may be available,
-# with the key portion equal to some language-dependent construct name and its
-# value the name declared for that construct in the program. This scope entry
-# indicates the scope in which the tag was found. For example, a tag generated
-# for a C structure member would have a scope looking like "struct:myStruct".myStruct".
-
+    def get_tags_dict_by_suffix(self, suffix, **kw):
+        """Return the tags with the given suffix of a tag file as a dict"""
+        filters = kw.get('filters', [])
+        return parse_tag_lines(self.search_by_suffix(suffix),
+                               tag_class=self.tag_class(), filters=filters)
