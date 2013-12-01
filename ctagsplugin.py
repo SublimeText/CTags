@@ -509,7 +509,11 @@ def show_build_panel(view):
     display = []
 
     if view.file_name() is not None:
-        display.append(['Open File', view.file_name()])
+        if not setting('recursive'):
+            display.append(['Open File', view.file_name()])
+        else:
+            display.append([
+                'Open File\'s Directory', os.path.dirname(view.file_name())])
 
     if len(view.window().folders()) > 0:
         element = ['Open Folders']
