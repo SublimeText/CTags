@@ -518,7 +518,8 @@ def show_build_panel(view):
     if len(view.window().folders()) > 0:
         display.append(
             ['All Open Folders', '; '.join(
-                [os.path.split(x)[1] for x in view.window().folders()])])
+                ['\'{0}\''.format(os.path.split(x)[1])
+                 for x in view.window().folders()])])
         display.extend(
             [[os.path.split(x)[1], x] for x in view.window().folders()])
 
