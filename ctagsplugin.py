@@ -888,7 +888,7 @@ class CTagsAutoComplete(sublime_plugin.EventListener):
                 if not (view.window().folders() and os.path.exists(tags_path)):
                     return tags
 
-                f = os.popen("awk '{ print $1 }' '" + tags_path + "'")
+                f = os.popen("awk \"{ print $1 }\" \"" + tags_path + "\"")
 
                 for i in f.readlines():
                     tags.append([i.strip()])
