@@ -516,9 +516,11 @@ def show_build_panel(view):
                 'Open File\'s Directory', os.path.dirname(view.file_name())])
 
     if len(view.window().folders()) > 0:
-        element = ['Open Folders']
-        element.extend(view.window().folders())
-        display.append(element)
+        display.append(
+            ['All Open Folders', '; '.join(
+                [os.path.split(x)[1] for x in view.window().folders()])])
+        display.extend(
+            [[os.path.split(x)[1], x] for x in view.window().folders()])
 
     def on_select(i):
         if i != -1:
@@ -792,7 +794,7 @@ class RebuildTags(sublime_plugin.TextCommand):
             paths.extend(args['dirs'])
             build_ctags(paths)
         elif (self.view.file_name() is None and
-                len(self.view.window().folders()) < 0):
+                len(self.view.window().folders()) <= 0):
             status_message('Cannot build CTags: No file or folder open.')
             return
         else:
