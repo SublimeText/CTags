@@ -280,8 +280,10 @@ def build_ctags(path, tag_file=None, recursive=False, cmd=None, env=None):
         raise IOError('\'path\' is not at valid directory or file path, or '
                       'is not accessible')
 
-    #TODO this can break on some platforms, http://stackoverflow.com/q/8384737
-    cwd = os.path.dirname(path)
+    if os.path.isfile(path):
+        cwd = os.path.dirname(path)
+    else:
+        cwd = path
 
     if tag_file:
         cmd.append('-f {0}'.format(tag_file))
@@ -292,7 +294,7 @@ def build_ctags(path, tag_file=None, recursive=False, cmd=None, env=None):
         filename = os.path.basename(path)
         cmd.append(filename)
     else:  # search all files in current directory
-        cmd.append('*')
+        cmd.append(os.path.join(path, '*'))
 
     # execute the command
     p = subprocess.Popen(cmd, cwd=cwd, shell=True, env=env,
