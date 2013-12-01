@@ -500,6 +500,36 @@ class JumpPrev(sublime_plugin.WindowCommand):
 """CTags commands"""
 
 
+def show_build_panel(view):
+    """Handle build ctags command.
+
+    Allows user to select whether tags should be built for the current file,
+    a given directory or all open directories.
+    """
+    display = []
+
+    if view.file_name() is not None:
+        if not setting('recursive'):
+            display.append(['Open File', view.file_name()])
+        else:
+            display.append([
+                'Open File\'s Directory', os.path.dirname(view.file_name())])
+
+    if len(view.window().folders()) > 0:
+        display.append(
+            ['All Open Folders', '; '.join(
+                ['\'{0}\''.format(os.path.split(x)[1])
+                 for x in view.window().folders()])])
+        display.extend(
+            [[os.path.split(x)[1], x] for x in view.window().folders()])
+
+    def on_select(i):
+        if i != -1:
+            build_ctags(display[i][1:])
+
+    view.window().show_quick_panel(display, on_select)
+
+
 def show_tag_panel(view, result, jump_directly):
     """Handle tag navigation command.
 
@@ -761,75 +791,66 @@ class RebuildTags(sublime_plugin.TextCommand):
         """Handler for ``rebuild_tags`` command"""
         paths = []
 
-        # user has requested to rebuild tags for the specific folders (via
-        # context menu in Folders pane)
         if 'dirs' in args:
             paths.extend(args['dirs'])
-        # file open, rebuild tags relative to the file
-        elif self.view.file_name() is not None:
-            # Rebuild and rebuild tags relative to the currently opened file
-            paths.append(self.view.file_name())
-        # no file is open, build tags for all opened folders
-        elif len(self.view.window().folders()) > 0:
-            # No file is open, rebuild tags for all opened folders
-            paths.extend(self.view.window().folders())
-        # no file or folder open, return
-        else:
+            build_ctags(paths)
+        elif (self.view.file_name() is None and
+                len(self.view.window().folders()) <= 0):
             status_message('Cannot build CTags: No file or folder open.')
             return
+        else:
+            show_build_panel(self.view)
 
-        command = setting('command')
-        recursive = setting('recursive')
-        tag_file = setting('tag_file')
 
-        self.build_ctags(paths, tag_file, recursive, command)
+@threaded(msg='Already running CTags!')
+def build_ctags(paths):
+    """Build tags for the open file or folder(s)
 
-    @threaded(msg='Already running CTags!')
-    def build_ctags(self, paths, tag_file, recursive, command):
-        """Build tags for the open file or folder(s)
+    :param paths: paths to build ctags for
+    :param tag_file: file name to use for tags file
+    :param tag_file: filename to use for the tag file. Defaults to ``tags``
+    :param recursive: specify if search should be recursive in directory
+        given by path. This overrides filename specified by ``path``
+    :param env: environment variables to be used when executing ``ctags``
 
-        :param paths: paths to build ctags for
-        :param tag_file: file name to use for tags file
-        :param tag_file: filename to use for the tag file. Defaults to ``tags``
-        :param recursive: specify if search should be recursive in directory
-            given by path. This overrides filename specified by ``path``
-        :param env: environment variables to be used when executing ``ctags``
+    :returns: None
+    """
+    command = setting('command')
+    recursive = setting('recursive')
+    tag_file = setting('tag_file')
 
-        :returns: None
-        """
+    def tags_building(tag_file):
+        """Display 'Building CTags' message in all views"""
+        print(('Building CTags for %s: Please be patient' % tag_file))
+        in_main(lambda: status_message('Building CTags for {0}: Please be'
+                                       ' patient'.format(tag_file)))()
 
-        def tags_building(tag_file):
-            """Display 'Building CTags' message in all views"""
-            print(('Building CTags for %s: Please be patient' % tag_file))
-            in_main(lambda: status_message('Building CTags for {0}: Please be'
-                                           ' patient'.format(tag_file)))()
+    def tags_built(tag_file):
+        """Display 'Finished Building CTags' message in all views"""
+        print(('Finished building %s' % tag_file))
+        in_main(lambda: status_message('Finished building {0}'
+                                       .format(tag_file)))()
+        in_main(lambda: tags_cache[os.path.dirname(tag_file)].clear())()
 
-        def tags_built(tag_file):
-            """Display 'Finished Building CTags' message in all views"""
-            print(('Finished building %s' % tag_file))
-            in_main(lambda: status_message('Finished building {0}'
-                                           .format(tag_file)))()
-            in_main(lambda: tags_cache[os.path.dirname(tag_file)].clear())()
+    for path in paths:
+        tags_building(path)
 
-        for path in paths:
-            tags_building(path)
+        try:
+            result = ctags.build_ctags(path=path, tag_file=tag_file,
+                                       recursive=recursive, cmd=command)
+        except EnvironmentError as e:
+            if not isinstance(e.strerror, str):
+                str_err = ' '.join(e.strerror.decode('utf-8').splitlines())
 
-            try:
-                result = ctags.build_ctags(path=path, tag_file=tag_file,
-                                           recursive=recursive, cmd=command)
-            except EnvironmentError as e:
-                if not isinstance(e.strerror, str):
-                    str_err = ' '.join(e.strerror.decode('utf-8').splitlines())
+            error_message(str_err)  # show error message
+            return
+        except IOError as e:
+            error_message(str(e).rstrip())
+            return
 
-                error_message(str_err)  # show error message
-                return
-            except IOError as e:
-                error_message(str(e).rstrip())
-                return
+        tags_built(result)
 
-            tags_built(result)
-
-        GetAllCTagsList.ctags_list = []  # clear the cached ctags list
+    GetAllCTagsList.ctags_list = []  # clear the cached ctags list
 
 
 """Autocomplete commands"""
