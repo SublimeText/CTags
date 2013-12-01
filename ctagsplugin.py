@@ -516,16 +516,28 @@ def show_build_panel(view):
                 'Open File\'s Directory', os.path.dirname(view.file_name())])
 
     if len(view.window().folders()) > 0:
+        # append option to build for all open folders
         display.append(
             ['All Open Folders', '; '.join(
                 ['\'{0}\''.format(os.path.split(x)[1])
                  for x in view.window().folders()])])
+        # append options to build for each open folder
         display.extend(
             [[os.path.split(x)[1], x] for x in view.window().folders()])
 
     def on_select(i):
         if i != -1:
-            build_ctags(display[i][1:])
+            if display[i][0] == 'All Open Folders':
+                paths = view.window().folders()
+            else:
+                paths = display[i][1:]
+
+            command = setting('command')
+            recursive = setting('recursive')
+            tag_file = setting('tag_file')
+
+            rebuild_tags = RebuildTags(False)
+            rebuild_tags.build_ctags(paths, command, tag_file, recursive)
 
     view.window().show_quick_panel(display, on_select)
 
@@ -791,9 +803,13 @@ class RebuildTags(sublime_plugin.TextCommand):
         """Handler for ``rebuild_tags`` command"""
         paths = []
 
+        command = setting('command')
+        recursive = setting('recursive')
+        tag_file = setting('tag_file')
+
         if 'dirs' in args:
             paths.extend(args['dirs'])
-            build_ctags(paths)
+            self.build_ctags(paths, command, tag_file, recursive)
         elif (self.view.file_name() is None and
                 len(self.view.window().folders()) <= 0):
             status_message('Cannot build CTags: No file or folder open.')
@@ -801,56 +817,50 @@ class RebuildTags(sublime_plugin.TextCommand):
         else:
             show_build_panel(self.view)
 
+    @threaded(msg='Already running CTags!')
+    def build_ctags(self, paths, command, tag_file, recursive):
+        """Build tags for the open file or folder(s)
 
-@threaded(msg='Already running CTags!')
-def build_ctags(paths):
-    """Build tags for the open file or folder(s)
+        :param paths: paths to build ctags for
+        :param command: ctags command
+        :param tag_file: filename to use for the tag file. Defaults to ``tags``
+        :param recursive: specify if search should be recursive in directory
+            given by path. This overrides filename specified by ``path``
 
-    :param paths: paths to build ctags for
-    :param tag_file: file name to use for tags file
-    :param tag_file: filename to use for the tag file. Defaults to ``tags``
-    :param recursive: specify if search should be recursive in directory
-        given by path. This overrides filename specified by ``path``
-    :param env: environment variables to be used when executing ``ctags``
+        :returns: None
+        """
+        def tags_building(tag_file):
+            """Display 'Building CTags' message in all views"""
+            print(('Building CTags for %s: Please be patient' % tag_file))
+            in_main(lambda: status_message('Building CTags for {0}: Please be'
+                                           ' patient'.format(tag_file)))()
 
-    :returns: None
-    """
-    command = setting('command')
-    recursive = setting('recursive')
-    tag_file = setting('tag_file')
+        def tags_built(tag_file):
+            """Display 'Finished Building CTags' message in all views"""
+            print(('Finished building %s' % tag_file))
+            in_main(lambda: status_message('Finished building {0}'
+                                           .format(tag_file)))()
+            in_main(lambda: tags_cache[os.path.dirname(tag_file)].clear())()
 
-    def tags_building(tag_file):
-        """Display 'Building CTags' message in all views"""
-        print(('Building CTags for %s: Please be patient' % tag_file))
-        in_main(lambda: status_message('Building CTags for {0}: Please be'
-                                       ' patient'.format(tag_file)))()
+        for path in paths:
+            tags_building(path)
 
-    def tags_built(tag_file):
-        """Display 'Finished Building CTags' message in all views"""
-        print(('Finished building %s' % tag_file))
-        in_main(lambda: status_message('Finished building {0}'
-                                       .format(tag_file)))()
-        in_main(lambda: tags_cache[os.path.dirname(tag_file)].clear())()
+            try:
+                result = ctags.build_ctags(path=path, tag_file=tag_file,
+                                           recursive=recursive, cmd=command)
+            except EnvironmentError as e:
+                if not isinstance(e.strerror, str):
+                    str_err = ' '.join(e.strerror.decode('utf-8').splitlines())
 
-    for path in paths:
-        tags_building(path)
+                error_message(str_err)  # show error message
+                return
+            except IOError as e:
+                error_message(str(e).rstrip())
+                return
 
-        try:
-            result = ctags.build_ctags(path=path, tag_file=tag_file,
-                                       recursive=recursive, cmd=command)
-        except EnvironmentError as e:
-            if not isinstance(e.strerror, str):
-                str_err = ' '.join(e.strerror.decode('utf-8').splitlines())
+            tags_built(result)
 
-            error_message(str_err)  # show error message
-            return
-        except IOError as e:
-            error_message(str(e).rstrip())
-            return
-
-        tags_built(result)
-
-    GetAllCTagsList.ctags_list = []  # clear the cached ctags list
+        GetAllCTagsList.ctags_list = []  # clear the cached ctags list
 
 
 """Autocomplete commands"""
