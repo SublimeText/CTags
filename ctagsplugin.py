@@ -848,14 +848,14 @@ class RebuildTags(sublime_plugin.TextCommand):
             try:
                 result = ctags.build_ctags(path=path, tag_file=tag_file,
                                            recursive=recursive, cmd=command)
+            except IOError as e:
+                error_message(str(e).rstrip())
+                return
             except EnvironmentError as e:
                 if not isinstance(e.strerror, str):
                     str_err = ' '.join(e.strerror.decode('utf-8').splitlines())
 
                 error_message(str_err)  # show error message
-                return
-            except IOError as e:
-                error_message(str(e).rstrip())
                 return
 
             tags_built(result)
