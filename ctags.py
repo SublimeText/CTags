@@ -381,6 +381,9 @@ class Tag(object):
         self.column = column
 
     def __lt__(self, other):
+        # handle corner case raised by utf-8 characters
+        if not len(self.line.split()) <= self.column:
+            return False
         return self.line.split('\t')[self.column] < other
 
     def __gt__(self, other):
