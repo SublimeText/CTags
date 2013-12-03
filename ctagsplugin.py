@@ -854,8 +854,9 @@ class RebuildTags(sublime_plugin.TextCommand):
             except EnvironmentError as e:
                 if not isinstance(e.strerror, str):
                     str_err = ' '.join(e.strerror.decode('utf-8').splitlines())
-
-                error_message(str_err)  # show error message
+                else:
+                    str_err = str(e).rstrip()
+                error_message(str_err)  # show error_message
                 return
 
             tags_built(result)
