@@ -310,7 +310,7 @@ def find_with_scope(view, pattern, scope, start_pos=0, cond=True, flags=0):
     max_pos = view.size()
 
     while start_pos < max_pos:
-        f = view.find(pattern[:-5] + '$', start_pos, flags)
+        f = view.find(pattern, start_pos, flags)
 
         if not f or view.match_selector(f.begin(), scope) is cond:
             break
@@ -321,7 +321,7 @@ def find_with_scope(view, pattern, scope, start_pos=0, cond=True, flags=0):
 
 
 def find_source(view, pattern, start_at, flags=sublime.LITERAL):
-    return find_with_scope(view, pattern, 'comment,string',
+    return find_with_scope(view, pattern, 'string',
                            start_at, False, flags)
 
 
@@ -341,28 +341,40 @@ def follow_tag_path(view, tag_path, pattern):
 
     # find the ex_command pattern
     pattern_region = find_source(
-        view, '^' + escape_regex(pattern), start_at, flags=0)
+        view, '^' + escape_regex(pattern) + '$', start_at, flags=0)
 
     if setting('debug'):  # leave a visual trail for easy debugging
         regions = regions + ([pattern_region] if pattern_region else [])
         view.erase_regions('tag_path')
         view.add_regions('tag_path', regions, 'comment', 1)
 
-    return pattern_region.begin() - 1 if pattern_region else start_at
+    return pattern_region.begin() - 1 if pattern_region else None
 
 
 def scroll_to_tag(view, tag, hook=None):
     @on_load(os.path.join(tag.root_dir, tag.filename))
     def and_then(view):
+        do_find = True
+
         if tag.ex_command.isdigit():
             look_from = view.text_point(int(tag.ex_command)-1, 0)
         else:
             look_from = follow_tag_path(view, tag.tag_path, tag.ex_command)
+            if not look_from:
+                do_find = False
 
-        symbol_region = view.find(tag.ex_command, look_from, sublime.LITERAL)
+        if do_find:
+            symbol_region = view.find(escape_regex(tag.symbol) + r"(?:[^_]|$)",
+                look_from, 0)
 
-        select(view, (symbol_region or (view.line(look_from + 1)
-                      if look_from else sublime.Region(0, 0))))
+        if do_find and symbol_region:
+            # Using reversed symbol_region so cursor stays in front of the
+            # symbol. - 1 to discard the additional regex part.
+            select_region = sublime.Region(symbol_region.end() - 1,
+                symbol_region.begin())
+            select(view, select_region)
+        else:
+            status_message('Can\'t find "%s"' % tag.symbol)
 
         if hook:
             hook(view)
