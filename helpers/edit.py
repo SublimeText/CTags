@@ -102,7 +102,7 @@ class Edit:
         view = self.view
         if sublime.version().startswith('2'):
             edit = view.begin_edit()
-            self.run(edit)
+            self.run(view, edit)
             view.end_edit(edit)
         else:
             key = str(hash(tuple(self.steps)))
