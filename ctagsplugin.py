@@ -359,7 +359,7 @@ def scroll_to_tag(view, tag, hook=None):
         else:
             look_from = follow_tag_path(view, tag.tag_path, tag.ex_command)
 
-        symbol_region = view.find(tag.ex_command, look_from, sublime.LITERAL)
+        symbol_region = view.find(escape_regex(tag.ex_command) + "$", look_from, 0)
 
         select(view, (symbol_region or (view.line(look_from + 1)
                       if look_from else sublime.Region(0, 0))))
