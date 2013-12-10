@@ -158,7 +158,7 @@ def post_process_tag(tag):
     """
     tag.update(process_fields(tag))
 
-    tag['ex_command'] = process_ex_cmd(tag)
+    #tag['ex_command'] = process_ex_cmd(tag)
 
     tag.update(create_tag_path(tag))
 
