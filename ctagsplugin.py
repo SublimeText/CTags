@@ -297,49 +297,34 @@ def get_common_ancestor_folder(path, folders):
 """Scrolling functions"""
 
 
-def find_line(view, tag):
-    """Find a line corresponding to the given ``tag`` in the given ``view``
-
-    :param view: the view to search for the file in
-    :param tag: tag object to use in parsing object
-    """
-    result = tag.ex_command
-
-    if result['line_num']:  # result is a line number
-        symbol_region = view.text_point(int(result['line_num']) - 1, 0)
-    else:  # it's one or the other, so result is a regex
-        # we want to escape all symbols except the start ('^') and end ('/')
-        # chars, assuming they even exist. Hence, we execute re.escape on the
-        # "pattern" only
-        search_pattern = ''.join(filter(None, (
-            result['start'], re.escape(result['pattern']), result['end'])))
-
-        symbol_region = view.find(search_pattern, 0)
-
-        if not symbol_region:  # file may have changed - alert user
-            print('Uh oh...')
-
-    select(view, (symbol_region))
-
-
 def scroll_to_tag(view, tag, hook=None):
     @on_load(os.path.join(tag.root_dir, tag.filename))
     def and_then(view):
-        '''
-        if tag.ex_command.isdigit():
-            look_from = view.text_point(int(tag.ex_command)-1, 0)
-        else:
-            look_from = follow_tag_path(view, tag.tag_path, tag.ex_command)
+        """Find a line corresponding to the given ``tag`` in the given ``view``
 
-        symbol_region = view.find(tag.ex_command, look_from, sublime.LITERAL)
+        :param view: the view to search for the file in
+        :param tag: tag object to use in parsing object
+        """
+        result = tag.ex_command
 
-        select(view, (symbol_region or (view.line(look_from + 1)
-                      if look_from else sublime.Region(0, 0))))
+        if result['line_num']:  # result is a line number
+            symbol_region = view.text_point(int(result['line_num']) - 1, 0)
+        else:  # it's one or the other, so result is a regex
+            # we want to escape all symbols except the start ('^') and end
+            # ('/') chars, assuming they even exist. Hence, we execute
+            # re.escape on the "pattern" only
+            search_pattern = ''.join(filter(None, (
+                result['start'], re.escape(result['pattern']), result['end'])))
+
+            symbol_region = view.find(search_pattern, 0)
+
+            if not symbol_region:  # file may have changed - alert user
+                print('Uh oh...')
+
+        select(view, (symbol_region))
 
         if hook:
             hook(view)
-        '''
-        find_line(view, tag)
 
 
 """Formatting helper functions"""
