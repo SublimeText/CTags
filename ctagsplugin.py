@@ -48,15 +48,10 @@ OBJECT_PUNCTUATORS = {
     'function': '/',
 }
 
-ENTITY_SCOPE = 'entity.name.function, entity.name.type, meta.toc-list'
-
 RUBY_SPECIAL_ENDINGS = '\?|!'
 RUBY_SCOPES = '.*(ruby|rails).*'
 
 ON_LOAD = sublime_plugin.all_callbacks['on_load']
-
-RE_SPECIAL_CHARS = re.compile(
-    '(\\\\|\\*|\\+|\\?|\\||\\{|\\}|\\[|\\]|\\(|\\)|\\^|\\$|\\.|\\#|\\ )')
 
 
 """
@@ -85,10 +80,6 @@ def get_setting(key, default=None):
     return get_settings().get(key, default)
 
 setting = get_setting
-
-
-def escape_regex(s):
-    return RE_SPECIAL_CHARS.sub(lambda m: '\\%s' % m.group(1), s)
 
 
 def select(view, region):
@@ -304,51 +295,6 @@ def get_common_ancestor_folder(path, folders):
 
 
 """Scrolling functions"""
-
-
-def find_with_scope(view, pattern, scope, start_pos=0, cond=True, flags=0):
-    max_pos = view.size()
-
-    while start_pos < max_pos:
-        f = view.find(pattern[:-5] + '$', start_pos, flags)
-
-        if not f or view.match_selector(f.begin(), scope) is cond:
-            break
-        else:
-            start_pos = f.end()
-
-    return f
-
-
-def find_source(view, pattern, start_at, flags=sublime.LITERAL):
-    return find_with_scope(view, pattern, 'comment,string',
-                           start_at, False, flags)
-
-
-def follow_tag_path(view, tag_path, pattern):
-    regions = [sublime.Region(0, 0)]
-
-    for p in list(tag_path)[1:-1]:
-        while True:  # .end() is BUG!
-            regions.append(find_source(view, p, regions[-1].begin()))
-
-            if ((regions[-1] in (None, regions[-2]) or
-                 view.match_selector(regions[-1].begin(), ENTITY_SCOPE))):
-                regions = [r for r in regions if r is not None]
-                break
-
-    start_at = max(regions, key=lambda r: r.begin()).begin() - 1
-
-    # find the ex_command pattern
-    pattern_region = find_source(
-        view, '^' + escape_regex(pattern), start_at, flags=0)
-
-    if setting('debug'):  # leave a visual trail for easy debugging
-        regions = regions + ([pattern_region] if pattern_region else [])
-        view.erase_regions('tag_path')
-        view.add_regions('tag_path', regions, 'comment', 1)
-
-    return pattern_region.begin() - 1 if pattern_region else start_at
 
 
 def find_line(view, tag):
