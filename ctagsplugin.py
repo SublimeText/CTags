@@ -303,20 +303,7 @@ def find_line(view, tag):
     :param view: the view to search for the file in
     :param tag: tag object to use in parsing object
     """
-    SEARCH_PATTERN_RE = re.compile(
-        r'(((?P<escape>(\/|\?))'
-        '(?P<start>\^)?'
-        '(?P<pattern>.*?)'
-        '(?P<end>\$)?'
-        '(?P=escape))|'
-        '((?P<line_num>\d+)))')
-
-    result = SEARCH_PATTERN_RE.match(tag.ex_command)
-
-    if not result:  # tag is invalid
-        print('Uh oh...')
-
-    result = result.groupdict()
+    result = tag.ex_command
 
     if result['line_num']:  # result is a line number
         symbol_region = view.text_point(int(result['line_num']) - 1, 0)
@@ -376,7 +363,7 @@ def format_tag_for_quickopen(tag, show_path=True):
             f += string.Template(
                 '    %($field)s$punct%(symbol)s').substitute(locals())
 
-    format = [(f or tag.symbol) % tag, tag.ex_command]
+    format = [(f or tag.symbol) % tag, tag.ex_command['pattern']]
     format[1] = format[1].strip()
 
     if show_path:

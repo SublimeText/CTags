@@ -14,12 +14,20 @@ Contants
 """
 
 TAGS_RE = re.compile(
-    '(?P<symbol>[^\t]+)\t'
+    r'((?P<symbol>[^\t]+)\t'
     '(?P<filename>[^\t]+)\t'
     '(?P<ex_command>.*?);"\t'
     '(?P<type>[^\t\r\n]+)'
-    '(?:\t(?P<fields>.*))?'
+    '(?:\t(?P<fields>.*))?)'
 )
+
+EX_COMMAND_RE = re.compile(
+    r'(((?P<escape>(\/|\?))'
+    '(?P<start>\^)?'
+    '(?P<pattern>.*?)'
+    '(?P<end>\$)?'
+    '(?P=escape))|'
+    '((?P<line_num>\d+)))')
 
 # column indexes
 SYMBOL = 0
@@ -158,7 +166,7 @@ def post_process_tag(tag):
     """
     tag.update(process_fields(tag))
 
-    #tag['ex_command'] = process_ex_cmd(tag)
+    tag['ex_command'] = process_ex_cmd(tag)
 
     tag.update(create_tag_path(tag))
 
@@ -169,18 +177,20 @@ def process_ex_cmd(tag):
     """Process the 'ex_command' element of a tag dictionary.
 
     Process the ex_command string - a line number or regex used to find symbol
-    declaration - by unescaping the regex where used.
+    declaration - by breaking it into distinct parts.
 
     :param tag: dict containing a tag
 
     :returns: updated 'ex_command' dictionary entry
     """
-    ex_cmd = tag.get('ex_command')
+    result = EX_COMMAND_RE.match(tag.get('ex_command'))
 
-    if ex_cmd.isdigit():  # if a line number, do nothing
-        return ex_cmd
-    else:                 # else a regex, so unescape
-        return re.sub(r"\\(\$|/|\^|\\)", r'\1', ex_cmd[2:-2])  # unescape regex
+    if not result:  # tag is invalid
+        print('Uh oh...')
+
+    result = result.groupdict()
+
+    return result
 
 
 def process_fields(tag):
