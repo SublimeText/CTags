@@ -186,7 +186,7 @@ def process_ex_cmd(tag):
     result = EX_COMMAND_RE.match(tag.get('ex_command'))
 
     if not result:  # tag is invalid
-        print('Uh oh...')
+        raise TypeError('Unable to parse \'ex_command\'')
 
     result = result.groupdict()
 
