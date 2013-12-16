@@ -27,7 +27,7 @@ EX_COMMAND_RE = re.compile(
     '(?P<pattern>.*?)'
     '(?P<end>\$)?'
     '(?P=escape))|'
-    '((?P<line_num>\d+)))')
+    '((?P<line_num>\d+)))$')
 
 # column indexes
 SYMBOL = 0

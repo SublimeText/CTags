@@ -314,7 +314,9 @@ def scroll_to_tag(view, tag, hook=None):
             # ('/') chars, assuming they even exist. Hence, we execute
             # re.escape on the "pattern" only
             search_pattern = ''.join(filter(None, (
-                result['start'], re.escape(result['pattern']), result['end'])))
+                result['start'],
+                re.escape(result['pattern'].replace('\\/', '/')),
+                result['end'])))
 
             symbol_region = view.find(search_pattern, 0)
 
