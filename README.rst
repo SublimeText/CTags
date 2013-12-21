@@ -82,7 +82,7 @@ To install ctags use your package manager.
 
 * For Debian-based systems (Ubuntu, Mint, etc.)::
 
-    sudo apt-get install ctags
+    sudo apt-get install exuberant-ctags
 
 * For Red Hat-based systems (Red Hat, Fedora, CentOS)::
 
