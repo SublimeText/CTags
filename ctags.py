@@ -258,7 +258,8 @@ def create_tag_path(tag):
 """Tag building/sorting functions"""
 
 
-def build_ctags(path, tag_file=None, recursive=False, cmd=None, env=None):
+def build_ctags(path, tag_file=None, recursive=False, cmd=None, env=None,
+                ignore_file=None):
     """Execute the ``ctags`` command using ``Popen``
 
     :param path: path to file or directory (with all files) to generate
@@ -284,6 +285,13 @@ def build_ctags(path, tag_file=None, recursive=False, cmd=None, env=None):
         cwd = os.path.dirname(path)
     else:
         cwd = path
+
+    if ignore_file:
+        if not os.path.exists(path):
+            f = open(path, "wb")
+            f.write('')
+            f.Close()
+        cmd.append('--exclude=@{0}'.format(ignore_file))
 
     if tag_file:
         cmd.append('-f {0}'.format(tag_file))

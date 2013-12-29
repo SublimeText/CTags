@@ -17,6 +17,9 @@
     // Default read/write location of the tags file
     "tag_file" : ".tags",
 
+    // Wildcard list of files and directories do not generate tags
+    "ignore_file": ".tagignore",
+
     //
     "filters": {
         "source.python": {"type":"^i$"}
