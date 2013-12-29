@@ -290,7 +290,7 @@ def build_ctags(path, tag_file=None, recursive=False, cmd=None, env=None,
         if not os.path.exists(path):
             f = open(path, "wb")
             f.write('')
-            f.Close()
+            f.close()
         cmd.append('--exclude=@{0}'.format(ignore_file))
 
     if tag_file:
