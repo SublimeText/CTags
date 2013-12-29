@@ -547,9 +547,11 @@ def show_build_panel(view):
             command = setting('command')
             recursive = setting('recursive')
             tag_file = setting('tag_file')
+            ignore_file = setting('ignore_file')
 
             rebuild_tags = RebuildTags(False)
-            rebuild_tags.build_ctags(paths, command, tag_file, recursive)
+            rebuild_tags.build_ctags(paths, command, tag_file, recursive,
+                                     ignore_file)
 
     view.window().show_quick_panel(display, on_select)
 
@@ -831,7 +833,7 @@ class RebuildTags(sublime_plugin.TextCommand):
             show_build_panel(self.view)
 
     @threaded(msg='Already running CTags!')
-    def build_ctags(self, paths, command, tag_file, recursive, ignore_file=""):
+    def build_ctags(self, paths, command, tag_file, recursive, ignore_file):
         """Build tags for the open file or folder(s)
 
         :param paths: paths to build ctags for
@@ -839,7 +841,7 @@ class RebuildTags(sublime_plugin.TextCommand):
         :param tag_file: filename to use for the tag file. Defaults to ``tags``
         :param recursive: specify if search should be recursive in directory
             given by path. This overrides filename specified by ``path``
-
+        :param ignore_file: list of files and directories do not generate tags
         :returns: None
         """
         def tags_building(tag_file):
@@ -860,7 +862,7 @@ class RebuildTags(sublime_plugin.TextCommand):
 
             try:
                 result = ctags.build_ctags(path=path, tag_file=tag_file,
-                                           recursive=recursive, cmd=command
+                                           recursive=recursive, cmd=command,
                                            ignore_file=ignore_file)
             except IOError as e:
                 error_message(str(e).rstrip())
