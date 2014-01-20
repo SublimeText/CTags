@@ -256,7 +256,7 @@ def get_alternate_tags_paths(view, tags_file):
         for (selector, platform), path in setting('extra_tag_paths'):
             if view.match_selector(view.sel()[0].begin(), selector):
                 if sublime.platform() == platform:
-                    search_paths.append(path)
+                    search_paths.append(os.path.join(path, setting('tag_file')))
     except Exception as e:
         print(e)
 
