@@ -298,7 +298,8 @@ def build_ctags(path, tag_file=None, recursive=False, cmd=None, env=None):
 
     # execute the command
     p = subprocess.Popen(cmd, cwd=cwd, shell=False, env=env,
-                         stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+                         stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+                         stderr=subprocess.STDOUT)
 
     ret = p.wait()
 
