@@ -473,12 +473,12 @@ class TagFile(object):
             leftIndex = bisect.bisect_left(self, key)
             if exact_match:
                 result = self[leftIndex]
-                while result[result.column] == key:
+                while result.line and result[result.column] == key:
                     yield(result)
                     result = Tag(self.mapped.readline().strip(), self.column)
             else:
                 result = self[leftIndex]
-                while result[result.column].startswith(key):
+                while result.line and result[result.column].startswith(key):
                     yield(result)
                     result = Tag(self.mapped.readline().strip(), self.column)
 
