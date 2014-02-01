@@ -14,6 +14,9 @@
     // Set to false to disable recursive search for ctag generation
     "recursive" : true,
 
+    // Additional options to pass to ctags
+    "additional_options" : "",
+
     // Default read/write location of the tags file
     "tag_file" : ".tags",
 

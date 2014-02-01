@@ -258,7 +258,8 @@ def create_tag_path(tag):
 """Tag building/sorting functions"""
 
 
-def build_ctags(path, tag_file=None, recursive=False, cmd=None, env=None):
+def build_ctags(path, tag_file=None, recursive=False, opts=None, cmd=None,
+                env=None):
     """Execute the ``ctags`` command using ``Popen``
 
     :param path: path to file or directory (with all files) to generate
@@ -266,6 +267,7 @@ def build_ctags(path, tag_file=None, recursive=False, cmd=None, env=None):
     :param tag_file: filename to use for the tag file. Defaults to ``tags``
     :param recursive: specify if search should be recursive in directory
         given by path. This overrides filename specified by ``path``
+    :param opts: additional options to pass to the ctags executable
     :param env: environment variables to be used when executing ``ctags``
 
     :returns: original ``tag_file`` filename
@@ -287,6 +289,9 @@ def build_ctags(path, tag_file=None, recursive=False, cmd=None, env=None):
 
     if tag_file:
         cmd.append('-f {0}'.format(tag_file))
+
+    if opts:
+        cmd.append(opts)
 
     if recursive:  # ignore any file specified in path if recursive set
         cmd.append('-R')

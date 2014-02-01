@@ -162,6 +162,26 @@ class CTagsTest(unittest.TestCase):
                 os.remove(path)  # clean up
                 os.remove(tag_file)
 
+    def test_build_ctags__additional_options(self):
+        """Test execution of ctags using additional ctags options"""
+        path = self.build_python_file()
+
+        tag_file = ctags.build_ctags(path=path, tag_file='my_tag_file',
+                                     opts="--language-force=java")
+
+        with codecs.open(tag_file, encoding='utf-8') as output:
+            try:
+                content = output.readlines()
+                # there should be nothing in the file but headers (due to the
+                # Java 'language-force' option on a Python file)
+                self.assertEqual(
+                    content[-1][:2],  # all comments start with '!_' - confirm
+                    '!_')
+            finally:
+                output.close()
+                os.remove(path)  # clean up
+                os.remove(tag_file)
+
     """post_process_tag"""
 
     def test_post_process_tag__line_numbers(self):
