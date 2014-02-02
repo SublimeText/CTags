@@ -373,6 +373,8 @@ def scroll_to_tag(view, tag, hook=None):
             select_region = sublime.Region(symbol_region.end() - 1,
                 symbol_region.begin())
             select(view, select_region)
+            if not setting('select_searched_symbol'):
+                view.run_command('exit_visual_mode')
         else:
             status_message('Can\'t find "%s"' % tag.symbol)
 
