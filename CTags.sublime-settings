@@ -41,5 +41,8 @@
     "extra_tag_paths": [[["source.python", "windows"], "C:\\Python27\\Lib\\tags"]],
 
     // Additional tag files to search
-    "extra_tag_files": [".gemtags", "tags"]
+    "extra_tag_files": [".gemtags", "tags"],
+
+    // Set to false so as not to select searched symbol (in Vintage mode)
+    "select_searched_symbol": true
 }
