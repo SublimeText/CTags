@@ -350,11 +350,11 @@ def resort_ctags(tag_file):
     """
     keys = {}
 
-    with codecs.open(tag_file, encoding='utf-8') as fh:
+    with codecs.open(tag_file, encoding='utf-8', errors='ignore') as fh:
         for line in fh:
             keys.setdefault(line.split('\t')[FILENAME], []).append(line)
 
-    with codecs.open(tag_file+'_sorted_by_file', 'w', encoding='utf-8') as fw:
+    with codecs.open(tag_file+'_sorted_by_file', 'w', encoding='utf-8', errors='ignore') as fw:
         for k in sorted(keys):
             for line in keys[k]:
                 split = line.split('\t')
