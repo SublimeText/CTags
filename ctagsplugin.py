@@ -549,9 +549,10 @@ def show_build_panel(view):
             command = setting('command')
             recursive = setting('recursive')
             tag_file = setting('tag_file')
+            opts = setting('opts')
 
             rebuild_tags = RebuildTags(False)
-            rebuild_tags.build_ctags(paths, command, tag_file, recursive)
+            rebuild_tags.build_ctags(paths, command, tag_file, recursive, opts)
 
     view.window().show_quick_panel(display, on_select)
 
