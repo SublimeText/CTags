@@ -8,17 +8,24 @@
     "autocomplete": false,
 
     // Alter this value if your ctags command is not in the PATH, or if using
-    // a different version of ctags to that in the path (i.e. for OSX)
+    // a different version of ctags to that in the path (i.e. for OSX).
+    //
+    // NOTE: You *should not* place entire commands here. These commands are
+    // built automatically using the values below. For example:
+    //   GOOD: "command": "/usr/bin/ctags"
+    //   BAD:  "command": "ctags -R -f .tags --exclude=some/path"
     "command": "",
 
-    // Set to false to disable recursive search for ctag generation
+    // Set to false to disable recursive search for ctag generation. This
+    // translates the `-R` parameter
     "recursive" : true,
 
-    // Additional options to pass to ctags
-    "opts" : "",
-
-    // Default read/write location of the tags file
+    // Default read/write location of the tags file. This translates to the
+    // `-f [FILENAME]` parameter
     "tag_file" : ".tags",
+
+    // Additional options to pass to ctags, i.e. "--exclude=some/path"
+    "opts" : "",
 
     //
     "filters": {
