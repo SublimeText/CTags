@@ -290,10 +290,11 @@ def build_ctags(path, tag_file=None, recursive=False, opts=None, cmd=None,
     if tag_file:
         cmd.append('-f {0}'.format(tag_file))
 
-    if opts and type(opts) == list:
-        cmd.extend(opts)
-    else:  # *should* be a list, but better safe than sorry
-        cmd.append(opts)
+    if opts:
+        if type(opts) == list:
+            cmd.extend(opts)
+        else:  # *should* be a list, but better safe than sorry
+            cmd.append(opts)
 
     if recursive:  # ignore any file specified in path if recursive set
         cmd.append('-R')
