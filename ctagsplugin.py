@@ -92,10 +92,13 @@ def escape_regex(s):
 
 
 def select(view, region):
-    a = region.a
-    b = region.b
-    a = min(a, b)
-    region = sublime.Region(a , a )
+    if view.settings().get("command_mode"):
+        a = region.a
+        b = region.b
+        a = min(a, b)
+        region = sublime.Region(a , a )
+
+  
     sel_set = view.sel()
     sel_set.clear()
     sel_set.add(region)
