@@ -9,6 +9,7 @@ import pprint
 import re
 import string
 import threading
+import subprocess
 
 from itertools import chain
 from operator import itemgetter as iget
@@ -871,7 +872,7 @@ class RebuildTags(sublime_plugin.TextCommand):
                 return
             except subprocess.CalledProcessError as e:
                 if sublime.platform() == 'windows':
-                    str_err = e.output.decode(encoding='windows-1252').rstrip()
+                    str_err = e.output.decode('windows-1252').rstrip()
                 else:
                     str_err = e.output.rstrip()
                 error_message(str_err)
