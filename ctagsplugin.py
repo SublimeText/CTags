@@ -877,13 +877,9 @@ class RebuildTags(sublime_plugin.TextCommand):
                     str_err = e.output.rstrip()
                 error_message(str_err)
                 return
-            except EnvironmentError as e:
-                if not isinstance(e.strerror, str):
-                    str_err = ' '.join(e.strerror.decode('utf-8').splitlines())
-                else:
-                    str_err = str(e).rstrip()
-                error_message(str_err)  # show error_message
-                return
+            except Exception as e:
+                error_message("An unknown error occured.\nCheck the console for info.")
+                raise e
 
             tags_built(result)
 
