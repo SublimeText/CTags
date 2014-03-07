@@ -5,9 +5,15 @@
 import codecs
 import re
 import os
+import sys
 import subprocess
 import bisect
 import mmap
+
+if sys.version_info<(2,7,0):
+    from helpers.check_output import check_output
+else:
+    from subprocess import check_output
 
 """
 Contants
@@ -302,9 +308,8 @@ def build_ctags(path, tag_file=None, recursive=False, opts=None, cmd=None,
         cmd.append(os.path.join(path, '*'))
 
     # execute the command
-    p = subprocess.check_output(
-        cmd, cwd=cwd, shell=False, env=env, stdin=subprocess.PIPE,
-        stderr=subprocess.STDOUT)
+    check_output(cmd, cwd=cwd, shell=False, env=env, stdin=subprocess.PIPE,
+                 stderr=subprocess.STDOUT)
 
     if not tag_file:  # Exuberant ctags defaults to ``tags`` filename.
         tag_file = os.path.join(cwd, 'tags')
