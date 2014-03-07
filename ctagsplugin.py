@@ -867,7 +867,14 @@ class RebuildTags(sublime_plugin.TextCommand):
                                            recursive=recursive, opts=opts,
                                            cmd=command)
             except IOError as e:
-                error_message(str(e).rstrip())
+                error_message(e.strerror)
+                return
+            except subprocess.CalledProcessError as e:
+                if sublime.platform() == 'windows':
+                    str_err = e.output.decode(encoding='windows-1252').rstrip()
+                else:
+                    str_err = e.output.rstrip()
+                error_message(str_err)
                 return
             except EnvironmentError as e:
                 if not isinstance(e.strerror, str):

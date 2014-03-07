@@ -302,14 +302,9 @@ def build_ctags(path, tag_file=None, recursive=False, opts=None, cmd=None,
         cmd.append(os.path.join(path, '*'))
 
     # execute the command
-    p = subprocess.Popen(cmd, cwd=cwd, shell=False, env=env,
-                         stdin=subprocess.PIPE, stdout=subprocess.PIPE,
-                         stderr=subprocess.STDOUT)
-
-    ret = p.wait()
-
-    if ret:
-        raise EnvironmentError(ret, p.stdout.read())
+    p = subprocess.check_output(
+        cmd, cwd=cwd, shell=False, env=env, stdin=subprocess.PIPE,
+        stderr=subprocess.STDOUT)
 
     if not tag_file:  # Exuberant ctags defaults to ``tags`` filename.
         tag_file = os.path.join(cwd, 'tags')
