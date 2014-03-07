@@ -307,8 +307,13 @@ def build_ctags(path, tag_file=None, recursive=False, opts=None, cmd=None,
     else:  # search all files in current directory
         cmd.append(os.path.join(path, '*'))
 
+    # workaround for the issue described here:
+    #   http://bugs.python.org/issue6689
+    if os.name == 'posix':
+        cmd = ' '.join(cmd)
+
     # execute the command
-    check_output(cmd, cwd=cwd, shell=False, env=env, stdin=subprocess.PIPE,
+    check_output(cmd, cwd=cwd, shell=True, env=env, stdin=subprocess.PIPE,
                  stderr=subprocess.STDOUT)
 
     if not tag_file:  # Exuberant ctags defaults to ``tags`` filename.
