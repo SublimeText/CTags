@@ -259,7 +259,7 @@ def create_tag_path(tag):
 
 
 def build_ctags(path, tag_file=None, recursive=False, opts=None, cmd=None,
-                env=None):
+                fast_sort=False, env=None):
     """Execute the ``ctags`` command using ``Popen``
 
     :param path: path to file or directory (with all files) to generate
@@ -268,6 +268,8 @@ def build_ctags(path, tag_file=None, recursive=False, opts=None, cmd=None,
     :param recursive: specify if search should be recursive in directory
         given by path. This overrides filename specified by ``path``
     :param opts: list of additional options to pass to the ctags executable
+    :param cmd: path or name of ctags executable, if not 'ctags'
+    :param fast_sort: specify if sort should use the 'GNU sort' application
     :param env: environment variables to be used when executing ``ctags``
 
     :returns: original ``tag_file`` filename
@@ -321,16 +323,56 @@ def build_ctags(path, tag_file=None, recursive=False, opts=None, cmd=None,
             tag_file = os.path.join(cwd, tag_file)
 
     # re-sort ctag file in filename order to improve search performance
-    resort_ctags(tag_file)
+    resort_ctags(tag_file, fast_sort)
 
     return tag_file
 
 
-def resort_ctags(tag_file):
+def resort_ctags(tag_file, fast_sort=False):
     """Rearrange ctags file for speed.
 
     Resorts (re-sort) a CTag file in order of file. This improves searching
     performance when searching tags by file as a binary search can be used.
+
+    This function doesn't do any sorting; instead it just calls the relevant
+    function.
+
+    :param tag_file: path to tag file to be sorted
+    :param fast_sort: specify if sort should use the 'GNU sort' application
+
+    :returns: None
+    """
+    if fast_sort:
+        _resort_ctags__nix(tag_file)
+    else:
+        _resort_ctags__python(tag_file)
+
+
+def _resort_ctags__nix(tag_file):
+    """Sort a ctags file using the external 'GNU sort' application.
+
+    :param tag_file: The location of the tagfile to be sorted
+
+    :returns: None
+    """
+    cmd = ['sort', '-t\t', '-k2,2', '-o{0}_sorted_by_file'.format(tag_file),
+           tag_file]
+    cwd = os.path.dirname(tag_file)
+    env = None
+
+    # execute the command
+    p = subprocess.Popen(cmd, cwd=cwd, shell=False, env=env,
+                         stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+                         stderr=subprocess.STDOUT)
+
+    ret = p.wait()
+
+    if ret:
+        raise EnvironmentError(ret, p.stdout.read())
+
+
+def _resort_ctags__python(tag_file):
+    """Resort a CTags tag file using a simple Python sorting algorithm.
 
     The algorithm works as so:
 
@@ -346,6 +388,9 @@ def resort_ctags(tag_file):
                 Remove the prepending ``.\`` from the ``file_name`` part of
                     the                   tag
                 Join the line again and write the ``sorted_by_file`` file
+
+    This algorithm can have issues with particularly large files. These issues
+    are documented here: https://github.com/SublimeText/CTags/issues/145
 
     :param tag_file: The location of the tagfile to be sorted
 

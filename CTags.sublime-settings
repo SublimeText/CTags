@@ -41,6 +41,13 @@
     //
     "definition_current_first": true,
 
+    // Enable "fast sort". Use the 'GNU sort' application commonly found
+    // on *nix platforms.
+    //
+    // This is currently *experimental* and should not be enabled unless you
+    // know what you're doing.
+    "fast_sort": false,
+
     // Show the ctags menu in the context menus
     "show_context_menus": true,
 

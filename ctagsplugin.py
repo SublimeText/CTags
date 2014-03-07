@@ -550,9 +550,10 @@ def show_build_panel(view):
             recursive = setting('recursive')
             tag_file = setting('tag_file')
             opts = setting('opts')
+            fast_sort = setting('fast_sort')
 
             rebuild_tags = RebuildTags(False)
-            rebuild_tags.build_ctags(paths, command, tag_file, recursive, opts)
+            rebuild_tags.build_ctags(paths, command, tag_file, recursive, opts, fast_sort)
 
     view.window().show_quick_panel(display, on_select)
 
@@ -822,10 +823,11 @@ class RebuildTags(sublime_plugin.TextCommand):
         recursive = setting('recursive')
         opts = setting('opts')
         tag_file = setting('tag_file')
+        fast_sort = setting('fast_sort')
 
         if 'dirs' in args:
             paths.extend(args['dirs'])
-            self.build_ctags(paths, command, tag_file, recursive, opts)
+            self.build_ctags(paths, command, tag_file, recursive, opts, fast_sort)
         elif (self.view.file_name() is None and
                 len(self.view.window().folders()) <= 0):
             status_message('Cannot build CTags: No file or folder open.')
@@ -834,7 +836,7 @@ class RebuildTags(sublime_plugin.TextCommand):
             show_build_panel(self.view)
 
     @threaded(msg='Already running CTags!')
-    def build_ctags(self, paths, command, tag_file, recursive, opts):
+    def build_ctags(self, paths, command, tag_file, recursive, opts, fast_sort):
         """Build tags for the open file or folder(s)
 
         :param paths: paths to build ctags for
@@ -866,7 +868,7 @@ class RebuildTags(sublime_plugin.TextCommand):
             try:
                 result = ctags.build_ctags(path=path, tag_file=tag_file,
                                            recursive=recursive, opts=opts,
-                                           cmd=command)
+                                           cmd=command, fast_sort=fast_sort)
             except IOError as e:
                 error_message(str(e).rstrip())
                 return
