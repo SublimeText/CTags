@@ -872,7 +872,8 @@ class RebuildTags(sublime_plugin.TextCommand):
                 return
             except subprocess.CalledProcessError as e:
                 if sublime.platform() == 'windows':
-                    str_err = e.output.decode('windows-1252').rstrip()
+                    str_err = ' '.join(
+                        e.output.decode('windows-1252').splitlines())
                 else:
                     str_err = e.output.rstrip()
                 error_message(str_err)
