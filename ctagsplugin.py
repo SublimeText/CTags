@@ -842,7 +842,8 @@ class RebuildTags(sublime_plugin.TextCommand):
         :param tag_file: filename to use for the tag file. Defaults to ``tags``
         :param recursive: specify if search should be recursive in directory
             given by path. This overrides filename specified by ``path``
-        :param opts: additional parameters to pass to the ``ctags`` executable
+        :param opts: list of additional parameters to pass to the ``ctags``
+            executable
 
         :returns: None
         """
