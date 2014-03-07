@@ -343,9 +343,44 @@ def resort_ctags(tag_file, fast_sort=False):
     :returns: None
     """
     if fast_sort:
-        _resort_ctags__nix(tag_file)
+        if os.name == 'posix':
+            _resort_ctags__nix(tag_file)
+        else:
+            _resort_ctags__win(tag_file)
     else:
         _resort_ctags__python(tag_file)
+
+
+def _resort_ctags__win(tag_file):
+    """Sort a ctags file using PowerShell cmdlets.
+
+    :param tag_file: The location of the tagfile to be sorted
+
+    :returns: None
+    """
+    out_file = '{0}_sorted_by_file'.format(tag_file)
+    read_cmd = [
+        'Import-Csv', '-Path', tag_file, '-Delimiter', '"`t"',
+        '-Header', 'Symbol,Filename,Ex,Type,f1,f2,f3,f4,f5' ]
+    sort_cmd = [
+        'Sort-Object', 'Filename' ]
+    write_cmd = [
+        'Export-Csv', '-Path', out_file, '-Delimiter', '"`t"',
+        '-NoTypeInformation' ]
+
+    cmd = ['powershell', '-Command'] + read_cmd + ['|'] + sort_cmd + ['|'] + write_cmd
+    cwd = os.path.dirname(tag_file)
+    env = None
+
+    # execute the command
+    proc = subprocess.Popen(cmd, cwd=cwd, shell=False, env=env,
+                            stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+                            stderr=subprocess.STDOUT)
+
+    ret = proc.wait()
+
+    if ret:
+        raise EnvironmentError(ret, proc.stdout.read())
 
 
 def _resort_ctags__nix(tag_file):
