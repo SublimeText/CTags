@@ -8,6 +8,8 @@ import os
 import subprocess
 import bisect
 import mmap
+import csv
+import operator
 
 """
 Contants
@@ -372,42 +374,29 @@ def _resort_ctags__nix(tag_file):
 
 
 def _resort_ctags__python(tag_file):
-    """Resort a CTags tag file using a simple Python sorting algorithm.
+    """Resort a CTags tag file using a simple in-memory Python sort.
 
-    The algorithm works as so:
-
-        For each line in the tag file
-            Read the file name (``file_name``) the tag belongs to
-            If not exists, create an empty array and store in the
-                dictionary with the file name as key
-            Save the line to this list
-        Create a new ``[tagfile]_sorted_by_file`` file
-        For each key in the sorted dictionary
-            For each line in the list indicated by the key
-                Split the line on tab character
-                Remove the prepending ``.\`` from the ``file_name`` part of
-                    the                   tag
-                Join the line again and write the ``sorted_by_file`` file
+    This is based on code from here:
+        http://stackoverflow.com/q/2100353
 
     This algorithm can have issues with particularly large files. These issues
-    are documented here: https://github.com/SublimeText/CTags/issues/145
+    are documented here:
+        https://github.com/SublimeText/CTags/issues/145
 
     :param tag_file: The location of the tagfile to be sorted
 
     :returns: None
     """
-    keys = {}
+    out_path = ''.join([tag_file, '_sorted_by_file'])
 
-    with codecs.open(tag_file, encoding='utf-8', errors='ignore') as fh:
-        for line in fh:
-            keys.setdefault(line.split('\t')[FILENAME], []).append(line)
+    with codecs.open(tag_file, 'r', encoding='utf-8', errors='ignore') as in_file:
+        data = csv.reader(in_file, delimiter='\t')
+        sortedlist = sorted(data, key=operator.itemgetter(1))
 
-    with codecs.open(tag_file+'_sorted_by_file', 'w', encoding='utf-8', errors='ignore') as fw:
-        for k in sorted(keys):
-            for line in keys[k]:
-                split = line.split('\t')
-                split[FILENAME] = split[FILENAME].lstrip('.\\')
-                fw.write('\t'.join(split))
+    with codecs.open(out_path, 'w', encoding='utf-8', errors='ignore') as out_file:
+        file_writer = csv.writer(out_file, delimiter='\t')
+        for row in sortedlist:
+            file_writer.writerow(row)
 
 
 """
