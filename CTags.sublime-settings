@@ -41,12 +41,15 @@
     //
     "definition_current_first": true,
 
-    // Enable "fast sort". Use the 'GNU sort' application commonly found
-    // on *nix platforms.
-    //
+    // Specific what type of sort to use when sorting the tag files:
+    //   - 0 - use the default, in-memory sort (fast, all platforms)
+    //   - 1 - use the external, Python based sort (slow, all platforms)
+    //   - 2 - use the 'GNU sort' application (fast, *nix platforms only)
+    //   - * - default
     // This is currently *experimental* and should not be enabled unless you
-    // know what you're doing.
-    "fast_sort": false,
+    // know what you're doing. It may help if you see issues likes those
+    // reported here: https://github.com/SublimeText/CTags/issues/145
+    "sort": 0,
 
     // Show the ctags menu in the context menus
     "show_context_menus": true,

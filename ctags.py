@@ -10,6 +10,7 @@ import bisect
 import mmap
 import csv
 import operator
+import tempfile
 
 """
 Contants
@@ -261,7 +262,7 @@ def create_tag_path(tag):
 
 
 def build_ctags(path, tag_file=None, recursive=False, opts=None, cmd=None,
-                fast_sort=False, env=None):
+                sort=0, env=None):
     """Execute the ``ctags`` command using ``Popen``
 
     :param path: path to file or directory (with all files) to generate
@@ -271,7 +272,8 @@ def build_ctags(path, tag_file=None, recursive=False, opts=None, cmd=None,
         given by path. This overrides filename specified by ``path``
     :param opts: list of additional options to pass to the ctags executable
     :param cmd: path or name of ctags executable, if not 'ctags'
-    :param fast_sort: specify if sort should use the 'GNU sort' application
+    :param sort: specify type of sort to use, 0 - default, 1 - external,
+        2 - GNU sort
     :param env: environment variables to be used when executing ``ctags``
 
     :returns: original ``tag_file`` filename
@@ -325,12 +327,12 @@ def build_ctags(path, tag_file=None, recursive=False, opts=None, cmd=None,
             tag_file = os.path.join(cwd, tag_file)
 
     # re-sort ctag file in filename order to improve search performance
-    resort_ctags(tag_file, fast_sort)
+    resort_ctags(tag_file, sort)
 
     return tag_file
 
 
-def resort_ctags(tag_file, fast_sort=False):
+def resort_ctags(tag_file, sort=0):
     """Rearrange ctags file for speed.
 
     Resorts (re-sort) a CTag file in order of file. This improves searching
@@ -340,14 +342,103 @@ def resort_ctags(tag_file, fast_sort=False):
     function.
 
     :param tag_file: path to tag file to be sorted
-    :param fast_sort: specify if sort should use the 'GNU sort' application
+    :param sort: specify type of sort to use, 0 - default, 1 - external,
+        2 - GNU sort
 
     :returns: None
     """
-    if fast_sort:
+    print('sort type {0}'.format(sort))
+    if sort == 1:
+        _resort_ctags__external(tag_file)
+    elif sort == 2:
         _resort_ctags__nix(tag_file)
     else:
         _resort_ctags__python(tag_file)
+
+
+def _resort_ctags__python(tag_file):
+    """Resort a CTags tag file using a simple in-memory Python sort.
+
+    This is based on code from here:
+        http://stackoverflow.com/q/2100353
+
+    This algorithm can have issues with particularly large files. These issues
+    are documented here:
+        https://github.com/SublimeText/CTags/issues/145
+
+    :param tag_file: The location of the tagfile to be sorted
+
+    :returns: None
+    """
+    out_path = ''.join([tag_file, '_sorted_by_file'])
+
+    with codecs.open(tag_file, 'r', 'utf-8', 'ignore') as in_file:
+        data = csv.reader(in_file, delimiter='\t')
+        sortedlist = sorted(data, key=operator.itemgetter(1))
+
+    with codecs.open(out_path, 'w', 'utf-8', 'ignore') as out_file:
+        file_writer = csv.writer(out_file, delimiter='\t')
+        for row in sortedlist:
+            file_writer.writerow(row)
+
+
+def _resort_ctags__external(tag_file):
+    """Resort a CTags tag file using a external "bucket-sort" Python algorithm.
+
+    The algorithm works as so:
+
+        For each line (a.k.a. tag) in a tag file
+            Read line into memory
+            Get the filename from the line.
+            Use filename as key to a temp file and write line to said file
+        Sort final list of keys (i.e. filenames)
+        For each file in sorted key list
+            Append contents of file to sorted tag file
+        Close all files and delete temp files
+
+    As this is an external sort it will be slower than the in-memory sort.
+    Hence, this should only be used when constraints demand it, e.g. large
+    tag files.
+
+    :param tag_file: The location of the tagfile to be sorted
+
+    :returns: None
+    """
+    out_file = ''.join([tag_file, '_sorted_by_file'])
+
+    temp_files = {}
+
+    def get_file(filename):
+        """Get a file from the store of files"""
+        if not filename in temp_files:
+            temp_files[filename] = tempfile.NamedTemporaryFile(delete=False)
+            # close and reopen using codes to avoid problems described here:
+            #   http://stackoverflow.com/a/10490859/613428
+            temp_files[filename].close()
+            temp_files[filename] = codecs.open(
+                temp_files[filename].name, 'w+', 'utf-8', 'ignore')
+        return temp_files[filename]
+
+    try:
+        with codecs.open(tag_file, 'r+', 'utf-8', 'ignore') as file_o:
+            for _ in range(6):  # skip the header
+                next(file_o)
+            for line in file_o:
+                temp_file_o = get_file(line.split('\t')[FILENAME])
+                split = line.split('\t')
+                split[FILENAME] = split[FILENAME].lstrip('.\\')
+                temp_file_o.write('\t'.join(split))
+
+        with codecs.open(out_file, 'w+', 'utf-8', 'ignore') as file_o:
+            # we only need to sort the file names - the symbols were already
+            # sorted!
+            for key in sorted(temp_files):
+                temp_files[key].seek(0)
+                file_o.write(temp_files[key].read())
+    finally:
+        for key in temp_files:
+            temp_files[key].close()
+            os.remove(temp_files[key].name)
 
 
 def _resort_ctags__nix(tag_file):
@@ -371,32 +462,6 @@ def _resort_ctags__nix(tag_file):
 
     if ret:
         raise EnvironmentError(ret, p.stdout.read())
-
-
-def _resort_ctags__python(tag_file):
-    """Resort a CTags tag file using a simple in-memory Python sort.
-
-    This is based on code from here:
-        http://stackoverflow.com/q/2100353
-
-    This algorithm can have issues with particularly large files. These issues
-    are documented here:
-        https://github.com/SublimeText/CTags/issues/145
-
-    :param tag_file: The location of the tagfile to be sorted
-
-    :returns: None
-    """
-    out_path = ''.join([tag_file, '_sorted_by_file'])
-
-    with codecs.open(tag_file, 'r', encoding='utf-8', errors='ignore') as in_file:
-        data = csv.reader(in_file, delimiter='\t')
-        sortedlist = sorted(data, key=operator.itemgetter(1))
-
-    with codecs.open(out_path, 'w', encoding='utf-8', errors='ignore') as out_file:
-        file_writer = csv.writer(out_file, delimiter='\t')
-        for row in sortedlist:
-            file_writer.writerow(row)
 
 
 """

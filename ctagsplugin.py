@@ -550,10 +550,10 @@ def show_build_panel(view):
             recursive = setting('recursive')
             tag_file = setting('tag_file')
             opts = setting('opts')
-            fast_sort = setting('fast_sort')
+            sort = setting('sort')
 
             rebuild_tags = RebuildTags(False)
-            rebuild_tags.build_ctags(paths, command, tag_file, recursive, opts, fast_sort)
+            rebuild_tags.build_ctags(paths, command, tag_file, recursive, opts, sort)
 
     view.window().show_quick_panel(display, on_select)
 
@@ -823,11 +823,11 @@ class RebuildTags(sublime_plugin.TextCommand):
         recursive = setting('recursive')
         opts = setting('opts')
         tag_file = setting('tag_file')
-        fast_sort = setting('fast_sort')
+        sort = setting('sort')
 
         if 'dirs' in args:
             paths.extend(args['dirs'])
-            self.build_ctags(paths, command, tag_file, recursive, opts, fast_sort)
+            self.build_ctags(paths, command, tag_file, recursive, opts, sort)
         elif (self.view.file_name() is None and
                 len(self.view.window().folders()) <= 0):
             status_message('Cannot build CTags: No file or folder open.')
@@ -836,7 +836,7 @@ class RebuildTags(sublime_plugin.TextCommand):
             show_build_panel(self.view)
 
     @threaded(msg='Already running CTags!')
-    def build_ctags(self, paths, command, tag_file, recursive, opts, fast_sort):
+    def build_ctags(self, paths, command, tag_file, recursive, opts, sort):
         """Build tags for the open file or folder(s)
 
         :param paths: paths to build ctags for
@@ -846,6 +846,9 @@ class RebuildTags(sublime_plugin.TextCommand):
             given by path. This overrides filename specified by ``path``
         :param opts: list of additional parameters to pass to the ``ctags``
             executable
+        :param cmd: path or name of ctags executable, if not 'ctags'
+        :param sort: specify type of sort to use, 0 - default, 1 - external,
+            2 - GNU sort
 
         :returns: None
         """
@@ -868,7 +871,7 @@ class RebuildTags(sublime_plugin.TextCommand):
             try:
                 result = ctags.build_ctags(path=path, tag_file=tag_file,
                                            recursive=recursive, opts=opts,
-                                           cmd=command, fast_sort=fast_sort)
+                                           cmd=command, sort=sort)
             except IOError as e:
                 error_message(str(e).rstrip())
                 return
