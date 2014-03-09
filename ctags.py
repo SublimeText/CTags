@@ -14,11 +14,11 @@ Contants
 """
 
 TAGS_RE = re.compile(
-    '(?P<symbol>[^\t]+)\t'
-    '(?P<filename>[^\t]+)\t'
-    '(?P<ex_command>.*?\$/);"\t'
-    '(?P<type>[^\t\r\n]+)'
-    '(?:\t(?P<fields>.*))?'
+    r'(?P<symbol>[^\t]+)\t'
+    r'(?P<filename>[^\t]+)\t'
+    r'(?P<ex_command>.*?\$/);"\t'
+    r'(?P<type>[^\t\r\n]+)'
+    r'(?:\t(?P<fields>.*))?'
 )
 
 # column indexes
