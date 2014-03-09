@@ -308,16 +308,17 @@ def get_common_ancestor_folder(path, folders):
 
 def find_with_scope(view, pattern, scope, start_pos=0, cond=True, flags=0):
     max_pos = view.size()
+    region = None
 
     while start_pos < max_pos:
-        f = view.find(pattern, start_pos, flags)
+        region = view.find(pattern, start_pos, flags)
 
-        if not f or view.match_selector(f.begin(), scope) is cond:
+        if not region or view.match_selector(region.begin(), scope) is cond:
             break
         else:
-            start_pos = f.end()
+            start_pos = region.end()
 
-    return f
+    return region
 
 
 def find_source(view, pattern, start_at, flags=sublime.LITERAL):
