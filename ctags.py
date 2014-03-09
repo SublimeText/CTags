@@ -14,11 +14,11 @@ Contants
 """
 
 TAGS_RE = re.compile(
-    '(?P<symbol>[^\t]+)\t'
-    '(?P<filename>[^\t]+)\t'
-    '(?P<ex_command>.*?);"\t'
-    '(?P<type>[^\t\r\n]+)'
-    '(?:\t(?P<fields>.*))?'
+    r'(?P<symbol>[^\t]+)\t'
+    r'(?P<filename>[^\t]+)\t'
+    r'(?P<ex_command>.*?\$/);"\t'
+    r'(?P<type>[^\t\r\n]+)'
+    r'(?:\t(?P<fields>.*))?'
 )
 
 # column indexes
@@ -267,7 +267,7 @@ def build_ctags(path, tag_file=None, recursive=False, opts=None, cmd=None,
     :param tag_file: filename to use for the tag file. Defaults to ``tags``
     :param recursive: specify if search should be recursive in directory
         given by path. This overrides filename specified by ``path``
-    :param opts: additional options to pass to the ctags executable
+    :param opts: list of additional options to pass to the ctags executable
     :param env: environment variables to be used when executing ``ctags``
 
     :returns: original ``tag_file`` filename
@@ -291,7 +291,10 @@ def build_ctags(path, tag_file=None, recursive=False, opts=None, cmd=None,
         cmd.append('-f {0}'.format(tag_file))
 
     if opts:
-        cmd.append(opts)
+        if type(opts) == list:
+            cmd.extend(opts)
+        else:  # *should* be a list, but better safe than sorry
+            cmd.append(opts)
 
     if recursive:  # ignore any file specified in path if recursive set
         cmd.append('-R')

@@ -24,8 +24,9 @@
     // `-f [FILENAME]` parameter
     "tag_file" : ".tags",
 
-    // Additional options to pass to ctags, i.e. "--exclude=some/path"
-    "opts" : "",
+    // Additional options to pass to ctags, i.e.
+    // ["--exclude=some/path", "--exclude=some/other/path", ...]
+    "opts" : [],
 
     //
     "filters": {
