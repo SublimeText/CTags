@@ -350,7 +350,7 @@ class CTagsTest(unittest.TestCase):
                 content = output.readlines()
                 filename = os.path.basename(path)
             except:
-                self.failure("Setup of files for test failed")
+                self.fail("Setup of files for test failed")
             finally:
                 output.close()
                 os.remove(path)  # clean up
