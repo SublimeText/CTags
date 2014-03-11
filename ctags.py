@@ -16,7 +16,7 @@ Contants
 TAGS_RE = re.compile(
     r'(?P<symbol>[^\t]+)\t'
     r'(?P<filename>[^\t]+)\t'
-    r'(?P<ex_command>(\d|.*?\$/));"\t'
+    r'(?P<ex_command>(/.+/|\?.+\?|\d+));"\t'
     r'(?P<type>[^\t\r\n]+)'
     r'(?:\t(?P<fields>.*))?'
 )
