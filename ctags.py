@@ -5,9 +5,15 @@
 import codecs
 import re
 import os
+import sys
 import subprocess
 import bisect
 import mmap
+
+if sys.version_info<(2,7,0):
+    from helpers.check_output import check_output
+else:
+    from subprocess import check_output
 
 """
 Contants
@@ -304,15 +310,14 @@ def build_ctags(path, tag_file=None, recursive=False, opts=None, cmd=None,
     else:  # search all files in current directory
         cmd.append(os.path.join(path, '*'))
 
+    # workaround for the issue described here:
+    #   http://bugs.python.org/issue6689
+    if os.name == 'posix':
+        cmd = ' '.join(cmd)
+
     # execute the command
-    p = subprocess.Popen(cmd, cwd=cwd, shell=False, env=env,
-                         stdin=subprocess.PIPE, stdout=subprocess.PIPE,
-                         stderr=subprocess.STDOUT)
-
-    ret = p.wait()
-
-    if ret:
-        raise EnvironmentError(ret, p.stdout.read())
+    check_output(cmd, cwd=cwd, shell=True, env=env, stdin=subprocess.PIPE,
+                 stderr=subprocess.STDOUT)
 
     if not tag_file:  # Exuberant ctags defaults to ``tags`` filename.
         tag_file = os.path.join(cwd, 'tags')

@@ -9,6 +9,7 @@ import pprint
 import re
 import string
 import threading
+import subprocess
 
 from itertools import chain
 from operator import itemgetter as iget
@@ -868,15 +869,19 @@ class RebuildTags(sublime_plugin.TextCommand):
                                            recursive=recursive, opts=opts,
                                            cmd=command)
             except IOError as e:
-                error_message(str(e).rstrip())
+                error_message(e.strerror)
                 return
-            except EnvironmentError as e:
-                if not isinstance(e.strerror, str):
-                    str_err = ' '.join(e.strerror.decode('utf-8').splitlines())
+            except subprocess.CalledProcessError as e:
+                if sublime.platform() == 'windows':
+                    str_err = ' '.join(
+                        e.output.decode('windows-1252').splitlines())
                 else:
-                    str_err = str(e).rstrip()
-                error_message(str_err)  # show error_message
+                    str_err = e.output.rstrip()
+                error_message(str_err)
                 return
+            except Exception as e:
+                error_message("An unknown error occured.\nCheck the console for info.")
+                raise e
 
             tags_built(result)
 
