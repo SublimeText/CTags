@@ -687,6 +687,10 @@ class NavigateToDefinition(sublime_plugin.TextCommand):
         region = view.sel()[0]
         if region.begin() == region.end():  # point
             region = view.word(region)
+            language = view.syntax_name(view.sel()[0].b)
+            endings = view.substr(sublime.Region(region.end(), region.end()+1))
+            if self.scopes.match(language) and self.endings.match(endings):
+                region = sublime.Region(region.begin(), region.end()+1)
         symbol = view.substr(region)
 
         return JumpToDefinition.run(symbol, view, tags_file)
