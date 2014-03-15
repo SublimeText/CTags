@@ -349,7 +349,7 @@ class CTagsTest(unittest.TestCase):
         """Test ``parse_tag_lines`` with a sample Python file"""
         path = self.build_python_file__extended()
 
-        tag_file = ctags.build_ctags(path=path)
+        tag_file = ctags.build_ctags(path=path, opts=['--python-kinds=-i'])
 
         with codecs.open(tag_file, encoding='utf-8') as output:
             try:
@@ -404,13 +404,6 @@ class CTagsTest(unittest.TestCase):
                 'fields': 'class:MyClass',
                 'field_keys': ['class'],
                 'class': 'MyClass'}],
-            'os': [{
-                'symbol': 'os',
-                'filename': filename,
-                'ex_command': 'import os',
-                'tag_path': (filename, 'os'),
-                'type': 'i',
-                'fields': None}],
             'COLOR_RED': [{
                 'symbol': 'COLOR_RED',
                 'filename': filename,
