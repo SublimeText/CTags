@@ -1,0 +1,8 @@
+# After changing this file, check it on:
+# http://lint.travis-ci.org/
+language: python
+python:
+  - "2.6"  # sublime text 2
+  - "3.3"  # sublime text 3
+script:
+  - python -m unittest discover
