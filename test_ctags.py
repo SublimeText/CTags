@@ -349,7 +349,7 @@ class CTagsTest(unittest.TestCase):
         """Test ``parse_tag_lines`` with a sample Python file"""
         path = self.build_python_file__extended()
 
-        tag_file = ctags.build_ctags(path=path)
+        tag_file = ctags.build_ctags(path=path, opts=['--python-kinds=-i'])
 
         with codecs.open(tag_file, encoding='utf-8') as output:
             try:
@@ -374,20 +374,20 @@ class CTagsTest(unittest.TestCase):
                 'symbol': 'address',
                 'filename': filename,
                 'ex_command': '\taddress = None\t# comment preceded by a tab',
-                'tag_path': (filename, 'MyClass\r', 'address'),
+                'tag_path': (filename, 'MyClass', 'address'),
                 'type': 'v',
-                'fields': 'class:MyClass\r',
+                'fields': 'class:MyClass',
                 'field_keys': ['class'],
-                'class': 'MyClass\r'}],
+                'class': 'MyClass'}],
             'last_name': [{
                 'symbol': 'last_name',
                 'filename': filename,
                 'ex_command': '\tlast_name = None',
-                'tag_path': (filename, 'MyClass\r', 'last_name'),
+                'tag_path': (filename, 'MyClass', 'last_name'),
                 'type': 'v',
-                'fields': 'class:MyClass\r',
+                'fields': 'class:MyClass',
                 'field_keys': ['class'],
-                'class': 'MyClass\r'}],
+                'class': 'MyClass'}],
             'my_function': [{
                 'symbol': 'my_function',
                 'filename': filename,
@@ -399,18 +399,11 @@ class CTagsTest(unittest.TestCase):
                 'symbol': 'my_method',
                 'filename': filename,
                 'ex_command': '\tdef my_method(self, last_name):',
-                'tag_path': (filename, 'MyClass\r', 'my_method'),
+                'tag_path': (filename, 'MyClass', 'my_method'),
                 'type': 'm',
-                'fields': 'class:MyClass\r',
+                'fields': 'class:MyClass',
                 'field_keys': ['class'],
-                'class': 'MyClass\r'}],
-            'os': [{
-                'symbol': 'os',
-                'filename': filename,
-                'ex_command': 'import os',
-                'tag_path': (filename, 'os'),
-                'type': 'i',
-                'fields': None}],
+                'class': 'MyClass'}],
             'COLOR_RED': [{
                 'symbol': 'COLOR_RED',
                 'filename': filename,
@@ -459,18 +452,18 @@ class CTagsTest(unittest.TestCase):
                 'ex_command': '1',
                 'tag_path': (filename, 'foo'),
                 'type': 'd',
-                'fields': 'file:\r',
+                'fields': 'file:',
                 'field_keys': ['file'],
-                'file': '\r'}],
+                'file': ''}],
             'foobar': [{
                 'symbol': 'foobar',
                 'filename': filename,
                 'ex_command': '2',
                 'tag_path': (filename, 'foobar'),
                 'type': 'd',
-                'fields': 'file:\r',
+                'fields': 'file:',
                 'field_keys': ['file'],
-                'file': '\r'}]
+                'file': ''}]
             }
 
         result = ctags.parse_tag_lines(content)

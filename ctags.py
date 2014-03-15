@@ -95,6 +95,8 @@ def parse_tag_lines(lines, order_by='symbol', tag_class=None, filters=[]):
         if isinstance(line, Tag):  # handle both text and tag objects
             line = line.line
 
+        line = line.rstrip('\r\n')
+
         search_obj = TAGS_RE.search(line)
 
         if not search_obj:
