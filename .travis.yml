@@ -5,4 +5,5 @@ python:
   - "2.6"  # sublime text 2
   - "3.3"  # sublime text 3
 script:
-  - python -m unittest discover
+  - if [[ $TRAVIS_PYTHON_VERSION == '2.6' ]]; then python -m unittest2.__main__ discover; fi
+  - if [[ $TRAVIS_PYTHON_VERSION == '3.3' ]]; then python -m unittest discover; fi
