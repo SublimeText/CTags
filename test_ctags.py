@@ -6,6 +6,7 @@ import os
 import tempfile
 import unittest
 import codecs
+from subprocess import CalledProcessError
 
 try:
     import sublime
@@ -195,7 +196,7 @@ class CTagsTest(unittest.TestCase):
         # build_ctags requires a real path, so we create a temporary file as a
         # cross-platform way to get the temp directory
         with tempfile.NamedTemporaryFile() as temp:
-            with self.assertRaises(EnvironmentError):
+            with self.assertRaises(CalledProcessError):
                 ctags.build_ctags(path=temp.name, cmd='ccttaaggss')
 
     def test_build_ctags__single_file(self):
