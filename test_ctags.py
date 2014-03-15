@@ -3,10 +3,15 @@
 """Unit tests for ctags.py"""
 
 import os
+import sys
 import tempfile
-import unittest
 import codecs
 from subprocess import CalledProcessError
+
+if sys.version_info < (2, 7):
+    import unittest2 as unittest
+else:
+    import unittest
 
 try:
     import sublime
@@ -212,7 +217,7 @@ class CTagsTest(unittest.TestCase):
                 self.assertEqual(
                     content[-1],
                     'my_definition\t{0}\t/^def my_definition()'
-                    ':$/;"\tf\r\n'.format(filename))
+                    ':$/;"\tf{1}'.format(filename, os.linesep))
             finally:
                 output.close()
                 os.remove(path)  # clean up
@@ -231,7 +236,7 @@ class CTagsTest(unittest.TestCase):
                 self.assertEqual(
                     content[-1],
                     'my_definition\t{0}\t/^def my_definition()'
-                    ':$/;"\tf\r\n'.format(filename))
+                    ':$/;"\tf{1}'.format(filename, os.linesep))
             finally:
                 output.close()
                 os.remove(path)  # clean up
