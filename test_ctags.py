@@ -137,7 +137,7 @@ class CTagsTest(unittest.TestCase):
                 self.assertEqual(
                     content[-1],
                     'my_definition\t{0}\t/^def my_definition()'
-                    ':$/;"\tf\r\n'.format(filename))
+                    ':$/;"\tf{1}'.format(filename, os.linesep))
             finally:
                 output.close()
                 os.remove(path)  # clean up
@@ -156,7 +156,7 @@ class CTagsTest(unittest.TestCase):
                 self.assertEqual(
                     content[-1],
                     'my_definition\t{0}\t/^def my_definition()'
-                    ':$/;"\tf\r\n'.format(filename))
+                    ':$/;"\tf{1}'.format(filename, os.linesep))
             finally:
                 output.close()
                 os.remove(path)  # clean up
