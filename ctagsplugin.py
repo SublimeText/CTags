@@ -9,6 +9,7 @@ import pprint
 import re
 import string
 import threading
+import subprocess
 
 from itertools import chain
 from operator import itemgetter as iget
@@ -51,7 +52,6 @@ OBJECT_PUNCTUATORS = {
 ENTITY_SCOPE = 'entity.name.function, entity.name.type, meta.toc-list'
 
 RUBY_SPECIAL_ENDINGS = '\?|!'
-RUBY_SCOPES = '.*(ruby|rails).*'
 
 ON_LOAD = sublime_plugin.all_callbacks['on_load']
 
@@ -676,7 +676,6 @@ class NavigateToDefinition(sublime_plugin.TextCommand):
 
     def __init__(self, args):
         sublime_plugin.TextCommand.__init__(self, args)
-        self.scopes = re.compile(RUBY_SCOPES)
         self.endings = re.compile(RUBY_SPECIAL_ENDINGS)
 
     def is_visible(self):
@@ -687,6 +686,13 @@ class NavigateToDefinition(sublime_plugin.TextCommand):
         region = view.sel()[0]
         if region.begin() == region.end():  # point
             region = view.word(region)
+
+            # handle special line endings for Ruby
+            language = view.settings().get('syntax')
+            endings = view.substr(sublime.Region(region.end(), region.end()+1))
+
+            if 'Ruby' in language and self.endings.match(endings):
+                region = sublime.Region(region.begin(), region.end()+1)
         symbol = view.substr(region)
 
         return JumpToDefinition.run(symbol, view, tags_file)
@@ -868,15 +874,19 @@ class RebuildTags(sublime_plugin.TextCommand):
                                            recursive=recursive, opts=opts,
                                            cmd=command)
             except IOError as e:
-                error_message(str(e).rstrip())
+                error_message(e.strerror)
                 return
-            except EnvironmentError as e:
-                if not isinstance(e.strerror, str):
-                    str_err = ' '.join(e.strerror.decode('utf-8').splitlines())
+            except subprocess.CalledProcessError as e:
+                if sublime.platform() == 'windows':
+                    str_err = ' '.join(
+                        e.output.decode('windows-1252').splitlines())
                 else:
-                    str_err = str(e).rstrip()
-                error_message(str_err)  # show error_message
+                    str_err = e.output.rstrip()
+                error_message(str_err)
                 return
+            except Exception as e:
+                error_message("An unknown error occured.\nCheck the console for info.")
+                raise e
 
             tags_built(result)
 

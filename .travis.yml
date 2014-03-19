@@ -1,0 +1,12 @@
+# After changing this file, check it on:
+# http://lint.travis-ci.org/
+language: python
+python:
+  - "2.6"  # sublime text 2
+  - "3.3"  # sublime text 3
+before_install:
+  - sudo apt-get install exuberant-ctags
+  - if [[ $TRAVIS_PYTHON_VERSION == '2.6' ]]; then pip install unittest2; fi
+script:
+  - if [[ $TRAVIS_PYTHON_VERSION == '2.6' ]]; then python -m unittest2.__main__ discover; fi
+  - if [[ $TRAVIS_PYTHON_VERSION == '3.3' ]]; then python -m unittest discover; fi

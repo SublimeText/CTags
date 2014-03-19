@@ -3,9 +3,14 @@
 """Unit tests for ctagsplugin.py"""
 
 import os
+import sys
 import tempfile
-import unittest
 import shutil
+
+if sys.version_info < (2, 7):
+    import unittest2 as unittest
+else:
+    import unittest
 
 try:
     import sublime
