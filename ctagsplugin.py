@@ -571,7 +571,8 @@ def show_tag_panel(view, result, jump_directly):
         def on_select(i):
             if i != -1:
                 JumpPrev.append(view)
-                scroll_to_tag(view, args[i])
+                # workaround ST3 bug https://github.com/SublimeText/Issues/issues/39
+                sublime.set_timeout(functools.partial(scroll_to_tag, view, args[i]), 0)
 
         if jump_directly and len(args) == 1:
             on_select(0)
