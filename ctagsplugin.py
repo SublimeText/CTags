@@ -571,8 +571,11 @@ def show_tag_panel(view, result, jump_directly):
         def on_select(i):
             if i != -1:
                 JumpPrev.append(view)
-                # workaround ST3 bug https://github.com/SublimeText/Issues/issues/39
-                sublime.set_timeout(functools.partial(scroll_to_tag, view, args[i]), 0)
+                # Work around bug in ST3 where the quick panel keeps focus after
+                # selecting an entry.
+                # See https://github.com/SublimeText/Issues/issues/39
+                view.window().run_command('hide_overlay')
+                scroll_to_tag(view, args[i])
 
         if jump_directly and len(args) == 1:
             on_select(0)
