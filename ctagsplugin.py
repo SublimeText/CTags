@@ -4,6 +4,7 @@
 
 import functools
 import codecs
+import locale
 import os
 import pprint
 import re
@@ -881,7 +882,8 @@ class RebuildTags(sublime_plugin.TextCommand):
                     str_err = ' '.join(
                         e.output.decode('windows-1252').splitlines())
                 else:
-                    str_err = e.output.rstrip()
+                    str_err = e.output.decode(locale.getpreferredencoding()).rstrip()
+
                 error_message(str_err)
                 return
             except Exception as e:
