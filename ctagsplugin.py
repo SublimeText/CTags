@@ -834,9 +834,14 @@ class RebuildTags(sublime_plugin.TextCommand):
         opts = setting('opts')
         tag_file = setting('tag_file')
 
-        if 'dirs' in args:
+        if 'dirs' in args and args['dirs']:
             paths.extend(args['dirs'])
             self.build_ctags(paths, command, tag_file, recursive, opts)
+        elif 'files' in args and args['files']:
+            paths.extend(args['files'])
+            # build ctags and ignore recursive flag - we clearly only want
+            # to build them for a file
+            self.build_ctags(paths, command, tag_file, False, opts)
         elif (self.view.file_name() is None and
                 len(self.view.window().folders()) <= 0):
             status_message('Cannot build CTags: No file or folder open.')
