@@ -1,3 +1,8 @@
 [
-	{ "caption": "CTags: Rebuild Tags", "command": "rebuild_tags", "args": { "dirs": []} }
+    { "caption": "-", "id": "ctags_commands" },
+    {
+        "caption": "CTags: Rebuild Tags",
+        "command": "rebuild_tags",
+        "args": { "dirs": []}
+    }
 ]
