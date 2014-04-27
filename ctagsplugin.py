@@ -347,7 +347,7 @@ def follow_tag_path(view, tag_path, pattern):
     if setting('debug'):  # leave a visual trail for easy debugging
         regions = regions + ([pattern_region] if pattern_region else [])
         view.erase_regions('tag_path')
-        view.add_regions('tag_path', regions, 'comment', 1)
+        view.add_regions('tag_path', regions, 'comment', 'circle')
 
     return pattern_region.begin() - 1 if pattern_region else None
 
