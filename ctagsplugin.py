@@ -278,7 +278,12 @@ def get_alternate_tags_paths(view, tags_file):
                 os.path.normpath(
                     os.path.join(folder, extrafile)))
 
-    return set(p for p in search_paths if p and os.path.exists(p))
+    # use list instead of set  for keep order
+    ret = []
+    for p in search_paths:
+        if p and (p not in ret) and os.path.exists(p):
+            ret.append(p)
+    return ret
 
 
 def get_common_ancestor_folder(path, folders):
