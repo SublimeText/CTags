@@ -4,6 +4,7 @@
 
 import functools
 import codecs
+import locale
 import os
 import pprint
 import re
@@ -277,7 +278,12 @@ def get_alternate_tags_paths(view, tags_file):
                 os.path.normpath(
                     os.path.join(folder, extrafile)))
 
-    return set(p for p in search_paths if p and os.path.exists(p))
+    # use list instead of set  for keep order
+    ret = []
+    for p in search_paths:
+        if p and (p not in ret) and os.path.exists(p):
+            ret.append(p)
+    return ret
 
 
 def get_common_ancestor_folder(path, folders):
@@ -571,6 +577,10 @@ def show_tag_panel(view, result, jump_directly):
         def on_select(i):
             if i != -1:
                 JumpPrev.append(view)
+                # Work around bug in ST3 where the quick panel keeps focus after
+                # selecting an entry.
+                # See https://github.com/SublimeText/Issues/issues/39
+                view.window().run_command('hide_overlay')
                 scroll_to_tag(view, args[i])
 
         if jump_directly and len(args) == 1:
@@ -829,9 +839,14 @@ class RebuildTags(sublime_plugin.TextCommand):
         opts = setting('opts')
         tag_file = setting('tag_file')
 
-        if 'dirs' in args:
+        if 'dirs' in args and args['dirs']:
             paths.extend(args['dirs'])
             self.build_ctags(paths, command, tag_file, recursive, opts)
+        elif 'files' in args and args['files']:
+            paths.extend(args['files'])
+            # build ctags and ignore recursive flag - we clearly only want
+            # to build them for a file
+            self.build_ctags(paths, command, tag_file, False, opts)
         elif (self.view.file_name() is None and
                 len(self.view.window().folders()) <= 0):
             status_message('Cannot build CTags: No file or folder open.')
@@ -881,7 +896,8 @@ class RebuildTags(sublime_plugin.TextCommand):
                     str_err = ' '.join(
                         e.output.decode('windows-1252').splitlines())
                 else:
-                    str_err = e.output.rstrip()
+                    str_err = e.output.decode(locale.getpreferredencoding()).rstrip()
+
                 error_message(str_err)
                 return
             except Exception as e:
