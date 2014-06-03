@@ -267,7 +267,7 @@ def create_tag_path(tag):
 
 
 def build_ctags(path, tag_file=None, recursive=False, opts=None, cmd=None,
-                env=None):
+                env=None, extra_opts=None):
     """Execute the ``ctags`` command using ``Popen``
 
     :param path: path to file or directory (with all files) to generate
@@ -285,6 +285,10 @@ def build_ctags(path, tag_file=None, recursive=False, opts=None, cmd=None,
         cmd = [cmd]
     else:
         cmd = ['ctags']
+
+    if extra_opts:
+        for o in extra_opts:
+            cmd.append(o)
 
     if not os.path.exists(path):
         raise IOError('\'path\' is not at valid directory or file path, or '

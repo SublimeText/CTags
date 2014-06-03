@@ -556,9 +556,10 @@ def show_build_panel(view):
             recursive = setting('recursive')
             tag_file = setting('tag_file')
             opts = setting('opts')
+            extra_opts = setting('extra_opts')
 
             rebuild_tags = RebuildTags(False)
-            rebuild_tags.build_ctags(paths, command, tag_file, recursive, opts)
+            rebuild_tags.build_ctags(paths, command, tag_file, recursive, opts, extra_opts)
 
     view.window().show_quick_panel(display, on_select)
 
@@ -838,15 +839,16 @@ class RebuildTags(sublime_plugin.TextCommand):
         recursive = setting('recursive')
         opts = setting('opts')
         tag_file = setting('tag_file')
+        extra_opts = setting('extra_opts')
 
         if 'dirs' in args and args['dirs']:
             paths.extend(args['dirs'])
-            self.build_ctags(paths, command, tag_file, recursive, opts)
+            self.build_ctags(paths, command, tag_file, recursive, opts, extra_opts)
         elif 'files' in args and args['files']:
             paths.extend(args['files'])
             # build ctags and ignore recursive flag - we clearly only want
             # to build them for a file
-            self.build_ctags(paths, command, tag_file, False, opts)
+            self.build_ctags(paths, command, tag_file, False, opts, extra_opts)
         elif (self.view.file_name() is None and
                 len(self.view.window().folders()) <= 0):
             status_message('Cannot build CTags: No file or folder open.')
@@ -855,7 +857,7 @@ class RebuildTags(sublime_plugin.TextCommand):
             show_build_panel(self.view)
 
     @threaded(msg='Already running CTags!')
-    def build_ctags(self, paths, command, tag_file, recursive, opts):
+    def build_ctags(self, paths, command, tag_file, recursive, opts, extra_opts):
         """Build tags for the open file or folder(s)
 
         :param paths: paths to build ctags for
@@ -887,7 +889,7 @@ class RebuildTags(sublime_plugin.TextCommand):
             try:
                 result = ctags.build_ctags(path=path, tag_file=tag_file,
                                            recursive=recursive, opts=opts,
-                                           cmd=command)
+                                           cmd=command, extra_opts=extra_opts)
             except IOError as e:
                 error_message(e.strerror)
                 return
