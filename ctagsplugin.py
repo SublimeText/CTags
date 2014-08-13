@@ -72,7 +72,42 @@ def get_settings():
 
     :returns: dictionary containing settings
     """
-    return sublime.load_settings("CTags.sublime-settings")
+    _settings = sublime.load_settings("CTags.sublime-settings")
+    try:
+        _projectData = sublime.active_window().project_data()["CTags"]
+        try:
+            _settings.set("debug",_projectData["debug"])
+        except KeyError: pass
+        try:
+            _settings.set("autocomplete",_projectData["autocomplete"])
+        except KeyError: pass
+        try:
+            _settings.set("command",_projectData["command"])
+        except KeyError: pass
+        try:
+            _settings.set("recursive",_projectData["recursive"])
+        except KeyError: pass
+        try:
+            _settings.set("tag_file",_projectData["tag_file"])
+        except KeyError: pass
+        try:
+            _settings.set("opts",list(set(_projectData["opts"] + _settings.get("opts",[]))))
+        except KeyError: pass
+        try:
+            _settings.set("definition_current_first",_projectData["definition_current_first"])
+        except KeyError: pass
+        try:
+            _settings.set("show_context_menus",_projectData["show_context_menus"])
+        except KeyError: pass
+        try:
+            _settings.set("extra_tag_files",list(set(_projectData["extra_tag_files"])))
+        except KeyError: pass
+        try:
+            _settings.set("select_searched_symbol",_projectData["select_searched_symbol"])
+        except KeyError: pass
+    except KeyError:
+        print("no ctags project settings")
+    return _settings
 
 
 def get_setting(key, default=None):
