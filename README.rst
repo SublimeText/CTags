@@ -24,7 +24,7 @@ See this `forum thread`_ for a bit of historical background on the Sublime Text 
 Installation
 ============
 
-The easiest way to install this plugin, is to use the `Package Control`_ 
+The easiest way to install this plugin, is to use the `Package Control`_
 plugin, by `Will Bond`_
 
 .. _Package Control: http://wbond.net/sublime_packages/package_control/
@@ -71,7 +71,7 @@ following options:
 Ensure that the ``PATH`` is updated so the correct version is run:
 
 * If ``which ctags`` doesn't point at ctags in ``/usr/local/bin``, make sure
-  you add ``/usr/local/bin`` to your ``PATH`` ahead of the folder 
+  you add ``/usr/local/bin`` to your ``PATH`` ahead of the folder
   ``which ctags`` reported.
 * Alternatively, add the path to the new ``ctags`` executable to the settings,
   under ``command``. If you have Xcode / Apple Developer Tools installed this
@@ -80,7 +80,7 @@ Ensure that the ``PATH`` is updated so the correct version is run:
 Linux
 -----
 
-To install ctags use your package manager. 
+To install ctags use your package manager.
 
 * For Debian-based systems (Ubuntu, Mint, etc.)::
 
@@ -96,7 +96,7 @@ Windows
 -------
 
 * Download the `CTags binary`_ from the `Exuberant CTags`_ site.
-* Extract ``ctags.exe`` from the downloaded zip to 
+* Extract ``ctags.exe`` from the downloaded zip to
   ``C:\Program Files\Sublime Text 2`` or any folder within your PATH so that
   Sublime Text can run it.
 * Alternatively, extract to any folder and add the path to this folder to
@@ -115,7 +115,7 @@ current view, walking up directories until it finds one. If it can't find one
 it will offer to build one (in the directory of the current view)
 
 If a symbol can't be found in a tags file, it will search in additional
-locations that are specified in the ``CTags.sublime-settings`` file (see 
+locations that are specified in the ``CTags.sublime-settings`` file (see
 below).
 
 If you are a Rubyist, you can build a Ruby Gem's tags with the following
@@ -130,7 +130,7 @@ Settings
 
 By default, Sublime will include ctags files in your project, which causes
 them to show up in the file tree and search results. To disable this behaviour
-you should add a ``file_exclude_patterns`` entry to your 
+you should add a ``file_exclude_patterns`` entry to your
 ``Preferences.sublime-settings`` or your project file. For example::
 
   "file_exclude_patterns": [".tags", ".tags_sorted_by_file", ".gemtags"]
@@ -139,7 +139,7 @@ In addition to this setting, there's a ``CTags.sublime-settings`` file, which
 can be edited like any other ``.sublime-settings`` file
 
 * ``filters`` will allow you to set scope specific filters against a field of
-  the tag. In the excerpt above, imports tags like ``from a import b`` are 
+  the tag. In the excerpt above, imports tags like ``from a import b`` are
   filtered::
 
     '(?P<symbol>[^\t]+)\t'
@@ -148,8 +148,8 @@ can be edited like any other ``.sublime-settings`` file
     '(?P<type>[^\t\r\n]+)'
     '(?:\t(?P<fields>.*))?'
 
-* ``extra_tag_paths`` is a list of extra places to look for keyed by 
-* ``(selector, platform)``. Note the ``platform`` is tested against 
+* ``extra_tag_paths`` is a list of extra places to look for keyed by
+* ``(selector, platform)``. Note the ``platform`` is tested against
   ``sublime.platform()`` so any values that function returns are valid.
 * ``extra_tag_files`` is a list of extra files relative to the original file
 * ``command`` is the path to the version of ctags to use, for example::
@@ -161,6 +161,23 @@ can be edited like any other ``.sublime-settings`` file
     "command" : "C:\Users\<username>\Downloads\CTags\ctag.exe"
 
 The rest of the options are fairly self explanatory.
+
+Settings are also read from a project file::
+
+    {
+      "folders":[...],
+      "CTags":
+      {
+        "opts":[...],
+        "debug":true,
+        ...
+      }
+    }
+
+Currently supported are the following options from the Default settings: debug,
+autocomplete, command, recursive, tag_file, opts, definition_current_first,
+show_context_menus, extra_tag_files, select_searched_symbol. While boolean options
+will be overridden, arrays (like 'opts') will be merged.
 
 Support
 =======
