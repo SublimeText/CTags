@@ -94,6 +94,12 @@ def get_settings():
             _settings.set("opts",list(set(_projectData["opts"] + _settings.get("opts",[]))))
         except KeyError: pass
         try:
+            _settings.set("filters",dict(_settings.get("filters",{}).items() + _projectData["filters"].items()))
+        except KeyError: pass
+        try:
+            _settings.set("definition_filters",dict(_settings.get("definition_filters",{}).items() + _projectData["definition_filters"].items()))
+        except KeyError: pass
+        try:
             _settings.set("definition_current_first",_projectData["definition_current_first"])
         except KeyError: pass
         try:
