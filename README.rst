@@ -174,9 +174,7 @@ Settings are also read from a project file::
       }
     }
 
-Currently supported are the following options from the Default settings: debug,
-autocomplete, command, recursive, tag_file, opts, definition_current_first,
-show_context_menus, extra_tag_files, select_searched_symbol. While boolean options
+The only default setting not supported is extra_tag_paths. While boolean options
 will be overridden, arrays (like 'opts') will be merged.
 
 Support
