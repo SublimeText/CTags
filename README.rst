@@ -175,7 +175,7 @@ Settings are also read from a project file::
     }
 
 The only default setting not supported is extra_tag_paths. While boolean options
-will be overridden, arrays (like 'opts') will be merged.
+will be overridden, arrays and dictionaries (like 'opts' or 'filters') will be merged.
 
 Support
 =======
