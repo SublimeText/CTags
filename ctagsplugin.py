@@ -11,7 +11,6 @@ import re
 import string
 import threading
 import subprocess
-import sys
 
 from itertools import chain
 from operator import itemgetter as iget
