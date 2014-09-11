@@ -11,6 +11,7 @@ import re
 import string
 import threading
 import subprocess
+import sys
 
 from itertools import chain
 from operator import itemgetter as iget
@@ -352,7 +353,7 @@ def follow_tag_path(view, tag_path, pattern):
     if setting('debug'):  # leave a visual trail for easy debugging
         regions = regions + ([pattern_region] if pattern_region else [])
         view.erase_regions('tag_path')
-        view.add_regions('tag_path', regions, 'comment', 1)
+        view.add_regions('tag_path', regions, 'comment', '', 1)
 
     return pattern_region.begin() - 1 if pattern_region else None
 
