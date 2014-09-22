@@ -409,7 +409,7 @@ def format_tag_for_quickopen(tag, show_path=True):
             f += string.Template(
                 '    %($field)s$punct%(symbol)s').substitute(locals())
 
-    format = [(f or tag.symbol) % tag, tag.ex_command]
+    format = [f % tag if f else tag.symbol, tag.ex_command]
     format[1] = format[1].strip()
 
     if show_path:
