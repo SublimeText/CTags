@@ -311,6 +311,8 @@ def find_with_scope(view, pattern, scope, start_pos=0, cond=True, flags=0):
     max_pos = view.size()
 
     while start_pos < max_pos:
+        estrs = pattern.split('\ufffd')
+        if(len(estrs)>1):pattern = estrs[0]
         f = view.find(pattern, start_pos, flags)
 
         if not f or view.match_selector(f.begin(), scope) is cond:
