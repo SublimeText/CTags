@@ -316,6 +316,8 @@ def find_with_scope(view, pattern, scope, start_pos=0, cond=True, flags=0):
     max_pos = view.size()
 
     while start_pos < max_pos:
+        estrs = pattern.split('\ufffd')
+        if(len(estrs)>1):pattern = estrs[0]
         f = view.find(pattern, start_pos, flags)
 
         if not f or view.match_selector(f.begin(), scope) is cond:
@@ -352,7 +354,7 @@ def follow_tag_path(view, tag_path, pattern):
     if setting('debug'):  # leave a visual trail for easy debugging
         regions = regions + ([pattern_region] if pattern_region else [])
         view.erase_regions('tag_path')
-        view.add_regions('tag_path', regions, 'comment', 1)
+        view.add_regions('tag_path', regions, 'comment', '', 1)
 
     return pattern_region.begin() - 1 if pattern_region else None
 
@@ -409,7 +411,7 @@ def format_tag_for_quickopen(tag, show_path=True):
             f += string.Template(
                 '    %($field)s$punct%(symbol)s').substitute(locals())
 
-    format = [(f or tag.symbol) % tag, tag.ex_command]
+    format = [f % tag if f else tag.symbol, tag.ex_command]
     format[1] = format[1].strip()
 
     if show_path:
