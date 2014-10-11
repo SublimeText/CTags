@@ -7,5 +7,7 @@
             "files": []
         }
     },
-    { "caption": "-", "id": "ctags_commands" }
+    {
+        "caption": "-", "id": "ctags_commands"
+    }
 ]

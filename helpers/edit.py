@@ -1,8 +1,8 @@
-#!/usr/bin/env python
+"""
+Buffer editing for both ST2 and ST3 that 'just works'.
 
-# Copyright, SublimeXiki project <https://github.com/lunixbochs/SublimeXiki>
-
-"""Buffer editing for both ST2 and ST3 that 'just works'"""
+Copyright, SublimeXiki project <https://github.com/lunixbochs/SublimeXiki>
+"""
 
 import inspect
 import sublime
@@ -13,7 +13,6 @@ try:
 except AttributeError:
     sublime.edit_storage = {}
 
-
 def run_callback(func, *args, **kwargs):
     spec = inspect.getfullargspec(func)
     if spec.args or spec.varargs:
@@ -21,14 +20,12 @@ def run_callback(func, *args, **kwargs):
     else:
         func()
 
-
 class EditFuture:
     def __init__(self, func):
         self.func = func
 
     def resolve(self, view, edit):
         return self.func(view, edit)
-
 
 class EditStep:
     def __init__(self, cmd, *args):
@@ -56,7 +53,6 @@ class EditStep:
                 arg = arg.resolve(view, edit)
             args.append(arg)
         return args
-
 
 class Edit:
     def __init__(self, view):
@@ -108,7 +104,6 @@ class Edit:
             key = str(hash(tuple(self.steps)))
             sublime.edit_storage[key] = self.run
             view.run_command('apply_edit', {'key': key})
-
 
 class apply_edit(sublime_plugin.TextCommand):
     def run(self, edit, key):
