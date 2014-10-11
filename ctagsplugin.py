@@ -5,6 +5,7 @@ A ctags plugin for Sublime Text 2/3.
 import functools
 import codecs
 import locale
+import sys
 import os
 import pprint
 import re
@@ -21,8 +22,6 @@ try:
     import sublime_plugin
     from sublime import status_message, error_message
 except ImportError:  # running tests
-    import sys
-
     from tests.sublime_fake import sublime
     from tests.sublime_fake import sublime_plugin
 
