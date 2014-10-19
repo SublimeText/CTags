@@ -1,15 +1,15 @@
 [
-	{
-		"button": "button1",
-		"count": 1,
-		"press_command": "drag_select",
-		"modifiers": ["ctrl","shift"],
-		"command": "navigate_to_definition"
-	},
-	{
-		"button": "button2",
-		"count": 1,
-		"modifiers": ["ctrl","shift"],
-		"command": "jump_prev"
-	}
+    {
+        "button": "button1",
+        "count": 1,
+        "press_command": "drag_select",
+        "modifiers": ["ctrl","shift"],
+        "command": "navigate_to_definition"
+    },
+    {
+        "button": "button2",
+        "count": 1,
+        "modifiers": ["ctrl","shift"],
+        "command": "jump_prev"
+    }
 ]
