@@ -21,6 +21,10 @@ try:
     import sublime
     import sublime_plugin
     from sublime import status_message, error_message
+
+    # hack the system path to prevent the following issue in ST3
+    #     ImportError: No module named 'ctags'
+    sys.path.append(os.path.dirname(os.path.realpath(__file__)))
 except ImportError:  # running tests
     from tests.sublime_fake import sublime
     from tests.sublime_fake import sublime_plugin
@@ -28,16 +32,10 @@ except ImportError:  # running tests
     sys.modules['sublime'] = sublime
     sys.modules['sublime_plugin'] = sublime_plugin
 
-if sys.version_info < (3, 0):
-    import ctags
-    from ctags import (FILENAME, parse_tag_lines, PATH_ORDER, SYMBOL,
-                       TagElements, TagFile)
-    from helpers.edit import Edit
-else:
-    from CTags import ctags
-    from CTags.ctags import (FILENAME, parse_tag_lines, PATH_ORDER, SYMBOL,
-                             TagElements, TagFile)
-    from CTags.helpers.edit import Edit
+import ctags
+from ctags import (FILENAME, parse_tag_lines, PATH_ORDER, SYMBOL,
+                   TagElements, TagFile)
+from helpers.edit import Edit
 
 #
 # Contants
