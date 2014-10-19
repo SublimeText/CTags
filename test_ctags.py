@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 
-"""Unit tests for ctags.py"""
+"""
+Unit tests for 'ctags.py'.
+"""
 
 import os
 import sys
