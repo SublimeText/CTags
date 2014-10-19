@@ -63,7 +63,7 @@ class Edit:
         return bool(self.steps)
 
     @classmethod
-    def future(self, func):
+    def future(cls, func):
         return EditFuture(func)
 
     def step(self, cmd, *args):
@@ -94,7 +94,7 @@ class Edit:
     def __enter__(self):
         return self
 
-    def __exit__(self, type, value, traceback):
+    def __exit__(self, type_, value, traceback):
         view = self.view
         if sublime.version().startswith('2'):
             edit = view.begin_edit()

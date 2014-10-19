@@ -1,11 +1,9 @@
 class sublime(object):
-
-    '''Constants'''
-
+    """
+    Mock object for ``sublime`` class in Sublime Text.
+    """
     LITERAL = ''
     VERSION = '2.0'
-
-    '''Functions'''
 
     def load_settings(self, **kargs):
         pass
@@ -14,16 +12,13 @@ class sublime(object):
     def version():
         return sublime.VERSION
 
-
 class sublime_plugin(object):
-
-    '''Constants'''
-
+    """
+    Mock object for ``sublime_plugin`` class in Sublime Text.
+    """
     all_callbacks = {
         'on_load': []
     }
-
-    '''Classes'''
 
     class WindowCommand(object):
         pass

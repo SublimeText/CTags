@@ -1,15 +1,15 @@
 [
-  {
-    "caption": "-"
-  },
-  {
-    "command": "navigate_to_definition",
-    "args": {},
-    "caption": "Navigate to Definition"
-  },
-  {
-    "command": "jump_prev",
-    "args": {},
-    "caption": "Jump Back"
-  }
+    {
+        "caption": "-"
+    },
+    {
+        "command": "navigate_to_definition",
+        "args": {},
+        "caption": "Navigate to Definition"
+    },
+    {
+        "command": "jump_prev",
+        "args": {},
+        "caption": "Jump Back"
+    }
 ]
