@@ -18,9 +18,10 @@ import ctags
 import ctagsplugin
 
 class CTagsPluginTest(unittest.TestCase):
-    """
-    Helper functions.
-    """
+    #
+    # Helper functions.
+    #
+
     def make_tmp_directory(self, pwd=None):
         """
         Make a temporary directory to place files in.
@@ -119,15 +120,15 @@ class CTagsPluginTest(unittest.TestCase):
         tag_file = 'example_tags'
 
         current_path = self.build_python_file()
-        tag_file = ctags.build_ctags(path=current_path, tag_file=tag_file)
+        tag_file_ = ctags.build_ctags(path=current_path, tag_file=tag_file)
 
         # should find tag file in current directory
         self.assertEqual(
             ctagsplugin.find_tags_relative_to(current_path, tag_file),
-            tag_file)
+            tag_file_)
 
         # cleanup
-        self.remove_tmp_files([current_path, tag_file])
+        self.remove_tmp_files([current_path, tag_file_])
 
     def test_find_tags_relative_to__find_tags_in_parent_directory(self):
         tag_file = 'example_tags'
