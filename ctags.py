@@ -361,8 +361,12 @@ def resort_ctags(tag_file):
     keys = {}
 
     with codecs.open(tag_file, encoding='utf-8', errors='replace') as fh:
-        for line in fh:
-            keys.setdefault(line.split('\t')[FILENAME], []).append(line)
+        for line_no, line in enumerate(fh):
+            words = line.split('\t')
+            if len(words) <= FILENAME:
+                print("{0}({1}) warning: corrupt tagfile line - skipping".format(tag_file, line_no+1))
+            else:
+                keys.setdefault(words[FILENAME], []).append(line)
 
     with codecs.open(tag_file+'_sorted_by_file', 'w', encoding='utf-8', errors='replace') as fw:
         for k in sorted(keys):
