@@ -101,5 +101,8 @@
     // When enabled, searched symbols will be highlighted when found. This
     // can be irritating in some instances, e.g. when in Vintage mode. In
     // these cases, setting this to false will disable this highlighting.
-    "select_searched_symbol": true
+    "select_searched_symbol": true,
+
+    // Set to false to not open an error dialog while tags are building
+    "display_rebuilding_message": true
 }
