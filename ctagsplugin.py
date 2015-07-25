@@ -304,7 +304,6 @@ def get_common_ancestor_folder(path, folders):
 
 def find_with_scope(view, pattern, scope, start_pos=0, cond=True, flags=0):
     max_pos = view.size()
-
     while start_pos < max_pos:
         estrs = pattern.split(r'\ufffd')
         if(len(estrs)>1):
@@ -645,6 +644,9 @@ class JumpToDefinition:
 
         def_filters = compile_definition_filters(view)
 
+		
+        fname_abs = view.file_name() if not(view.file_name() is None) else None
+		
         def pass_def_filter(o):
             for f in def_filters:
                 for k, v in list(f.items()):
@@ -653,12 +655,20 @@ class JumpToDefinition:
                             return False
             return True
 
+        def eq_filename(rel_path):
+            if fname_abs is None or rel_path is None:
+                return False
+				
+            if rel_path.startswith("."):
+               rel_path = rel_path[1:]		
+            return fname_abs.endswith(rel_path)
+			
         @prepare_for_quickpanel()
         def sorted_tags():
             p_tags = list(filter(pass_def_filter, tags.get(symbol, [])))
             if not p_tags:
                 status_message('Can\'t find "%s"' % symbol)
-            p_tags = sorted(p_tags, key=iget('tag_path'))
+            p_tags = sorted(p_tags, key=lambda tag: '' if eq_filename(tag.tag_path[0]) else tag.tag_path[0])
             return p_tags
 
         return sorted_tags
