@@ -602,7 +602,9 @@ def check_if_building(self, **args):
     Check if ctags are currently being built.
     """
     if RebuildTags.build_ctags.func.running:
-        error_message('Please wait while tags are built')
+        status_message('Tags not available until built')
+        if setting('display_rebuilding_message'):
+            error_message('Please wait while tags are built')
         return False
     return True
 
