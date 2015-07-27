@@ -3,6 +3,7 @@ A ctags plugin for Sublime Text 2/3.
 """
 
 import functools
+from functools import reduce
 import codecs
 import locale
 import sys
@@ -16,6 +17,9 @@ import subprocess
 from itertools import chain
 from operator import itemgetter as iget
 from collections import defaultdict, deque
+
+# TODO:Debug:Remove Dekel
+import spdb
 
 try:
     import sublime
@@ -628,7 +632,10 @@ class JumpToDefinition:
     Provider for NavigateToDefinition and SearchForDefinition commands.
     """
     @staticmethod
-    def run(symbol, view, tags_file):
+    def run(symbol, mbrParts, view, tags_file):
+        print('JumpToDefinition')
+        #spdb.start(0)
+
         tags = {}
         for tags_file in get_alternate_tags_paths(view, tags_file):
             with TagFile(tags_file, SYMBOL) as tagfile:
@@ -642,9 +649,19 @@ class JumpToDefinition:
 
         def_filters = compile_definition_filters(view)
 
-		
-        fname_abs = view.file_name() if not(view.file_name() is None) else None
-		
+        fname_abs = view.file_name().lower() if not(view.file_name() is None) else None        
+        
+         # Return a set of tri-grams (each tri-gram is a tuple) given a string: 
+        # Ex: 'Dekel' --> {('d', 'e', 'k'), ('k', 'e', 'l'), ('e', 'k', 'e')}
+        def get_grams(str):
+            lstr = str.lower()
+            return set(zip(lstr,lstr[1:],lstr[2:]))
+       
+        
+        mbrGrams = [get_grams(part) for part in mbrParts];
+        setMbrGrams = reduce(lambda s,t: s.union(t), mbrGrams)
+        print('setMbrGrams = %s' % setMbrGrams);
+        
         def pass_def_filter(o):
             for f in def_filters:
                 for k, v in list(f.items()):
@@ -652,21 +669,75 @@ class JumpToDefinition:
                         if re.match(v, o[k]):
                             return False
             return True
-
+            
+        # Given two dicts, merge them into a new dict as a shallow copy. 
+        # y members overwrite x members with the same keys.
+        def merge_two_dicts(x, y):        
+            z = x.copy()
+            z.update(y)
+            return z
+        
+            
+        # Object Member Expression File Ranking: Rank higher candiates tags path names that fuzzy match the <expression>.method()
+        # Rules:
+        # 1) youtube.fetch() --> mbrPaths = ['youtube'] --> get_rank of tag 'fetch' with rel_path a/b/Youtube.js ---> RANK_EXACT_MATCH_RIGHTMOST_MBR_PART_TO_FILENAME
+        # 2) youtube.fetch() --> user GotoDef from youtube.js --> RANK_EQ_FILENAME_RANK
+        # 3) vidtube.fetch() --> tag 'fetch' with rel_path google/video/youtube.js ---> fuzzy match of tri-grams of vidtube (vid,idt,dtu,tub,ube) with tri-grams from the path
+        RANK_EQ_FILENAME_RANK = 10
+        RANK_EXACT_MATCH_RIGHTMOST_MBR_PART_TO_FILENAME = 20
+        WEIGHT_RIGHTMOST_MBR_PART = 2
+        MAX_WEIGHT_GRAM = 3
+        WEIGHT_DECAY = 1.5
+        reThis = re.compile('this|self|me|that', re.IGNORECASE) #TODO: this/self config
+        def get_rank(rel_path):
+            print('get_rank.rel_path = %s' % rel_path);
+            
+            rank = 0
+            rel_path_no_ext = rel_path.lstrip('.' + os.sep)
+            rel_path_no_ext = os.path.splitext(rel_path_no_ext)[0]
+            pathParts = rel_path_no_ext.split(os.sep);
+            if len(pathParts) >= 1 and len(mbrParts) >= 1 and pathParts[-1].lower() == mbrParts[-1].lower():
+                rank += RANK_EXACT_MATCH_RIGHTMOST_MBR_PART_TO_FILENAME
+                print('Boost: pathParts[-1].lower() == mbrParts[-1].lower() %d' % rank)
+                    
+            # Same file --> Boost rank
+            if eq_filename(rel_path): 
+                rank += RANK_EQ_FILENAME_RANK
+                print('Same file: %d' % rank)
+                if len(mbrParts) == 1 and reThis.match(mbrParts[-1]):
+                    rank += RANK_EQ_FILENAME_RANK # this.mtd() -  rank candidate from current file very high.
+                    print('Same file + this: %d' % rank)
+                    return rank
+                
+            # Prepare dict of <tri-gram : weight>, where weight decays are we move further away from the method call (to the left)
+            pathGrams = [get_grams(part) for part in pathParts];
+            print('pathGrams = %s' % pathGrams);
+            wt = MAX_WEIGHT_GRAM
+            dctPathGram = {}
+            for setPathGram in reversed(pathGrams):                
+                dctPathPart = dict.fromkeys(setPathGram,wt)
+                dctPathGram = merge_two_dicts(dctPathPart,dctPathGram)
+                wt /= WEIGHT_DECAY
+            
+            print('dctPathGram = %s' % dctPathGram);
+            
+            for mbrGrm in setMbrGrams:
+                rank += dctPathGram.get(mbrGrm,0)
+            
+            print('rank = %d' % rank);
+            return rank
+            
         def eq_filename(rel_path):
             if fname_abs is None or rel_path is None:
-                return False
-				
-            if rel_path.startswith("."):
-               rel_path = rel_path[1:]		
-            return fname_abs.endswith(rel_path)
-			
+                return False    
+            return fname_abs.endswith(rel_path.lstrip('.').lower())
+            
         @prepare_for_quickpanel()
         def sorted_tags():
             p_tags = list(filter(pass_def_filter, tags.get(symbol, [])))
             if not p_tags:
                 status_message('Can\'t find "%s"' % symbol)
-            p_tags = sorted(p_tags, key=lambda tag: '' if eq_filename(tag.tag_path[0]) else tag.tag_path[0])
+            p_tags = sorted(p_tags, key=lambda tag: get_rank(tag.tag_path[0]),reverse=True )   
             return p_tags
 
         return sorted_tags
@@ -687,6 +758,17 @@ class NavigateToDefinition(sublime_plugin.TextCommand):
     def is_visible(self):
         return setting('show_context_menus')
 
+    # Extract receiver object e.g. receiver.mtd() 
+    # Strip away brackets and operators.
+    # TODO: Bug: func(obj.yyy); --> GoDef yyy --> currently return 'funcobj' --> do not match func( --> output should be 'obj'
+    # TODO: Bug: getSlow(a && b).mtd() --> stops at whitespace inside the (a && b) -->  extracts 'b' instead of getSlow(a && b)
+    def extract_member_exp(self,line_to_symbol):    
+        arrWrds = re.split('\s',line_to_symbol); #TODO:Config for per-lang identifier names and delimiters 
+        print('arrWrds[-1]=%s' %  arrWrds[-1])
+        arrIdent = re.split('\(|\)|\[|\]|&&|\|\||\!|\:',arrWrds[-1]); 
+        print('arrIdent=%s' %  arrIdent)
+        return "".join(arrIdent)
+        
     @ctags_goto_command(jump_directly=True)
     def run(self, view, args, tags_file):
         region = view.sel()[0]
@@ -700,8 +782,20 @@ class NavigateToDefinition(sublime_plugin.TextCommand):
             if 'Ruby' in language and self.endings.match(endings):
                 region = sublime.Region(region.begin(), region.end()+1)
         symbol = view.substr(region)
-
-        return JumpToDefinition.run(symbol, view, tags_file)
+     
+        sym_line = view.substr(view.line(region))
+        print('view.line(region)=%s' % sym_line)
+        (row,col) = view.rowcol(region.begin())
+        line_to_symbol = sym_line[:col]
+        print('line_to_symbol=%s' % line_to_symbol )
+        member_exp = self.extract_member_exp(line_to_symbol)
+        
+        
+        print('member_expresion=%s' %  member_exp)
+        arrMbrParts = re.split('\.',member_exp.rstrip('.')) # TODO:Config per-lang
+        print('arrMbrParts=%s' %  arrMbrParts)
+        
+        return JumpToDefinition.run(symbol, arrMbrParts, view, tags_file)
 
 class SearchForDefinition(sublime_plugin.WindowCommand):
     """
@@ -728,7 +822,7 @@ class SearchForDefinition(sublime_plugin.WindowCommand):
             status_message('Can\'t find any relevant tags file')
             return
 
-        result = JumpToDefinition.run(symbol, view, tags_file)
+        result = JumpToDefinition.run(symbol, None, view, tags_file)
         show_tag_panel(view, result, True)
 
     def on_change(self, text):
