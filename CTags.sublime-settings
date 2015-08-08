@@ -101,5 +101,11 @@
     // When enabled, searched symbols will be highlighted when found. This
     // can be irritating in some instances, e.g. when in Vintage mode. In
     // these cases, setting this to false will disable this highlighting.
-    "select_searched_symbol": true
+    "select_searched_symbol": true,
+
+    //scope filter: Tags file may optionally contain tagfield for the scope of the tag.
+    //Ex: item  .\app\utils\fileHelper.js   420;"   vp  lineno:420  scope:420:19-422:9
+    //The re is used to extract  scope:/beginLine:beginCol-endLine:endCol/
+    //Different tags generators may generate this non-standard field in different formats
+    "scope_re": "(\\d.*?):(\\d.*?)-(\\d.*?):(\\d.*?)"
 }

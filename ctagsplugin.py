@@ -632,9 +632,9 @@ class JumpToDefinition:
     Provider for NavigateToDefinition and SearchForDefinition commands.
     """
     @staticmethod
-    def run(symbol, mbrParts, view, tags_file):
+    def run(symbol,region, mbrParts, view, tags_file):
         print('JumpToDefinition')
-        #spdb.start(0)
+         #spdb.start(0)
 
         tags = {}
         for tags_file in get_alternate_tags_paths(view, tags_file):
@@ -690,7 +690,7 @@ class JumpToDefinition:
         WEIGHT_DECAY = 1.5
         reThis = re.compile('this|self|me|that', re.IGNORECASE) #TODO: this/self config
         def get_rank(rel_path):
-            print('get_rank.rel_path = %s' % rel_path);
+ #           print('get_rank.rel_path = %s' % rel_path);
             
             rank = 0
             rel_path_no_ext = rel_path.lstrip('.' + os.sep)
@@ -698,7 +698,7 @@ class JumpToDefinition:
             pathParts = rel_path_no_ext.split(os.sep);
             if len(pathParts) >= 1 and len(mbrParts) >= 1 and pathParts[-1].lower() == mbrParts[-1].lower():
                 rank += RANK_EXACT_MATCH_RIGHTMOST_MBR_PART_TO_FILENAME
-                print('Boost: pathParts[-1].lower() == mbrParts[-1].lower() %d' % rank)
+#                print('Boost: pathParts[-1].lower() == mbrParts[-1].lower() %d' % rank)
                     
             # Same file --> Boost rank
             if eq_filename(rel_path): 
@@ -711,7 +711,7 @@ class JumpToDefinition:
                 
             # Prepare dict of <tri-gram : weight>, where weight decays are we move further away from the method call (to the left)
             pathGrams = [get_grams(part) for part in pathParts];
-            print('pathGrams = %s' % pathGrams);
+ #           print('pathGrams = %s' % pathGrams);
             wt = MAX_WEIGHT_GRAM
             dctPathGram = {}
             for setPathGram in reversed(pathGrams):                
@@ -719,22 +719,62 @@ class JumpToDefinition:
                 dctPathGram = merge_two_dicts(dctPathPart,dctPathGram)
                 wt /= WEIGHT_DECAY
             
-            print('dctPathGram = %s' % dctPathGram);
+#            print('dctPathGram = %s' % dctPathGram);
             
             for mbrGrm in setMbrGrams:
                 rank += dctPathGram.get(mbrGrm,0)
             
-            print('rank = %d' % rank);
+ #           print('rank = %d' % rank);
             return rank
             
         def eq_filename(rel_path):
             if fname_abs is None or rel_path is None:
                 return False    
             return fname_abs.endswith(rel_path.lstrip('.').lower())
+        
+        # Given optional scope extended field tag.scope = 'startline:startcol-endline:endcol' -  def-scope. 
+        # Return: Tuple of 2 Lists: 
+        #  in_scope: Tags with matching scope: current cursor / caret position is contained in their start-end scope range.
+        #  no_scope: Tags without scope or with global scope 
+        # Usage: locals, local parameters Tags have scope (ex: in estr.js tag generator for JavaScript)
+        def scope_filter(taglist):
+            in_scope = []
+            no_scope = []
+            for tag in taglist:
+                if region is None or tag.scope is None or tag.scope == 'global':
+                    no_scope.append(tag)
+                    continue
+
+                if not eq_filename(tag.filename):
+                    continue
             
+                mch = re.search(setting('scope_re'),tag.scope) 
+                
+                if mch:
+                    beginLine = int(mch.group(1)) - 1 # .tags file is 1 based and region.begin() is 0 based
+                    beginCol  = int(mch.group(2)) - 1
+                    endLine = int(mch.group(3)) - 1
+                    endCol  = int(mch.group(4)) - 1
+                    beginPoint = view.text_point(beginLine,beginCol)
+                    endPoint = view.text_point(endLine,endCol)                
+                    if region.begin() >= beginPoint and region.end() <= endPoint:                    
+                        in_scope.append(tag)
+                        
+
+            return (in_scope,no_scope)    
+
         @prepare_for_quickpanel()
         def sorted_tags():
-            p_tags = list(filter(pass_def_filter, tags.get(symbol, [])))
+            # Scope Filter: If symbol matches at least 1 local scope tag - assume they hides non-scope and global scope tags. 
+            # If non local-scope (in_scope) matches --> keep the global / no scope matches (see in sorted_tags) and discard 
+            # the local-scope - because they are not locals of the current position                                
+            (in_scope,no_scope) = scope_filter(tags.get(symbol, []))
+            if (len(in_scope) > 0):
+                p_tags = in_scope
+            else:                
+                p_tags = no_scope
+
+            p_tags = list(filter(pass_def_filter, p_tags))
             if not p_tags:
                 status_message('Can\'t find "%s"' % symbol)
             p_tags = sorted(p_tags, key=lambda tag: get_rank(tag.tag_path[0]),reverse=True )   
@@ -795,7 +835,7 @@ class NavigateToDefinition(sublime_plugin.TextCommand):
         arrMbrParts = re.split('\.',member_exp.rstrip('.')) # TODO:Config per-lang
         print('arrMbrParts=%s' %  arrMbrParts)
         
-        return JumpToDefinition.run(symbol, arrMbrParts, view, tags_file)
+        return JumpToDefinition.run(symbol, region, arrMbrParts, view, tags_file)
 
 class SearchForDefinition(sublime_plugin.WindowCommand):
     """
@@ -822,7 +862,7 @@ class SearchForDefinition(sublime_plugin.WindowCommand):
             status_message('Can\'t find any relevant tags file')
             return
 
-        result = JumpToDefinition.run(symbol, None, view, tags_file)
+        result = JumpToDefinition.run(symbol, None,None, view, tags_file)
         show_tag_panel(view, result, True)
 
     def on_change(self, text):
