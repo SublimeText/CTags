@@ -766,10 +766,11 @@ class JumpToDefinition:
         @prepare_for_quickpanel()
         def sorted_tags():
             # Scope Filter: If symbol matches at least 1 local scope tag - assume they hides non-scope and global scope tags. 
-            # If non local-scope (in_scope) matches --> keep the global / no scope matches (see in sorted_tags) and discard 
+            # If no local-scope (in_scope) matches --> keep the global / no scope matches (see in sorted_tags) and discard 
             # the local-scope - because they are not locals of the current position                                
+            # If object-receiver (someobj.symbol) --> refer to as global tag --> filter out local-scope tags
             (in_scope,no_scope) = scope_filter(tags.get(symbol, []))
-            if (len(in_scope) > 0):
+            if (len(setMbrGrams) ==0 and len(in_scope) > 0):
                 p_tags = in_scope
             else:                
                 p_tags = no_scope
