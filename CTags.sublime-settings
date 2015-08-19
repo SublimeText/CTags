@@ -112,11 +112,19 @@
                           "splitters" : ["."], 
                           "open"  : ["{","[","("],
                           "close" : ["}", "]" , ")"], //close[i] must match open[i]
-                          "ignore" : ["&", "|" , "?" ,":" , "!", "'" , "\""],
+                          "ignore" : ["&", "|" , "?" ,":" , "!", "'" , "=","\""],
                           "stop"   : ["\\s"], 
                           "this" : ["this", "me", "self", "that"]
                          }   
-                     }
+                      },
+        "source.python": 
+                      {  "inherit": "source.js", //python settings inherit JavaScript, with some overrides
+                         "member_exp":
+                            { 
+                              "ignore" : ["and", "or" , "not" ,":" , "!", "'" ,"=", "\""],                     
+                              "this" : ["self"]
+                            }   
+                       }
     },
 
 

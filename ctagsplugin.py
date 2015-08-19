@@ -97,6 +97,15 @@ def concat_re(reList,escape=True,wrapCapture=False):
         ret = "(" + ret + ")"
     return ret
 
+def dict_extend(dct, base):
+        if not dct: dct = {}
+        if base:
+            deriv = base
+            deriv.update(dct)
+        else:
+            deriv = dct
+        return deriv
+
 def escape_regex(s):
     return RE_SPECIAL_CHARS.sub(lambda m: '\\%s' % m.group(1), s)
 
@@ -815,6 +824,10 @@ class NavigateToDefinition(sublime_plugin.TextCommand):
     def extract_member_exp(self,line_to_symbol,source):    
         lang = setting('language_syntax').get(source)
         if lang is None: return line_to_symbol
+        print('lang.get(inherit)=%s' %  lang.get('inherit'))
+        base = setting('language_syntax').get(lang.get('inherit'))
+        lang = dict_extend(lang ,base)
+        
         # Get per-language syntax regex of brackets, splitters etc.
         mbr_exp = lang.get('member_exp')
         if mbr_exp is None: return line_to_symbol
