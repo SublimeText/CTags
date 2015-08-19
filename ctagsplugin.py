@@ -87,6 +87,15 @@ def get_setting(key, default=None):
     return get_settings().get(key, default)
 
 setting = get_setting
+def concat_re(reList,escape=True,wrapCapture=False):
+    """
+    concat list of regex into a single regex, used by re.split
+    wrapCapture - if true --> adds () around the result regex --> split will keep the splitters in its output array.
+    """
+    ret = "|".join((re.escape(spl) if escape else spl) for spl in reList)
+    if (wrapCapture):
+        ret = "(" + ret + ")"
+    return ret
 
 def escape_regex(s):
     return RE_SPECIAL_CHARS.sub(lambda m: '\\%s' % m.group(1), s)
@@ -634,7 +643,7 @@ class JumpToDefinition:
     @staticmethod
     def run(symbol,region, mbrParts, view, tags_file):
         print('JumpToDefinition')
-         #spdb.start(0)
+         
 
         tags = {}
         for tags_file in get_alternate_tags_paths(view, tags_file):
@@ -657,9 +666,9 @@ class JumpToDefinition:
             lstr = str.lower()
             return set(zip(lstr,lstr[1:],lstr[2:]))
        
-        
+        #spdb.start(0)
         mbrGrams = [get_grams(part) for part in mbrParts];
-        setMbrGrams = reduce(lambda s,t: s.union(t), mbrGrams)
+        setMbrGrams = (reduce(lambda s,t: s.union(t), mbrGrams) if mbrGrams else set() )
         print('setMbrGrams = %s' % setMbrGrams);
         
         def pass_def_filter(o):
@@ -741,7 +750,7 @@ class JumpToDefinition:
             in_scope = []
             no_scope = []
             for tag in taglist:
-                if region is None or tag.scope is None or tag.scope == 'global':
+                if region is None or tag.get('scope') is None or tag.scope is None or tag.scope == 'global':
                     no_scope.append(tag)
                     continue
 
@@ -770,7 +779,7 @@ class JumpToDefinition:
             # the local-scope - because they are not locals of the current position                                
             # If object-receiver (someobj.symbol) --> refer to as global tag --> filter out local-scope tags
             (in_scope,no_scope) = scope_filter(tags.get(symbol, []))
-            if (len(setMbrGrams) ==0 and len(in_scope) > 0):
+            if (len(setMbrGrams) ==0 and len(in_scope) > 0): #TODO:Config: @symbol - in Ruby instance var (therefore never local var)
                 p_tags = in_scope
             else:                
                 p_tags = no_scope
@@ -801,14 +810,80 @@ class NavigateToDefinition(sublime_plugin.TextCommand):
 
     # Extract receiver object e.g. receiver.mtd() 
     # Strip away brackets and operators.
-    # TODO: Bug: func(obj.yyy); --> GoDef yyy --> currently return 'funcobj' --> do not match func( --> output should be 'obj'
-    # TODO: Bug: getSlow(a && b).mtd() --> stops at whitespace inside the (a && b) -->  extracts 'b' instead of getSlow(a && b)
-    def extract_member_exp(self,line_to_symbol):    
-        arrWrds = re.split('\s',line_to_symbol); #TODO:Config for per-lang identifier names and delimiters 
+    # TODO:HIGH: Add base lang defs + Python/Ruby/C++/Java/C#/PHP overrides (should be very similar)
+    # TODO: comment and string support (eat as may contain brackets. add them to context - js['prop1']['prop-of-prop1'])
+    def extract_member_exp(self,line_to_symbol,source):    
+        lang = setting('language_syntax').get(source)
+        if lang is None: return line_to_symbol
+        # Get per-language syntax regex of brackets, splitters etc.
+        mbr_exp = lang.get('member_exp')
+        if mbr_exp is None: return line_to_symbol
+        lstStop = mbr_exp.get('stop',[])
+        setStop = set(lstStop)
+        if (not setStop):
+            return line_to_symbol
+
+        lstClose = mbr_exp.get('close',[])
+        setClose = set(lstClose)
+        lstOpen = mbr_exp.get('open',[])
+        setOpen = set(lstOpen)
+        lstIgnore = mbr_exp.get('ignore',[])
+        setIgnore = set(lstIgnore)
+
+        if len(lstOpen) != len(lstClose): print('warning!: extract_member_exp: settings lstOpen must match lstClose')
+        matchOpenClose = dict(zip(lstOpen,lstClose))
+        # Construct | regex from all open and close strings with capture (..)
+        splex = concat_re(lstOpen + lstClose + lstIgnore,escape=True)
+        reIgnore =  concat_re(lstStop,escape=False)
+        splex = "({0}|{1})".format(splex,reIgnore)
+        splat = re.split(splex,line_to_symbol)
+#        print('splat=%s' %  splat)
+        #  Stack iter reverse(splat) for detecting unbalanced e.g 'func(obj.yyy' while skipping balanced brackets in getSlow(a && b).mtd()
+        stack = []
+        lstMbr = []
+        insideExp = False
+        for cur in reversed(splat):
+            # Scan backwards from the symbol: If alpha-numeric - keep it. If Closing bracket e.g ] or ) or } --> push into stack
+            if cur in setClose:
+                stack.append(cur)
+                insideExp = True
+            # If opening bracket --> match it from top-of-stack: If stack empty - stop else If match pop-and-continue else stop scanning + warning
+            elif cur in setOpen:
+                # '(' with no matching ')' --> func(obj.yyy case --> return obj.yyy
+                if len(stack) == 0:  
+                    break
+                tokClose = stack.pop()
+                tokCloseCur = matchOpenClose.get(cur)
+                if tokClose != tokCloseCur:
+                    print('non-matching brackets at the same nesting level: %s %s' % (tokCloseCur,tokClose))
+                    break
+                insideExp = False
+            elif cur in setIgnore:
+                pass 
+            # If white space --> stop, unless inside open-close brackets nested expression
+            elif re.match(reIgnore,cur):
+                if not insideExp: break
+            else:
+                lstMbr[0:0] = cur
+
+        strMbrExp = "".join(lstMbr)
+        # Begin TODO:Debug:Remove: old (simple and buggy code) - for debugging by comparison 
+        arrWrds = re.split('\s',line_to_symbol); 
         print('arrWrds[-1]=%s' %  arrWrds[-1])
-        arrIdent = re.split('\(|\)|\[|\]|&&|\|\||\!|\:',arrWrds[-1]); 
-        print('arrIdent=%s' %  arrIdent)
-        return "".join(arrIdent)
+        arrIdent = re.split('\(|\)|\[|\]|&&|\|\||\!|\:|\'|\"',arrWrds[-1]); 
+        strOldIdent = "".join(arrIdent)
+            
+
+        if strOldIdent != strMbrExp:
+            print('strOldIdent != strMbrExp: strOldIdent=%s strMbrExp=%s' %  (strOldIdent,strMbrExp))
+        # End Debug
+        lstSplit = mbr_exp.get('splitters',[])
+        reSplit =  concat_re(lstSplit,escape=True)
+        arrMbrParts = list(filter(None,re.split(reSplit,strMbrExp))) # Split member deref per-lang (-> and :: in PHP and C++) - use base if not found
+        print('arrMbrParts=%s' %  arrMbrParts)
+        
+        return arrMbrParts
+        
         
     @ctags_goto_command(jump_directly=True)
     def run(self, view, args, tags_file):
@@ -825,17 +900,14 @@ class NavigateToDefinition(sublime_plugin.TextCommand):
         symbol = view.substr(region)
      
         sym_line = view.substr(view.line(region))
-        print('view.line(region)=%s' % sym_line)
+#        print('view.line(region)=%s' % sym_line)
         (row,col) = view.rowcol(region.begin())
         line_to_symbol = sym_line[:col]
-        print('line_to_symbol=%s' % line_to_symbol )
-        member_exp = self.extract_member_exp(line_to_symbol)
-        
-        
-        print('member_expresion=%s' %  member_exp)
-        arrMbrParts = re.split('\.',member_exp.rstrip('.')) # TODO:Config per-lang
-        print('arrMbrParts=%s' %  arrMbrParts)
-        
+        print('line_to_symbol=%s' % line_to_symbol)
+ 
+        scope_name = view.scope_name(view.sel()[0].begin()) # ex: 'source.python meta.function-call.python '
+        source = re.split(' ',scope_name)[0] # ex: 'source.python' 
+        arrMbrParts = self.extract_member_exp(line_to_symbol,source)
         return JumpToDefinition.run(symbol, region, arrMbrParts, view, tags_file)
 
 class SearchForDefinition(sublime_plugin.WindowCommand):

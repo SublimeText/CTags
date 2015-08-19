@@ -103,6 +103,23 @@
     // these cases, setting this to false will disable this highlighting.
     "select_searched_symbol": true,
 
+    //Per-language syntax regex and character sets
+    //Ex: Python 'and' ignore exp --> '\sand\s' - it must have whitespace around it so it is not part of real name: gates.Nand.evaluate() 
+    "language_syntax": {
+        "splitters" : [".","::","->"],
+        "source.js": { "member_exp":
+                        { "chars" : "[A-Za-z0-9_$]",
+                          "splitters" : ["."], 
+                          "open"  : ["{","[","("],
+                          "close" : ["}", "]" , ")"], //close[i] must match open[i]
+                          "ignore" : ["&", "|" , "?" ,":" , "!", "'" , "\""],
+                          "stop"   : ["\\s"], 
+                          "this" : ["this", "me", "self", "that"]
+                         }   
+                     }
+    },
+
+
     //scope filter: Tags file may optionally contain tagfield for the scope of the tag.
     //Ex: item  .\app\utils\fileHelper.js   420;"   vp  lineno:420  scope:420:19-422:9
     //The re is used to extract  scope:/beginLine:beginCol-endLine:endCol/
