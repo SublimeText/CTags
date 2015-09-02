@@ -109,11 +109,11 @@
         "splitters" : [".","::","->"],
         "source.js": { "member_exp":
                         { "chars" : "[A-Za-z0-9_$]",
-                          "splitters" : ["."], 
-                          "open"  : ["{","[","("],
-                          "close" : ["}", "]" , ")"], //close[i] must match open[i]
-                          "ignore" : ["&", "|" , "?" ,":" , "!", "'" , "=","\""],
-                          "stop"   : ["\\s"], 
+                          "splitters" : ["\\."], 
+                          "open"  : ["\\{","\\[","\\("],
+                          "close" : ["\\}", "\\]" , "\\)"], //close[i] must match open[i]
+                          "ignore" : ["&", "\\|" , "\\?" ,":" , "\\!", "'" , "=","\""],
+                          "stop"   : ["\\s",","], 
                           "this" : ["this", "me", "self", "that"]
                          }   
                       },
@@ -121,7 +121,7 @@
                       {  "inherit": "source.js", //python settings inherit JavaScript, with some overrides
                          "member_exp":
                             { 
-                              "ignore" : ["and", "or" , "not" ,":" , "!", "'" ,"=", "\""],                     
+                              "ignore" : ["\\sand\\s", "\\sor\\s" , "\\snot\\s" ,":" , "\\!", "'" ,"=", "\""],                     
                               "this" : ["self"]
                             }   
                        }

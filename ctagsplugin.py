@@ -87,7 +87,7 @@ def get_setting(key, default=None):
     return get_settings().get(key, default)
 
 setting = get_setting
-def concat_re(reList,escape=True,wrapCapture=False):
+def concat_re(reList,escape=False,wrapCapture=False):
     """
     concat list of regex into a single regex, used by re.split
     wrapCapture - if true --> adds () around the result regex --> split will keep the splitters in its output array.
@@ -101,10 +101,35 @@ def dict_extend(dct, base):
         if not dct: dct = {}
         if base:
             deriv = base
-            deriv.update(dct)
+            deriv = merge_two_dicts_deep(deriv,dct)
         else:
             deriv = dct
         return deriv
+
+def merge_two_dicts_shallow(x, y):
+    """
+    Given two dicts, merge them into a new dict as a shallow copy. 
+    y members overwrite x members with the same keys.
+    """        
+    z = x.copy()
+    z.update(y)
+    return z
+
+
+def merge_two_dicts_deep(a, b, path=None):
+    "Merges b into a including sub-dictionaries - recursive"
+    if path is None: path = []
+    for key in b:
+        if key in a:
+            if isinstance(a[key], dict) and isinstance(b[key], dict):
+                merge_two_dicts_deep(a[key], b[key], path + [str(key)])
+            elif a[key] == b[key]:
+                pass # same leaf value
+            else:
+                a[key] = b[key]
+        else:
+            a[key] = b[key]
+    return a
 
 def escape_regex(s):
     return RE_SPECIAL_CHARS.sub(lambda m: '\\%s' % m.group(1), s)
@@ -675,7 +700,6 @@ class JumpToDefinition:
             lstr = str.lower()
             return set(zip(lstr,lstr[1:],lstr[2:]))
        
-        #spdb.start(0)
         mbrGrams = [get_grams(part) for part in mbrParts];
         setMbrGrams = (reduce(lambda s,t: s.union(t), mbrGrams) if mbrGrams else set() )
         print('setMbrGrams = %s' % setMbrGrams);
@@ -688,12 +712,6 @@ class JumpToDefinition:
                             return False
             return True
             
-        # Given two dicts, merge them into a new dict as a shallow copy. 
-        # y members overwrite x members with the same keys.
-        def merge_two_dicts(x, y):        
-            z = x.copy()
-            z.update(y)
-            return z
         
             
         # Object Member Expression File Ranking: Rank higher candiates tags path names that fuzzy match the <expression>.method()
@@ -734,7 +752,7 @@ class JumpToDefinition:
             dctPathGram = {}
             for setPathGram in reversed(pathGrams):                
                 dctPathPart = dict.fromkeys(setPathGram,wt)
-                dctPathGram = merge_two_dicts(dctPathPart,dctPathGram)
+                dctPathGram = merge_two_dicts_shallow(dctPathPart,dctPathGram)
                 wt /= WEIGHT_DECAY
             
 #            print('dctPathGram = %s' % dctPathGram);
@@ -821,7 +839,9 @@ class NavigateToDefinition(sublime_plugin.TextCommand):
     # Strip away brackets and operators.
     # TODO:HIGH: Add base lang defs + Python/Ruby/C++/Java/C#/PHP overrides (should be very similar)
     # TODO: comment and string support (eat as may contain brackets. add them to context - js['prop1']['prop-of-prop1'])
-    def extract_member_exp(self,line_to_symbol,source):    
+    def extract_member_exp(self,line_to_symbol,source):
+        #spdb.start(0)
+
         lang = setting('language_syntax').get(source)
         if lang is None: return line_to_symbol
         print('lang.get(inherit)=%s' %  lang.get('inherit'))
@@ -830,38 +850,40 @@ class NavigateToDefinition(sublime_plugin.TextCommand):
         
         # Get per-language syntax regex of brackets, splitters etc.
         mbr_exp = lang.get('member_exp')
-        if mbr_exp is None: return line_to_symbol
+        if mbr_exp is None: 
+            return line_to_symbol
+
         lstStop = mbr_exp.get('stop',[])
-        setStop = set(lstStop)
-        if (not setStop):
+        if (not lstStop):
+            print('warning!: language has member_exp setting but it is ineffective: Must have "stop" key with array of regex to stop search backward from identifier')
             return line_to_symbol
 
         lstClose = mbr_exp.get('close',[])
-        setClose = set(lstClose)
+        reClose = concat_re(lstClose)
         lstOpen = mbr_exp.get('open',[])
-        setOpen = set(lstOpen)
+        reOpen = concat_re(lstOpen)
         lstIgnore = mbr_exp.get('ignore',[])
-        setIgnore = set(lstIgnore)
-
+        reIgnore =  concat_re(lstIgnore)
         if len(lstOpen) != len(lstClose): print('warning!: extract_member_exp: settings lstOpen must match lstClose')
         matchOpenClose = dict(zip(lstOpen,lstClose))
         # Construct | regex from all open and close strings with capture (..)
-        splex = concat_re(lstOpen + lstClose + lstIgnore,escape=True)
-        reIgnore =  concat_re(lstStop,escape=False)
+        splex = concat_re(lstOpen + lstClose + lstIgnore + lstStop)
+        
+        reStop =  concat_re(lstStop)
         splex = "({0}|{1})".format(splex,reIgnore)
         splat = re.split(splex,line_to_symbol)
-#        print('splat=%s' %  splat)
+        #print('splat=%s' %  splat)
         #  Stack iter reverse(splat) for detecting unbalanced e.g 'func(obj.yyy' while skipping balanced brackets in getSlow(a && b).mtd()
         stack = []
         lstMbr = []
         insideExp = False
         for cur in reversed(splat):
             # Scan backwards from the symbol: If alpha-numeric - keep it. If Closing bracket e.g ] or ) or } --> push into stack
-            if cur in setClose:
+            if re.match(reClose,cur):
                 stack.append(cur)
                 insideExp = True
             # If opening bracket --> match it from top-of-stack: If stack empty - stop else If match pop-and-continue else stop scanning + warning
-            elif cur in setOpen:
+            elif re.match(reOpen,cur):
                 # '(' with no matching ')' --> func(obj.yyy case --> return obj.yyy
                 if len(stack) == 0:  
                     break
@@ -871,10 +893,10 @@ class NavigateToDefinition(sublime_plugin.TextCommand):
                     print('non-matching brackets at the same nesting level: %s %s' % (tokCloseCur,tokClose))
                     break
                 insideExp = False
-            elif cur in setIgnore:
-                pass 
-            # If white space --> stop, unless inside open-close brackets nested expression
             elif re.match(reIgnore,cur):
+                pass 
+            # If white space --> stop. Do not stop for whitespace inside open-close brackets nested expression
+            elif re.match(reStop,cur):
                 if not insideExp: break
             else:
                 lstMbr[0:0] = cur
@@ -891,7 +913,7 @@ class NavigateToDefinition(sublime_plugin.TextCommand):
             print('strOldIdent != strMbrExp: strOldIdent=%s strMbrExp=%s' %  (strOldIdent,strMbrExp))
         # End Debug
         lstSplit = mbr_exp.get('splitters',[])
-        reSplit =  concat_re(lstSplit,escape=True)
+        reSplit =  concat_re(lstSplit)
         arrMbrParts = list(filter(None,re.split(reSplit,strMbrExp))) # Split member deref per-lang (-> and :: in PHP and C++) - use base if not found
         print('arrMbrParts=%s' %  arrMbrParts)
         
