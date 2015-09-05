@@ -1,5 +1,5 @@
 """
-A ctags plugin for Sublime Text 2/3.
+A ctags plugin for Sublime Text 2/3. 
 """
 
 import functools
@@ -41,6 +41,9 @@ from ctags import (FILENAME, parse_tag_lines, PATH_ORDER, SYMBOL,
                    TagElements, TagFile)
 from helpers.edit import Edit
 
+from helpers.common import *
+from ranking.rank import RankMgr
+
 #
 # Contants
 #
@@ -57,82 +60,12 @@ RUBY_SPECIAL_ENDINGS = r'\?|!'
 
 ON_LOAD = sublime_plugin.all_callbacks['on_load']
 
-RE_SPECIAL_CHARS = re.compile(
-    '(\\\\|\\*|\\+|\\?|\\||\\{|\\}|\\[|\\]|\\(|\\)|\\^|\\$|\\.|\\#|\\ )')
 
 
 #
 # Functions
 #
 
-# Helper functions
-
-def get_settings():
-    """
-    Load settings.
-
-    :returns: dictionary containing settings
-    """
-    return sublime.load_settings("CTags.sublime-settings")
-
-def get_setting(key, default=None):
-    """
-    Load individual setting.
-
-    :param key: setting key to get value for
-    :param default: default value to return if no value found
-
-    :returns: value for ``key`` if ``key`` exists, else ``default``
-    """
-    return get_settings().get(key, default)
-
-setting = get_setting
-def concat_re(reList,escape=False,wrapCapture=False):
-    """
-    concat list of regex into a single regex, used by re.split
-    wrapCapture - if true --> adds () around the result regex --> split will keep the splitters in its output array.
-    """
-    ret = "|".join((re.escape(spl) if escape else spl) for spl in reList)
-    if (wrapCapture):
-        ret = "(" + ret + ")"
-    return ret
-
-def dict_extend(dct, base):
-        if not dct: dct = {}
-        if base:
-            deriv = base
-            deriv = merge_two_dicts_deep(deriv,dct)
-        else:
-            deriv = dct
-        return deriv
-
-def merge_two_dicts_shallow(x, y):
-    """
-    Given two dicts, merge them into a new dict as a shallow copy. 
-    y members overwrite x members with the same keys.
-    """        
-    z = x.copy()
-    z.update(y)
-    return z
-
-
-def merge_two_dicts_deep(a, b, path=None):
-    "Merges b into a including sub-dictionaries - recursive"
-    if path is None: path = []
-    for key in b:
-        if key in a:
-            if isinstance(a[key], dict) and isinstance(b[key], dict):
-                merge_two_dicts_deep(a[key], b[key], path + [str(key)])
-            elif a[key] == b[key]:
-                pass # same leaf value
-            else:
-                a[key] = b[key]
-        else:
-            a[key] = b[key]
-    return a
-
-def escape_regex(s):
-    return RE_SPECIAL_CHARS.sub(lambda m: '\\%s' % m.group(1), s)
 
 def select(view, region):
     sel_set = view.sel()
@@ -648,25 +581,10 @@ def check_if_building(self, **args):
     Check if ctags are currently being built.
     """
     if RebuildTags.build_ctags.func.running:
-        error_message('Please wait while tags are built')
+        error_message('Please wait while tags are built ')
         return False
     return True
 
-def compile_filters(view):
-    filters = []
-    for selector, regexes in list(setting('filters', {}).items()):
-        if view.match_selector(view.sel() and view.sel()[0].begin() or 0,
-                               selector):
-            filters.append(regexes)
-    return filters
-
-def compile_definition_filters(view):
-    filters = []
-    for selector, regexes in list(setting('definition_filters', {}).items()):
-        if view.match_selector(view.sel() and view.sel()[0].begin() or 0,
-                               selector):
-            filters.append(regexes)
-    return filters
 
 # Goto definition under cursor commands
 
@@ -678,7 +596,6 @@ class JumpToDefinition:
     def run(symbol,region, mbrParts, view, tags_file):
         print('JumpToDefinition')
          
-
         tags = {}
         for tags_file in get_alternate_tags_paths(view, tags_file):
             with TagFile(tags_file, SYMBOL) as tagfile:
@@ -690,131 +607,15 @@ class JumpToDefinition:
         if not tags:
             return status_message('Can\'t find "%s"' % symbol)
 
-        def_filters = compile_definition_filters(view)
-
-        fname_abs = view.file_name().lower() if not(view.file_name() is None) else None        
+        rankmgr = RankMgr(region, mbrParts, view)
         
-         # Return a set of tri-grams (each tri-gram is a tuple) given a string: 
-        # Ex: 'Dekel' --> {('d', 'e', 'k'), ('k', 'e', 'l'), ('e', 'k', 'e')}
-        def get_grams(str):
-            lstr = str.lower()
-            return set(zip(lstr,lstr[1:],lstr[2:]))
-       
-        mbrGrams = [get_grams(part) for part in mbrParts];
-        setMbrGrams = (reduce(lambda s,t: s.union(t), mbrGrams) if mbrGrams else set() )
-        print('setMbrGrams = %s' % setMbrGrams);
-        
-        def pass_def_filter(o):
-            for f in def_filters:
-                for k, v in list(f.items()):
-                    if k in o:
-                        if re.match(v, o[k]):
-                            return False
-            return True
-            
-        
-            
-        # Object Member Expression File Ranking: Rank higher candiates tags path names that fuzzy match the <expression>.method()
-        # Rules:
-        # 1) youtube.fetch() --> mbrPaths = ['youtube'] --> get_rank of tag 'fetch' with rel_path a/b/Youtube.js ---> RANK_EXACT_MATCH_RIGHTMOST_MBR_PART_TO_FILENAME
-        # 2) youtube.fetch() --> user GotoDef from youtube.js --> RANK_EQ_FILENAME_RANK
-        # 3) vidtube.fetch() --> tag 'fetch' with rel_path google/video/youtube.js ---> fuzzy match of tri-grams of vidtube (vid,idt,dtu,tub,ube) with tri-grams from the path
-        RANK_EQ_FILENAME_RANK = 10
-        RANK_EXACT_MATCH_RIGHTMOST_MBR_PART_TO_FILENAME = 20
-        WEIGHT_RIGHTMOST_MBR_PART = 2
-        MAX_WEIGHT_GRAM = 3
-        WEIGHT_DECAY = 1.5
-        reThis = re.compile('this|self|me|that', re.IGNORECASE) #TODO: this/self config
-        def get_rank(rel_path):
- #           print('get_rank.rel_path = %s' % rel_path);
-            
-            rank = 0
-            rel_path_no_ext = rel_path.lstrip('.' + os.sep)
-            rel_path_no_ext = os.path.splitext(rel_path_no_ext)[0]
-            pathParts = rel_path_no_ext.split(os.sep);
-            if len(pathParts) >= 1 and len(mbrParts) >= 1 and pathParts[-1].lower() == mbrParts[-1].lower():
-                rank += RANK_EXACT_MATCH_RIGHTMOST_MBR_PART_TO_FILENAME
-#                print('Boost: pathParts[-1].lower() == mbrParts[-1].lower() %d' % rank)
-                    
-            # Same file --> Boost rank
-            if eq_filename(rel_path): 
-                rank += RANK_EQ_FILENAME_RANK
-                print('Same file: %d' % rank)
-                if len(mbrParts) == 1 and reThis.match(mbrParts[-1]):
-                    rank += RANK_EQ_FILENAME_RANK # this.mtd() -  rank candidate from current file very high.
-                    print('Same file + this: %d' % rank)
-                    return rank
-                
-            # Prepare dict of <tri-gram : weight>, where weight decays are we move further away from the method call (to the left)
-            pathGrams = [get_grams(part) for part in pathParts];
- #           print('pathGrams = %s' % pathGrams);
-            wt = MAX_WEIGHT_GRAM
-            dctPathGram = {}
-            for setPathGram in reversed(pathGrams):                
-                dctPathPart = dict.fromkeys(setPathGram,wt)
-                dctPathGram = merge_two_dicts_shallow(dctPathPart,dctPathGram)
-                wt /= WEIGHT_DECAY
-            
-#            print('dctPathGram = %s' % dctPathGram);
-            
-            for mbrGrm in setMbrGrams:
-                rank += dctPathGram.get(mbrGrm,0)
-            
- #           print('rank = %d' % rank);
-            return rank
-            
-        def eq_filename(rel_path):
-            if fname_abs is None or rel_path is None:
-                return False    
-            return fname_abs.endswith(rel_path.lstrip('.').lower())
-        
-        # Given optional scope extended field tag.scope = 'startline:startcol-endline:endcol' -  def-scope. 
-        # Return: Tuple of 2 Lists: 
-        #  in_scope: Tags with matching scope: current cursor / caret position is contained in their start-end scope range.
-        #  no_scope: Tags without scope or with global scope 
-        # Usage: locals, local parameters Tags have scope (ex: in estr.js tag generator for JavaScript)
-        def scope_filter(taglist):
-            in_scope = []
-            no_scope = []
-            for tag in taglist:
-                if region is None or tag.get('scope') is None or tag.scope is None or tag.scope == 'global':
-                    no_scope.append(tag)
-                    continue
-
-                if not eq_filename(tag.filename):
-                    continue
-            
-                mch = re.search(setting('scope_re'),tag.scope) 
-                
-                if mch:
-                    beginLine = int(mch.group(1)) - 1 # .tags file is 1 based and region.begin() is 0 based
-                    beginCol  = int(mch.group(2)) - 1
-                    endLine = int(mch.group(3)) - 1
-                    endCol  = int(mch.group(4)) - 1
-                    beginPoint = view.text_point(beginLine,beginCol)
-                    endPoint = view.text_point(endLine,endCol)                
-                    if region.begin() >= beginPoint and region.end() <= endPoint:                    
-                        in_scope.append(tag)
-                        
-
-            return (in_scope,no_scope)    
-
         @prepare_for_quickpanel()
         def sorted_tags():
-            # Scope Filter: If symbol matches at least 1 local scope tag - assume they hides non-scope and global scope tags. 
-            # If no local-scope (in_scope) matches --> keep the global / no scope matches (see in sorted_tags) and discard 
-            # the local-scope - because they are not locals of the current position                                
-            # If object-receiver (someobj.symbol) --> refer to as global tag --> filter out local-scope tags
-            (in_scope,no_scope) = scope_filter(tags.get(symbol, []))
-            if (len(setMbrGrams) ==0 and len(in_scope) > 0): #TODO:Config: @symbol - in Ruby instance var (therefore never local var)
-                p_tags = in_scope
-            else:                
-                p_tags = no_scope
-
-            p_tags = list(filter(pass_def_filter, p_tags))
+            #spdb.start(0)
+            taglist = tags.get(symbol, [])
+            p_tags = rankmgr.sort_tags(taglist)
             if not p_tags:
                 status_message('Can\'t find "%s"' % symbol)
-            p_tags = sorted(p_tags, key=lambda tag: get_rank(tag.tag_path[0]),reverse=True )   
             return p_tags
 
         return sorted_tags
@@ -840,7 +641,6 @@ class NavigateToDefinition(sublime_plugin.TextCommand):
     # TODO:HIGH: Add base lang defs + Python/Ruby/C++/Java/C#/PHP overrides (should be very similar)
     # TODO: comment and string support (eat as may contain brackets. add them to context - js['prop1']['prop-of-prop1'])
     def extract_member_exp(self,line_to_symbol,source):
-        #spdb.start(0)
 
         lang = setting('language_syntax').get(source)
         if lang is None: return line_to_symbol
