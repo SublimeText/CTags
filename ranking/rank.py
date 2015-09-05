@@ -29,6 +29,10 @@ def compile_definition_filters(view):
     return filters
 
 def get_grams(str):
+    """
+    Return a set of tri-grams (each tri-gram is a tuple) given a string: 
+    Ex: 'Dekel' --> {('d', 'e', 'k'), ('k', 'e', 'l'), ('e', 'k', 'e')}
+    """
     lstr = str.lower()
     return set(zip(lstr,lstr[1:],lstr[2:]))
 
@@ -61,10 +65,7 @@ class RankMgr:
         self.def_filters = compile_definition_filters(view)
 
         self.fname_abs = view.file_name().lower() if not(view.file_name() is None) else None        
-        
-         # Return a set of tri-grams (each tri-gram is a tuple) given a string: 
-        # Ex: 'Dekel' --> {('d', 'e', 'k'), ('k', 'e', 'l'), ('e', 'k', 'e')}
-        
+              
         mbrGrams = [get_grams(part) for part in mbrParts];
         self.setMbrGrams = (reduce(lambda s,t: s.union(t), mbrGrams) if mbrGrams else set() )
         print('setMbrGrams = %s' % self.setMbrGrams);
