@@ -693,11 +693,11 @@ class NavigateToDefinition(sublime_plugin.TextCommand):
                     print('non-matching brackets at the same nesting level: %s %s' % (tokCloseCur,tokClose))
                     break
                 insideExp = False
-            elif re.match(reIgnore,cur):
-                pass 
             # If white space --> stop. Do not stop for whitespace inside open-close brackets nested expression
             elif re.match(reStop,cur):
                 if not insideExp: break
+            elif re.match(reIgnore,cur):
+                pass
             else:
                 lstMbr[0:0] = cur
 
