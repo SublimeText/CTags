@@ -115,6 +115,13 @@
                           "ignore" : ["&", "\\|" , "\\?" ,":" , "\\!", "'" , "=","\""],
                           "stop"   : ["\\s",","], 
                           "this" : ["this", "me", "self", "that"]
+                         },
+
+                         "reference_types":
+                         {
+                              "__symbol__(\\.call|\\.apply){0,1}\\s*?\\(" : ["f","fa"],
+                              "\\.fire\\s*?\\(\\s*?\\[\\'\"]__symbol__\\[\\'\"\\]" : ["eventHandler"] 
+
                          }   
                       },
         "source.python": 
@@ -123,6 +130,13 @@
                             { 
                               "ignore" : ["\\sand\\s", "\\sor\\s" , "\\snot\\s" ,":" , "\\!", "'" ,"=", "\""],                     
                               "this" : ["self"]
+                            }   
+                       },
+        "source.java": //TODO: Add real java settings once testing is over
+                      {  
+                         "member_exp":
+                            { 
+                         
                             }   
                        }
     },

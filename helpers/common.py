@@ -92,6 +92,22 @@ RE_SPECIAL_CHARS = re.compile(
 
 def escape_regex(s):
     return RE_SPECIAL_CHARS.sub(lambda m: '\\%s' % m.group(1), s)
+    
+def get_source(view):
+    """
+    return the language used in current caret or selection location
+    """
+    scope_name = view.scope_name(view.sel()[0].begin()) # ex: 'source.python meta.function-call.python '
+    source = re.split(' ',scope_name)[0] # ex: 'source.python'
+    return source
+
+def get_lang_setting(source):
+    lang = setting('language_syntax').get(source)
+    if lang is None: return line_to_symbol
+    print('lang.get(inherit)=%s' %  lang.get('inherit'))
+    base = setting('language_syntax').get(lang.get('inherit'))
+    lang = dict_extend(lang ,base)
+    return lang
 
 
 def compile_filters(view):

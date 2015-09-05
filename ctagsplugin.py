@@ -593,7 +593,7 @@ class JumpToDefinition:
     Provider for NavigateToDefinition and SearchForDefinition commands.
     """
     @staticmethod
-    def run(symbol,region, mbrParts, view, tags_file):
+    def run(symbol,region,sym_line, mbrParts, view, tags_file):
         print('JumpToDefinition')
          
         tags = {}
@@ -607,7 +607,7 @@ class JumpToDefinition:
         if not tags:
             return status_message('Can\'t find "%s"' % symbol)
 
-        rankmgr = RankMgr(region, mbrParts, view)
+        rankmgr = RankMgr(region, mbrParts, view,symbol,sym_line)
         
         @prepare_for_quickpanel()
         def sorted_tags():
@@ -642,12 +642,7 @@ class NavigateToDefinition(sublime_plugin.TextCommand):
     # TODO: comment and string support (eat as may contain brackets. add them to context - js['prop1']['prop-of-prop1'])
     def extract_member_exp(self,line_to_symbol,source):
 
-        lang = setting('language_syntax').get(source)
-        if lang is None: return line_to_symbol
-        print('lang.get(inherit)=%s' %  lang.get('inherit'))
-        base = setting('language_syntax').get(lang.get('inherit'))
-        lang = dict_extend(lang ,base)
-        
+        lang = get_lang_setting(source)        
         # Get per-language syntax regex of brackets, splitters etc.
         mbr_exp = lang.get('member_exp')
         if mbr_exp is None: 
@@ -740,10 +735,9 @@ class NavigateToDefinition(sublime_plugin.TextCommand):
         line_to_symbol = sym_line[:col]
         print('line_to_symbol=%s' % line_to_symbol)
  
-        scope_name = view.scope_name(view.sel()[0].begin()) # ex: 'source.python meta.function-call.python '
-        source = re.split(' ',scope_name)[0] # ex: 'source.python' 
+        source = get_source(view)
         arrMbrParts = self.extract_member_exp(line_to_symbol,source)
-        return JumpToDefinition.run(symbol, region, arrMbrParts, view, tags_file)
+        return JumpToDefinition.run(symbol, region, sym_line,arrMbrParts, view, tags_file)
 
 class SearchForDefinition(sublime_plugin.WindowCommand):
     """
@@ -770,7 +764,7 @@ class SearchForDefinition(sublime_plugin.WindowCommand):
             status_message('Can\'t find any relevant tags file')
             return
 
-        result = JumpToDefinition.run(symbol, None,None, view, tags_file)
+        result = JumpToDefinition.run(symbol,None, None,None, view, tags_file)
         show_tag_panel(view, result, True)
 
     def on_change(self, text):

@@ -18,6 +18,8 @@ from collections import defaultdict, deque
 
 from helpers.common import *
 
+#import spdb
+
 def compile_definition_filters(view):
     filters = []
     for selector, regexes in list(get_setting('definition_filters', {}).items()):
@@ -34,13 +36,28 @@ class RankMgr:
     """
     For each matched Tag, calculates the rank score or filter it out. The remaining matches are sorted by decending score. 
     """
-    def __init__(self,region, mbrParts, view):
+    def __init__(self,region, mbrParts, view,symbol,sym_line):
         print('RankMgr init')
         
+        #spdb.start(0)
+
         self.region = region
         self.mbrParts = mbrParts
         self.view = view
-
+        # Used by Rank by Definition Types
+        self.symbol = symbol
+        self.sym_line = sym_line 
+        self.tag_types = None
+        
+        self.lang = get_lang_setting(get_source(view))
+        self.mbr_exp = self.lang.get('member_exp')
+        if self.mbr_exp:
+            lstThis = self.mbr_exp.get('this')
+            if lstThis:
+                self.reThis = re.compile(concat_re(lstThis), re.IGNORECASE)
+            else:
+                print('Warning! Language that has syntax settings is expected to define this|self expression syntax')
+            
         self.def_filters = compile_definition_filters(view)
 
         self.fname_abs = view.file_name().lower() if not(view.file_name() is None) else None        
@@ -51,7 +68,27 @@ class RankMgr:
         mbrGrams = [get_grams(part) for part in mbrParts];
         self.setMbrGrams = (reduce(lambda s,t: s.union(t), mbrGrams) if mbrGrams else set() )
         print('setMbrGrams = %s' % self.setMbrGrams);
-            
+
+    RANK_MATCH_TYPE = 30
+    def get_type_rank(self,tag):
+        """
+        Rank by Definition Types: Rank Higher matching definitions with types matching to the GotoDef <reference>
+        Use regex to identify the <reference> type 
+        """
+        # First time - compare current symbol line to the per-language list of regex: Each regex is mapped to 1 or more tag types
+        # Try all regex to build a list of preferred / higher rank tag types 
+        if self.tag_types is None:
+            self.tag_types = set()
+            reference_types = self.lang.get('reference_types', {})
+            for re_ref, lstTypes in reference_types.items():
+                # replace special keyword __symbol__ with our reference symbol
+                cur_re = re_ref.replace('__symbol__',self.symbol)
+                if (re.search(cur_re,self.sym_line)):
+                    self.tag_types = self.tag_types.union(lstTypes)
+
+        return self.RANK_MATCH_TYPE if tag.type in self.tag_types else 0
+
+
     # Object Member Expression File Ranking: Rank higher candiates tags path names that fuzzy match the <expression>.method()
     # Rules:
     # 1) youtube.fetch() --> mbrPaths = ['youtube'] --> get_rank of tag 'fetch' with rel_path a/b/Youtube.js ---> RANK_EXACT_MATCH_RIGHTMOST_MBR_PART_TO_FILENAME
@@ -59,14 +96,19 @@ class RankMgr:
     # 3) vidtube.fetch() --> tag 'fetch' with rel_path google/video/youtube.js ---> fuzzy match of tri-grams of vidtube (vid,idt,dtu,tub,ube) with tri-grams from the path
     RANK_EQ_FILENAME_RANK = 10
     RANK_EXACT_MATCH_RIGHTMOST_MBR_PART_TO_FILENAME = 20
+    
     WEIGHT_RIGHTMOST_MBR_PART = 2
     MAX_WEIGHT_GRAM = 3
     WEIGHT_DECAY = 1.5
-    reThis = re.compile('this|self|me|that', re.IGNORECASE) #TODO: this/self config
-    def get_rank(self,rel_path,mbrParts):
-#           print('get_rank.rel_path = %s' % rel_path);
-        
+    
+    def get_rank(self,tag,mbrParts):
+#           print('get_rank.rel_path = %s' % rel_path);        
         rank = 0
+
+        # Type definition Rank
+        rank += self.get_type_rank(tag)
+
+        rel_path = tag.tag_path[0]
         rel_path_no_ext = rel_path.lstrip('.' + os.sep)
         rel_path_no_ext = os.path.splitext(rel_path_no_ext)[0]
         pathParts = rel_path_no_ext.split(os.sep);
@@ -78,7 +120,7 @@ class RankMgr:
         if self.eq_filename(rel_path): 
             rank += self.RANK_EQ_FILENAME_RANK
             print('Same file: %d' % rank)
-            if len(mbrParts) == 1 and self.reThis.match(mbrParts[-1]):
+            if len(mbrParts) == 1 and self.reThis and self.reThis.match(mbrParts[-1]):
                 rank += self.RANK_EQ_FILENAME_RANK # this.mtd() -  rank candidate from current file very high.
                 print('Same file + this: %d' % rank)
                 return rank
@@ -158,6 +200,6 @@ class RankMgr:
             p_tags = no_scope
 
         p_tags = list(filter(lambda tag: self.pass_def_filter(tag), p_tags))
-        p_tags = sorted(p_tags, key=lambda tag: self.get_rank(tag.tag_path[0],self.mbrParts),reverse=True )   
+        p_tags = sorted(p_tags, key=lambda tag: self.get_rank(tag,self.mbrParts),reverse=True )   
         return p_tags
 
