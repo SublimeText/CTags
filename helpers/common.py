@@ -102,9 +102,12 @@ def get_source(view):
     return source
 
 def get_lang_setting(source):
+    """
+    given source (ex: 'source.python') --> return its language_syntax settings.
+    A language can inherit its settings from another language, overidding as needed. 
+    """
     lang = setting('language_syntax').get(source)
     if lang is None: return line_to_symbol
-    print('lang.get(inherit)=%s' %  lang.get('inherit'))
     base = setting('language_syntax').get(lang.get('inherit'))
     lang = dict_extend(lang ,base)
     return lang

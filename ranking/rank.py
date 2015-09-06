@@ -41,10 +41,6 @@ class RankMgr:
     For each matched Tag, calculates the rank score or filter it out. The remaining matches are sorted by decending score. 
     """
     def __init__(self,region, mbrParts, view,symbol,sym_line):
-        print('RankMgr init')
-        
-        #spdb.start(0)
-
         self.region = region
         self.mbrParts = mbrParts
         self.view = view
@@ -90,20 +86,34 @@ class RankMgr:
         return self.RANK_MATCH_TYPE if tag.type in self.tag_types else 0
 
 
+    RANK_EQ_FILENAME_RANK = 10
+    def get_samefile_rank(self,rel_path,mbrParts):
+        """
+        Tag from same file as reference --> Boost rank
+        Tag from same file as reference and this|self.method() --> Double boost rank
+        Note: Inheritence model (base class in different file) is not yet supported.
+        """
+        rank = 0
+        if self.eq_filename(rel_path): 
+            rank += self.RANK_EQ_FILENAME_RANK
+#           print('Same file: %d' % rank)
+            if len(mbrParts) == 1 and self.reThis and self.reThis.match(mbrParts[-1]):
+                rank += self.RANK_EQ_FILENAME_RANK # this.mtd() -  rank candidate from current file very high.
+#                print('Same file + this: %d' % rank)
+        return rank
+
     # Object Member Expression File Ranking: Rank higher candiates tags path names that fuzzy match the <expression>.method()
     # Rules:
     # 1) youtube.fetch() --> mbrPaths = ['youtube'] --> get_rank of tag 'fetch' with rel_path a/b/Youtube.js ---> RANK_EXACT_MATCH_RIGHTMOST_MBR_PART_TO_FILENAME
     # 2) youtube.fetch() --> user GotoDef from youtube.js --> RANK_EQ_FILENAME_RANK
     # 3) vidtube.fetch() --> tag 'fetch' with rel_path google/video/youtube.js ---> fuzzy match of tri-grams of vidtube (vid,idt,dtu,tub,ube) with tri-grams from the path
-    RANK_EQ_FILENAME_RANK = 10
+    
     RANK_EXACT_MATCH_RIGHTMOST_MBR_PART_TO_FILENAME = 20
     
     WEIGHT_RIGHTMOST_MBR_PART = 2
     MAX_WEIGHT_GRAM = 3
     WEIGHT_DECAY = 1.5
-    
-    def get_rank(self,tag,mbrParts):
-#           print('get_rank.rel_path = %s' % rel_path);        
+    def get_rank(self,tag,mbrParts):        
         rank = 0
 
         # Type definition Rank
@@ -115,28 +125,17 @@ class RankMgr:
         pathParts = rel_path_no_ext.split(os.sep);
         if len(pathParts) >= 1 and len(mbrParts) >= 1 and pathParts[-1].lower() == mbrParts[-1].lower():
             rank += self.RANK_EXACT_MATCH_RIGHTMOST_MBR_PART_TO_FILENAME
-#                print('Boost: pathParts[-1].lower() == mbrParts[-1].lower() %d' % rank)
-                
-        # Same file --> Boost rank
-        if self.eq_filename(rel_path): 
-            rank += self.RANK_EQ_FILENAME_RANK
-            print('Same file: %d' % rank)
-            if len(mbrParts) == 1 and self.reThis and self.reThis.match(mbrParts[-1]):
-                rank += self.RANK_EQ_FILENAME_RANK # this.mtd() -  rank candidate from current file very high.
-                print('Same file + this: %d' % rank)
-                return rank
-            
+              
+        # Same file and this.method() ranking        
+        rank+= self.get_samefile_rank(rel_path,mbrParts)   
         # Prepare dict of <tri-gram : weight>, where weight decays are we move further away from the method call (to the left)
         pathGrams = [get_grams(part) for part in pathParts];
-#           print('pathGrams = %s' % pathGrams);
         wt = self.MAX_WEIGHT_GRAM
         dctPathGram = {}
         for setPathGram in reversed(pathGrams):                
             dctPathPart = dict.fromkeys(setPathGram,wt)
             dctPathGram = merge_two_dicts_shallow(dctPathPart,dctPathGram)
             wt /= self.WEIGHT_DECAY
-        
-#            print('dctPathGram = %s' % dctPathGram);
         
         for mbrGrm in self.setMbrGrams:
             rank += dctPathGram.get(mbrGrm,0)
@@ -158,12 +157,15 @@ class RankMgr:
             return False    
         return self.fname_abs.endswith(rel_path.lstrip('.').lower())
     
-    # Given optional scope extended field tag.scope = 'startline:startcol-endline:endcol' -  def-scope. 
-    # Return: Tuple of 2 Lists: 
-    #  in_scope: Tags with matching scope: current cursor / caret position is contained in their start-end scope range.
-    #  no_scope: Tags without scope or with global scope 
-    # Usage: locals, local parameters Tags have scope (ex: in estr.js tag generator for JavaScript)
+    
     def scope_filter(self,taglist):
+        """
+        Given optional scope extended field tag.scope = 'startline:startcol-endline:endcol' -  def-scope. 
+        Return: Tuple of 2 Lists: 
+        in_scope: Tags with matching scope: current cursor / caret position is contained in their start-end scope range.
+        no_scope: Tags without scope or with global scope 
+        Usage: locals, local parameters Tags have scope (ex: in estr.js tag generator for JavaScript)
+        """
         in_scope = []
         no_scope = []
         for tag in taglist:
