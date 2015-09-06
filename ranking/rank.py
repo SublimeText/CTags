@@ -18,8 +18,6 @@ from collections import defaultdict, deque
 
 from helpers.common import *
 
-#import spdb
-
 def compile_definition_filters(view):
     filters = []
     for selector, regexes in list(get_setting('definition_filters', {}).items()):
@@ -51,12 +49,6 @@ class RankMgr:
         
         self.lang = get_lang_setting(get_source(view))
         self.mbr_exp = self.lang.get('member_exp')
-        if self.mbr_exp:
-            lstThis = self.mbr_exp.get('this')
-            if lstThis:
-                self.reThis = re.compile(concat_re(lstThis), re.IGNORECASE)
-            else:
-                print('Warning! Language that has syntax settings is expected to define this|self expression syntax')
             
         self.def_filters = compile_definition_filters(view)
 
@@ -87,21 +79,30 @@ class RankMgr:
 
 
     RANK_EQ_FILENAME_RANK = 10
+    reThis = None
     def get_samefile_rank(self,rel_path,mbrParts):
         """
         Tag from same file as reference --> Boost rank
         Tag from same file as reference and this|self.method() --> Double boost rank
         Note: Inheritence model (base class in different file) is not yet supported.
-        """
+        """ 
+        if self.reThis is None and self.mbr_exp:
+            lstThis = self.mbr_exp.get('this')
+            if lstThis:
+                self.reThis = re.compile(concat_re(lstThis), re.IGNORECASE)
+            else:
+                print('Warning! Language that has syntax settings is expected to define this|self expression syntax')
+        
         rank = 0
         if self.eq_filename(rel_path): 
             rank += self.RANK_EQ_FILENAME_RANK
-#           print('Same file: %d' % rank)
+            print('Same file: %d' % rank)
             if len(mbrParts) == 1 and self.reThis and self.reThis.match(mbrParts[-1]):
                 rank += self.RANK_EQ_FILENAME_RANK # this.mtd() -  rank candidate from current file very high.
-#                print('Same file + this: %d' % rank)
+                print('Same file + this: %d' % rank)
         return rank
-
+    
+    
     # Object Member Expression File Ranking: Rank higher candiates tags path names that fuzzy match the <expression>.method()
     # Rules:
     # 1) youtube.fetch() --> mbrPaths = ['youtube'] --> get_rank of tag 'fetch' with rel_path a/b/Youtube.js ---> RANK_EXACT_MATCH_RIGHTMOST_MBR_PART_TO_FILENAME
@@ -120,14 +121,16 @@ class RankMgr:
         rank += self.get_type_rank(tag)
 
         rel_path = tag.tag_path[0]
+        # Same file and this.method() ranking        
+        rank+= self.get_samefile_rank(rel_path,mbrParts)
+        
+        
         rel_path_no_ext = rel_path.lstrip('.' + os.sep)
         rel_path_no_ext = os.path.splitext(rel_path_no_ext)[0]
         pathParts = rel_path_no_ext.split(os.sep);
         if len(pathParts) >= 1 and len(mbrParts) >= 1 and pathParts[-1].lower() == mbrParts[-1].lower():
             rank += self.RANK_EXACT_MATCH_RIGHTMOST_MBR_PART_TO_FILENAME
-              
-        # Same file and this.method() ranking        
-        rank+= self.get_samefile_rank(rel_path,mbrParts)   
+        
         # Prepare dict of <tri-gram : weight>, where weight decays are we move further away from the method call (to the left)
         pathGrams = [get_grams(part) for part in pathParts];
         wt = self.MAX_WEIGHT_GRAM
