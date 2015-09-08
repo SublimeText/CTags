@@ -339,8 +339,9 @@ def scroll_to_tag(view, tag, hook=None):
                 do_find = False
 
         if do_find:
+            search_symbol = tag.get('def_symbol',tag.symbol)
             symbol_region = view.find(
-                escape_regex(tag.symbol) + r"(?:[^_]|$)", look_from, 0)
+                escape_regex(search_symbol) + r"(?:[^_]|$)", look_from, 0)
 
         if do_find and symbol_region:
             # Using reversed symbol_region so cursor stays in front of the
