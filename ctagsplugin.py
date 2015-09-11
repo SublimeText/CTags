@@ -508,7 +508,7 @@ def show_build_panel(view):
             ['All Open Folders', '; '.join(
                 ['\'{0}\''.format(os.path.split(x)[1])
                  for x in view.window().folders()])])
-        # append options to build for each open folder
+        # Append options to build for each open folder 
         display.extend(
             [[os.path.split(x)[1], x] for x in view.window().folders()])
 
