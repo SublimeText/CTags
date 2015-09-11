@@ -102,8 +102,8 @@
     // can be irritating in some instances, e.g. when in Vintage mode. In
     // these cases, setting this to false will disable this highlighting.
     "select_searched_symbol": true,
-
-    //Per-language syntax regex and character sets
+ 
+    //Per-language syntax regex and character sets (used by Rank Manager)
     //Ex: Python 'and' ignore exp --> '\sand\s' - it must have whitespace around it so it is not part of real name: gates.Nand.evaluate() 
     "language_syntax": {
         "splitters" : [".","::","->"],
