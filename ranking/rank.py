@@ -163,7 +163,7 @@ class RankMgr:
         2) vidtube.fetch() --> tag 'fetch' with rel_path google/video/youtube.js ---> fuzzy match of tri-grams of vidtube (vid,idt,dtu,tub,ube) with tri-grams from the path
         """
         rank = 0
-        if (!mbrParts): return rank
+        if  len(mbrParts) == 0: return rank
         
         rel_path_no_ext = rel_path.lstrip('.' + os.sep)
         rel_path_no_ext = os.path.splitext(rel_path_no_ext)[0]
