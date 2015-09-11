@@ -765,7 +765,7 @@ class SearchForDefinition(sublime_plugin.WindowCommand):
             status_message('Can\'t find any relevant tags file')
             return
 
-        result = JumpToDefinition.run(symbol,None, None,None, view, tags_file)
+        result = JumpToDefinition.run(symbol,None, "",[], view, tags_file)
         show_tag_panel(view, result, True)
 
     def on_change(self, text):
