@@ -132,11 +132,11 @@
                               "this" : ["self"]
                             }   
                        },
-        "source.java": //TODO: Add real java settings once testing is over
-                      {  
+        "source.java": 
+                      {  "inherit": "source.js",
                          "member_exp":
                             { 
-                         
+                                "this" : ["this"]
                             }   
                        }
     },
