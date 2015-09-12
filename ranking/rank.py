@@ -2,19 +2,12 @@
 Rank and Filter support for ctags plugin for Sublime Text 2/3.
 """
 
-import functools
 from functools import reduce
-import locale
 import sys
 import os
-import pprint
 import re
 import string
-import threading
-import subprocess
-from itertools import chain
-from operator import itemgetter as iget
-from collections import defaultdict, deque
+
 
 from helpers.common import *
 
