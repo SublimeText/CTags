@@ -1,6 +1,7 @@
 import re
 from helpers.common import *
-
+#import spdb
+#spdb.start()
 class Parser:
     """
     Parses tag references and tag definitions. Used for ranking
@@ -13,7 +14,10 @@ class Parser:
         TODO:HIGH: Add base lang defs + Python/Ruby/C++/Java/C#/PHP overrides (should be very similar)
         TODO: comment and string support (eat as may contain brackets. add them to context - js['prop1']['prop-of-prop1'])
         """
-        lang = get_lang_setting(source)        
+        lang = get_lang_setting(source)
+        if not lang:
+            return [line_to_symbol]
+        
         # Get per-language syntax regex of brackets, splitters etc.
         mbr_exp = lang.get('member_exp')
         if mbr_exp is None: 
@@ -22,7 +26,7 @@ class Parser:
         lstStop = mbr_exp.get('stop',[])
         if (not lstStop):
             print('warning!: language has member_exp setting but it is ineffective: Must have "stop" key with array of regex to stop search backward from identifier')
-            return line_to_symbol
+            return [line_to_symbol]
 
         lstClose = mbr_exp.get('close',[])
         reClose = concat_re(lstClose)

@@ -107,9 +107,11 @@ def get_lang_setting(source):
     A language can inherit its settings from another language, overidding as needed. 
     """
     lang = setting('language_syntax').get(source)
-    if lang is None: return line_to_symbol
-    base = setting('language_syntax').get(lang.get('inherit'))
-    lang = dict_extend(lang ,base)
+    if lang is not None:
+        base = setting('language_syntax').get(lang.get('inherit'))
+        lang = dict_extend(lang ,base)
+    else:
+        lang = {}
     return lang
 
 

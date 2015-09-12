@@ -40,7 +40,7 @@ class RankMgr:
         self.sym_line = sym_line 
         
         self.lang = get_lang_setting(get_source(view))
-        self.mbr_exp = self.lang.get('member_exp')
+        self.mbr_exp = self.lang.get('member_exp',{})
             
         self.def_filters = compile_definition_filters(view)
 
@@ -105,7 +105,7 @@ class RankMgr:
         """
         # First time - compare current symbol line to the per-language list of regex: Each regex is mapped to 1 or more tag types
         # Try all regex to build a list of preferred / higher rank tag types 
-        if self.tag_types is None:
+        if self.tag_types is None: 
             self.tag_types = set()
             reference_types = self.lang.get('reference_types', {})
             for re_ref, lstTypes in reference_types.items():
@@ -126,11 +126,11 @@ class RankMgr:
         Tag from same file as reference and this|self.method() --> Double boost rank
         Note: Inheritence model (base class in different file) is not yet supported.
         """ 
-        if self.reThis is None and self.mbr_exp:
+        if self.reThis is None:
             lstThis = self.mbr_exp.get('this')
             if lstThis:
                 self.reThis = re.compile(concat_re(lstThis), re.IGNORECASE)
-            else:
+            elif self.mbr_exp:
                 print('Warning! Language that has syntax settings is expected to define this|self expression syntax')
         
         rank = 0

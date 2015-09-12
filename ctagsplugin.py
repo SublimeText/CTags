@@ -652,7 +652,7 @@ class NavigateToDefinition(sublime_plugin.TextCommand):
         sym_line = view.substr(view.line(region))
         (row,col) = view.rowcol(region.begin())
         line_to_symbol = sym_line[:col]
- 
+        #print ("line_to_symbol %s" % line_to_symbol)
         source = get_source(view)
         arrMbrParts = Parser.extract_member_exp(line_to_symbol,source)
         return JumpToDefinition.run(symbol, region, sym_line,arrMbrParts, view, tags_file)
