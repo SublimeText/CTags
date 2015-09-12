@@ -48,7 +48,6 @@ class RankMgr:
               
         mbrGrams = [get_grams(part) for part in mbrParts];
         self.setMbrGrams = (reduce(lambda s,t: s.union(t), mbrGrams) if mbrGrams else set() )
-#        print('setMbrGrams = %s' % self.setMbrGrams);
 
     def pass_def_filter(self,o):
         for f in self.def_filters:
@@ -137,10 +136,10 @@ class RankMgr:
         rank = 0
         if self.eq_filename(rel_path): 
             rank += self.RANK_EQ_FILENAME_RANK
-            print('Same file: %d' % rank)
+            #print('Same file: %d' % rank)
             if len(mbrParts) == 1 and self.reThis and self.reThis.match(mbrParts[-1]):
                 rank += self.RANK_EQ_FILENAME_RANK # this.mtd() -  rank candidate from current file very high.
-                print('Same file + this: %d' % rank)
+                #print('Same file + this: %d' % rank)
         return rank
     
     
