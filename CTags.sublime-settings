@@ -141,6 +141,13 @@
                             { 
                                 "this" : ["this"]
                             }   
+                       },
+        "source.cs": 
+                      {  "inherit": "source.js",
+                         "member_exp":
+                            { 
+                                "this" : ["this"]
+                            }   
                        }
     },
 
