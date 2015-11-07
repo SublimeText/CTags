@@ -3,6 +3,7 @@ A ctags plugin for Sublime Text 2/3.
 """
 
 import functools
+from functools import reduce
 import codecs
 import locale
 import sys
@@ -37,6 +38,10 @@ from ctags import (FILENAME, parse_tag_lines, PATH_ORDER, SYMBOL,
                    TagElements, TagFile)
 from helpers.edit import Edit
 
+from helpers.common import *
+from ranking.rank import RankMgr
+from ranking.parse import Parser
+
 #
 # Contants
 #
@@ -53,45 +58,18 @@ RUBY_SPECIAL_ENDINGS = r'\?|!'
 
 ON_LOAD = sublime_plugin.all_callbacks['on_load']
 
-RE_SPECIAL_CHARS = re.compile(
-    '(\\\\|\\*|\\+|\\?|\\||\\{|\\}|\\[|\\]|\\(|\\)|\\^|\\$|\\.|\\#|\\ )')
-
 
 #
 # Functions
 #
 
-# Helper functions
-
-def get_settings():
-    """
-    Load settings.
-
-    :returns: dictionary containing settings
-    """
-    return sublime.load_settings("CTags.sublime-settings")
-
-def get_setting(key, default=None):
-    """
-    Load individual setting.
-
-    :param key: setting key to get value for
-    :param default: default value to return if no value found
-
-    :returns: value for ``key`` if ``key`` exists, else ``default``
-    """
-    return get_settings().get(key, default)
-
-setting = get_setting
-
-def escape_regex(s):
-    return RE_SPECIAL_CHARS.sub(lambda m: '\\%s' % m.group(1), s)
 
 def select(view, region):
     sel_set = view.sel()
     sel_set.clear()
     sel_set.add(region)
     sublime.set_timeout(functools.partial(view.show_at_center, region), 1)
+
 
 def in_main(f):
     @functools.wraps(f)
@@ -101,6 +79,8 @@ def in_main(f):
     return done_in_main
 
 # TODO: allow thread per tag file. That makes more sense.
+
+
 def threaded(finish=None, msg='Thread already running'):
     def decorator(func):
         func.running = 0
@@ -133,6 +113,7 @@ def threaded(finish=None, msg='Thread already running'):
         return threaded
 
     return decorator
+
 
 def on_load(path=None, window=None, encoded_row_col=True, begin_edit=False):
     """
@@ -198,6 +179,7 @@ def on_load(path=None, window=None, encoded_row_col=True, begin_edit=False):
 
     return wrapper
 
+
 def find_tags_relative_to(path, tag_file):
     """
     Find the tagfile relative to a file path.
@@ -221,6 +203,7 @@ def find_tags_relative_to(path, tag_file):
             dirs.pop()
 
     return None
+
 
 def get_alternate_tags_paths(view, tags_file):
     """
@@ -249,7 +232,9 @@ def get_alternate_tags_paths(view, tags_file):
         for (selector, platform), path in setting('extra_tag_paths'):
             if view.match_selector(view.sel()[0].begin(), selector):
                 if sublime.platform() == platform:
-                    search_paths.append(os.path.join(path, setting('tag_file')))
+                    search_paths.append(
+                        os.path.join(
+                            path, setting('tag_file')))
     except Exception as e:
         print(e)
 
@@ -277,6 +262,7 @@ def get_alternate_tags_paths(view, tags_file):
             ret.append(path)
     return ret
 
+
 def get_common_ancestor_folder(path, folders):
     """
     Get common ancestor for a file and a list of folders.
@@ -302,11 +288,12 @@ def get_common_ancestor_folder(path, folders):
 
 # Scrolling functions
 
+
 def find_with_scope(view, pattern, scope, start_pos=0, cond=True, flags=0):
     max_pos = view.size()
     while start_pos < max_pos:
         estrs = pattern.split(r'\ufffd')
-        if(len(estrs)>1):
+        if(len(estrs) > 1):
             pattern = estrs[0]
         f = view.find(pattern, start_pos, flags)
 
@@ -317,9 +304,11 @@ def find_with_scope(view, pattern, scope, start_pos=0, cond=True, flags=0):
 
     return f
 
+
 def find_source(view, pattern, start_at, flags=sublime.LITERAL):
     return find_with_scope(view, pattern, 'string',
                            start_at, False, flags)
+
 
 def follow_tag_path(view, tag_path, pattern):
     regions = [sublime.Region(0, 0)]
@@ -346,21 +335,23 @@ def follow_tag_path(view, tag_path, pattern):
 
     return pattern_region.begin() - 1 if pattern_region else None
 
+
 def scroll_to_tag(view, tag, hook=None):
     @on_load(os.path.join(tag.root_dir, tag.filename))
     def and_then(view):
         do_find = True
 
         if tag.ex_command.isdigit():
-            look_from = view.text_point(int(tag.ex_command)-1, 0)
+            look_from = view.text_point(int(tag.ex_command) - 1, 0)
         else:
             look_from = follow_tag_path(view, tag.tag_path, tag.ex_command)
             if not look_from:
                 do_find = False
 
         if do_find:
+            search_symbol = tag.get('def_symbol', tag.symbol)
             symbol_region = view.find(
-                escape_regex(tag.symbol) + r"(?:[^_]|$)", look_from, 0)
+                escape_regex(search_symbol) + r"(?:[^_]|$)", look_from, 0)
 
         if do_find and symbol_region:
             # Using reversed symbol_region so cursor stays in front of the
@@ -377,6 +368,7 @@ def scroll_to_tag(view, tag, hook=None):
             hook(view)
 
 # Formatting helper functions
+
 
 def format_tag_for_quickopen(tag, show_path=True):
     """
@@ -405,6 +397,7 @@ def format_tag_for_quickopen(tag, show_path=True):
 
     return format_
 
+
 def prepare_for_quickpanel(formatter=format_tag_for_quickopen):
     """
     Prepare list of matching ctags for the quickpanel.
@@ -425,6 +418,7 @@ def prepare_for_quickpanel(formatter=format_tag_for_quickopen):
     return compile_lists
 
 # File collection helper functions
+
 
 def get_rel_path_to_source(path, tag_file, multiple=True):
     """
@@ -463,6 +457,7 @@ def get_current_file_suffix(path):
 #
 
 # JumpPrev Commands
+
 
 class JumpPrev(sublime_plugin.WindowCommand):
     """
@@ -505,6 +500,7 @@ class JumpPrev(sublime_plugin.WindowCommand):
 
 # CTags commands
 
+
 def show_build_panel(view):
     """
     Handle build ctags command.
@@ -527,7 +523,7 @@ def show_build_panel(view):
             ['All Open Folders', '; '.join(
                 ['\'{0}\''.format(os.path.split(x)[1])
                  for x in view.window().folders()])])
-        # append options to build for each open folder
+        # Append options to build for each open folder
         display.extend(
             [[os.path.split(x)[1], x] for x in view.window().folders()])
 
@@ -547,6 +543,7 @@ def show_build_panel(view):
             rebuild_tags.build_ctags(paths, command, tag_file, recursive, opts)
 
     view.window().show_quick_panel(display, on_select)
+
 
 def show_tag_panel(view, result, jump_directly):
     """
@@ -574,6 +571,7 @@ def show_tag_panel(view, result, jump_directly):
         else:
             view.window().show_quick_panel(display, on_select)
 
+
 def ctags_goto_command(jump_directly=False):
     """
     Decorator to goto a ctag entry.
@@ -596,6 +594,7 @@ def ctags_goto_command(jump_directly=False):
         return command
     return wrapper
 
+
 def check_if_building(self, **args):
     """
     Check if ctags are currently being built.
@@ -607,21 +606,6 @@ def check_if_building(self, **args):
         return False
     return True
 
-def compile_filters(view):
-    filters = []
-    for selector, regexes in list(setting('filters', {}).items()):
-        if view.match_selector(view.sel() and view.sel()[0].begin() or 0,
-                               selector):
-            filters.append(regexes)
-    return filters
-
-def compile_definition_filters(view):
-    filters = []
-    for selector, regexes in list(setting('definition_filters', {}).items()):
-        if view.match_selector(view.sel() and view.sel()[0].begin() or 0,
-                               selector):
-            filters.append(regexes)
-    return filters
 
 # Goto definition under cursor commands
 
@@ -630,7 +614,9 @@ class JumpToDefinition:
     Provider for NavigateToDefinition and SearchForDefinition commands.
     """
     @staticmethod
-    def run(symbol, view, tags_file):
+    def run(symbol, region, sym_line, mbrParts, view, tags_file):
+        # print('JumpToDefinition')
+
         tags = {}
         for tags_file in get_alternate_tags_paths(view, tags_file):
             with TagFile(tags_file, SYMBOL) as tagfile:
@@ -642,36 +628,18 @@ class JumpToDefinition:
         if not tags:
             return status_message('Can\'t find "%s"' % symbol)
 
-        def_filters = compile_definition_filters(view)
+        rankmgr = RankMgr(region, mbrParts, view, symbol, sym_line)
 
-		
-        fname_abs = view.file_name() if not(view.file_name() is None) else None
-		
-        def pass_def_filter(o):
-            for f in def_filters:
-                for k, v in list(f.items()):
-                    if k in o:
-                        if re.match(v, o[k]):
-                            return False
-            return True
-
-        def eq_filename(rel_path):
-            if fname_abs is None or rel_path is None:
-                return False
-				
-            if rel_path.startswith("."):
-               rel_path = rel_path[1:]		
-            return fname_abs.endswith(rel_path)
-			
         @prepare_for_quickpanel()
         def sorted_tags():
-            p_tags = list(filter(pass_def_filter, tags.get(symbol, [])))
+            taglist = tags.get(symbol, [])
+            p_tags = rankmgr.sort_tags(taglist)
             if not p_tags:
                 status_message('Can\'t find "%s"' % symbol)
-            p_tags = sorted(p_tags, key=lambda tag: '' if eq_filename(tag.tag_path[0]) else tag.tag_path[0])
             return p_tags
 
         return sorted_tags
+
 
 class NavigateToDefinition(sublime_plugin.TextCommand):
     """
@@ -697,13 +665,29 @@ class NavigateToDefinition(sublime_plugin.TextCommand):
 
             # handle special line endings for Ruby
             language = view.settings().get('syntax')
-            endings = view.substr(sublime.Region(region.end(), region.end()+1))
+            endings = view.substr(
+                sublime.Region(
+                    region.end(),
+                    region.end() + 1))
 
             if 'Ruby' in language and self.endings.match(endings):
-                region = sublime.Region(region.begin(), region.end()+1)
+                region = sublime.Region(region.begin(), region.end() + 1)
         symbol = view.substr(region)
 
-        return JumpToDefinition.run(symbol, view, tags_file)
+        sym_line = view.substr(view.line(region))
+        (row, col) = view.rowcol(region.begin())
+        line_to_symbol = sym_line[:col]
+        #print ("line_to_symbol %s" % line_to_symbol)
+        source = get_source(view)
+        arrMbrParts = Parser.extract_member_exp(line_to_symbol, source)
+        return JumpToDefinition.run(
+            symbol,
+            region,
+            sym_line,
+            arrMbrParts,
+            view,
+            tags_file)
+
 
 class SearchForDefinition(sublime_plugin.WindowCommand):
     """
@@ -730,7 +714,7 @@ class SearchForDefinition(sublime_plugin.WindowCommand):
             status_message('Can\'t find any relevant tags file')
             return
 
-        result = JumpToDefinition.run(symbol, view, tags_file)
+        result = JumpToDefinition.run(symbol, None, "", [], view, tags_file)
         show_tag_panel(view, result, True)
 
     def on_change(self, text):
@@ -742,6 +726,7 @@ class SearchForDefinition(sublime_plugin.WindowCommand):
 # Show Symbol commands
 
 tags_cache = defaultdict(dict)
+
 
 class ShowSymbols(sublime_plugin.TextCommand):
     """
@@ -819,6 +804,7 @@ class ShowSymbols(sublime_plugin.TextCommand):
 
 # Rebuild CTags commands
 
+
 class RebuildTags(sublime_plugin.TextCommand):
     """
     Provider for the ``rebuild_tags`` command.
@@ -826,6 +812,7 @@ class RebuildTags(sublime_plugin.TextCommand):
     Command (re)builds tag files for the open file(s) or folder(s), reading
     relevant settings from the settings file.
     """
+
     def run(self, edit, **args):
         """Handler for ``rebuild_tags`` command"""
         paths = []
@@ -893,12 +880,14 @@ class RebuildTags(sublime_plugin.TextCommand):
                     str_err = ' '.join(
                         e.output.decode('windows-1252').splitlines())
                 else:
-                    str_err = e.output.decode(locale.getpreferredencoding()).rstrip()
+                    str_err = e.output.decode(
+                        locale.getpreferredencoding()).rstrip()
 
                 error_message(str_err)
                 return
             except Exception as e:
-                error_message("An unknown error occured.\nCheck the console for info.")
+                error_message(
+                    "An unknown error occured.\nCheck the console for info.")
                 raise e
 
             tags_built(result)
@@ -906,6 +895,7 @@ class RebuildTags(sublime_plugin.TextCommand):
         GetAllCTagsList.ctags_list = []  # clear the cached ctags list
 
 # Autocomplete commands
+
 
 class GetAllCTagsList():
     """
@@ -916,7 +906,9 @@ class GetAllCTagsList():
     def __init__(self, list):
         self.ctags_list = list
 
+
 class CTagsAutoComplete(sublime_plugin.EventListener):
+
     def on_query_completions(self, view, prefix, locations):
         if setting('autocomplete'):
             prefix = prefix.strip().lower()
@@ -945,7 +937,8 @@ class CTagsAutoComplete(sublime_plugin.EventListener):
                 else:
                     prefix = "\\"
 
-                f = os.popen("awk \"{ print "+prefix+"$1 }\" \"" + tags_path + "\"")
+                f = os.popen(
+                    "awk \"{ print " + prefix + "$1 }\" \"" + tags_path + "\"")
 
                 for i in f.readlines():
                     tags.append([i.strip()])
@@ -956,12 +949,12 @@ class CTagsAutoComplete(sublime_plugin.EventListener):
                 GetAllCTagsList.ctags_list = tags
                 results = [sublist for sublist in GetAllCTagsList.ctags_list
                            if sublist[0].lower().startswith(prefix)]
-                results = list(set(results).union(set(sub_results)))
-                results.sort()
+                results = sorted(set(results).union(set(sub_results)))
 
                 return results
 
 # Test CTags commands
+
 
 class TestCtags(sublime_plugin.TextCommand):
     routine = None
