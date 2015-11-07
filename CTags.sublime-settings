@@ -105,56 +105,63 @@
 
     // Set to false to not open an error dialog while tags are building
     "display_rebuilding_message": true,
-    
-    //Per-language syntax regex and character sets (used by Rank Manager )
-    //Ex: Python 'and' ignore exp --> '\sand\s' - it must have whitespace around it so it is not part of real name: gates.Nand.evaluate() 
+
+    // Rank Manager language syntax regex and character sets
+    //
+    // Ex: Python 'and' ignore exp --> '\sand\s' - it must have whitespace
+    // around it so it is not part of real name: gates.Nand.evaluate()
     "language_syntax": {
-        "splitters" : [".","::","->"],
-        "source.js": { "member_exp":
-                        { "chars" : "[A-Za-z0-9_$]",
-                          "splitters" : ["\\."], 
-                          "open"  : ["\\{","\\[","\\("],
-                          "close" : ["\\}", "\\]" , "\\)"], //close[i] must match open[i]
-                          "ignore" : ["&", "\\|" , "\\?" ,":" , "\\!", "'" , "=","\""],
-                          "stop"   : ["\\s",","], 
-                          "this" : ["this", "me", "self", "that"]
-                         },
-
-                         "reference_types":
-                         {
-                              "__symbol__(\\.call|\\.apply){0,1}\\s*?\\(" : ["f","fa"],
-                              "\\.fire\\s*?\\(\\s*?\\[\\'\"]__symbol__\\[\\'\"\\]" : ["eventHandler"] 
-
-                         }   
-                      },
-        "source.python": 
-                      {  "inherit": "source.js", //python settings inherit JavaScript, with some overrides
-                         "member_exp":
-                            { 
-                              "ignore" : ["\\sand\\s", "\\sor\\s" , "\\snot\\s" ,":" , "\\!", "'" ,"=", "\""],                     
-                              "this" : ["self"]
-                            }   
-                       },
-        "source.java": 
-                      {  "inherit": "source.js",
-                         "member_exp":
-                            { 
-                                "this" : ["this"]
-                            }   
-                       },
-        "source.cs": 
-                      {  "inherit": "source.js",
-                         "member_exp":
-                            { 
-                                "this" : ["this"]
-                            }   
-                       }
+        "splitters" : [".", "::", "->"],
+        "source.js": {
+            "member_exp": {
+                "chars": "[A-Za-z0-9_$]",
+                "splitters": ["\\."],
+                "open": ["\\{", "\\[", "\\("],
+                "close": ["\\}", "\\]" , "\\)"], //close[i] must match open[i]
+                "ignore": ["&", "\\|", "\\?", ":", "\\!", "'", "=", "\""],
+                "stop": ["\\s", ","],
+                "this": ["this", "me", "self", "that"]
+            },
+            "reference_types": {
+                "__symbol__(\\.call|\\.apply){0,1}\\s*?\\(": ["f", "fa"],
+                "\\.fire\\s*?\\(\\s*?\\[\\'\"]__symbol__\\[\\'\"\\]": [
+                    "eventHandler"
+                ]
+            }
+        },
+        "source.python": {
+            //python settings inherit JavaScript, with some overrides
+            "inherit": "source.js",
+            "member_exp": {
+                "ignore": ["\\sand\\s", "\\sor\\s", "\\snot\\s", ":", "\\!",
+                           "'", "=", "\""],
+                "this" : ["self"]
+            }
+        },
+        "source.java": {
+            "inherit": "source.js",
+            "member_exp": {
+                "this" : ["this"]
+            }
+        },
+        "source.cs": {
+            "inherit": "source.js",
+            "member_exp": {
+                "this" : ["this"]
+            }
+        }
     },
 
-
-    //scope filter: Tags file may optionally contain tagfield for the scope of the tag.
-    //Ex: item  .\app\utils\fileHelper.js   420;"   vp  lineno:420  scope:420:19-422:9
-    //The re is used to extract  scope:/beginLine:beginCol-endLine:endCol/
-    //Different tags generators may generate this non-standard field in different formats
+    // Scope Filters
+    //
+    // Tags file may optionally contain tagfield for the scope of the tag. For
+    // example:
+    //
+    //   item  .\fileHelper.js   420;"   vp  lineno:420  scope:420:19-422:9
+    //
+    // The re is used to extract 'scope:/beginLine:beginCol-endLine:endCol/'
+    //
+    // Different tags generators may generate this non-standard field in
+    // different formats
     "scope_re": "(\\d.*?):(\\d.*?)-(\\d.*?):(\\d.*?)"
 }
