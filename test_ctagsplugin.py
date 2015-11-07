@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 
-"""Unit tests for ctagsplugin.py"""
+"""
+Unit tests for 'ctagsplugin.py'.
+"""
 
 import os
 import sys
@@ -12,28 +14,17 @@ if sys.version_info < (2, 7):
 else:
     import unittest
 
-try:
-    import sublime
-
-    if int(sublime.version()) > 3000:
-        from . import ctagsplugin
-        from . import ctags
-    else:
-        import ctagsplugin
-        import ctags
-except:
-    import ctagsplugin
-    import ctags
-
+import ctags
+import ctagsplugin
 
 class CTagsPluginTest(unittest.TestCase):
-
-    """
-    Helper functions
-    """
+    #
+    # Helper functions.
+    #
 
     def make_tmp_directory(self, pwd=None):
-        """Make a temporary directory to place files in
+        """
+        Make a temporary directory to place files in.
 
         :returns: Path to the temporary directory
         """
@@ -41,10 +32,10 @@ class CTagsPluginTest(unittest.TestCase):
         return tmp_dir
 
     def build_python_file(self, pwd=None):
-        """Build a simple Python "program" that ctags can use.
+        """
+        Build a simple Python "program" that ctags can use.
 
-        :Returns:
-        Path to a constructed, valid Java source file
+        :returns: Path to a constructed, valid Java source file
         """
         path = ''
 
@@ -64,13 +55,13 @@ class CTagsPluginTest(unittest.TestCase):
         return path
 
     def build_java_file(self, pwd=None):
-        """Build a slightly detailed Java "program" that ctags can use.
+        """
+        Build a slightly detailed Java "program" that ctags can use.
 
         Build a slightly more detailed program that 'build_python_file' does,
         in order to test more advanced functionality of ctags.py, or ctags.exe
 
-        :Returns:
-        Path to a constructed, valid Java source file
+        :returns: Path to a constructed, valid Java source file
         """
         path = ''
 
@@ -99,7 +90,8 @@ class CTagsPluginTest(unittest.TestCase):
         return path
 
     def remove_tmp_directory(self, path):
-        """Remove a temporary directory made by ``make_tmp_directory``
+        """
+        Remove a temporary directory made by ``make_tmp_directory``
 
         :param path: Path to directory
 
@@ -108,7 +100,8 @@ class CTagsPluginTest(unittest.TestCase):
         shutil.rmtree(path)
 
     def remove_tmp_files(self, paths):
-        """Remove temporary files made by ``make_x_file``
+        """
+        Remove temporary files made by ``make_x_file``
 
         :param paths: Path to file
 
@@ -117,45 +110,45 @@ class CTagsPluginTest(unittest.TestCase):
         for path in paths:
             os.remove(path)
 
-    """
-    Test functions
-    """
+    #
+    # Test functions
+    #
 
-    """find_tags_relative_to"""
+    # find_tags_relative_to
 
     def test_find_tags_relative_to__find_tags_in_current_directory(self):
-        TAG_FILE = 'example_tags'
+        tag_file = 'example_tags'
 
         current_path = self.build_python_file()
-        tag_file = ctags.build_ctags(path=current_path, tag_file=TAG_FILE)
+        tag_file_ = ctags.build_ctags(path=current_path, tag_file=tag_file)
 
         # should find tag file in current directory
         self.assertEqual(
-            ctagsplugin.find_tags_relative_to(current_path, TAG_FILE),
-            tag_file)
+            ctagsplugin.find_tags_relative_to(current_path, tag_file),
+            tag_file_)
 
         # cleanup
-        self.remove_tmp_files([current_path, tag_file])
+        self.remove_tmp_files([current_path, tag_file_])
 
     def test_find_tags_relative_to__find_tags_in_parent_directory(self):
-        TAG_FILE = 'example_tags'
+        tag_file = 'example_tags'
 
         parent_path = self.build_python_file()
         parent_tag_file = ctags.build_ctags(path=parent_path,
-                                            tag_file=TAG_FILE)
+                                            tag_file=tag_file)
         child_dir = self.make_tmp_directory()
         child_path = self.build_python_file(pwd=child_dir)
 
         # should find tag file in parent directory
         self.assertEqual(
-            ctagsplugin.find_tags_relative_to(child_path, TAG_FILE),
+            ctagsplugin.find_tags_relative_to(child_path, tag_file),
             parent_tag_file)
 
         # cleanup
         self.remove_tmp_files([parent_path, parent_tag_file])
         self.remove_tmp_directory(child_dir)
 
-    """get_common_ancestor_folder"""
+    # get_common_ancestor_folder
 
     def test_get_common_ancestor_folder__current_folder_open(self):
         parent_dir = '/c/users'
@@ -206,7 +199,7 @@ class CTagsPluginTest(unittest.TestCase):
         # should return child directory as the deepest common folder
         self.assertEqual(path, child_dir)
 
-    """get_rel_path_to_source"""
+    # get_rel_path_to_source
 
     def test_get_rel_path_to_source__source_file_in_sibling_directory(self):
         temp = '/c/users/temporary_file'
@@ -229,9 +222,7 @@ class CTagsPluginTest(unittest.TestCase):
         # handle [windows, unix] paths
         relative_paths = ['folder\\temporary_file', 'folder/temporary_file']
 
-        #self.assertEquals([relative_path], result)
         self.assertIn(result[0], relative_paths)
-
 
 if __name__ == '__main__':
     unittest.main()

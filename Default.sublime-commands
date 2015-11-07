@@ -1,33 +1,33 @@
 [
-  {
-    "caption": "CTags: Rebuild Tags",
-    "command": "rebuild_tags"
-  },
-  {
-    "caption": "CTags: Show Symbols (file)",
-    "command": "show_symbols",
-    "context": [
-      {
-        "key": "selector",
-        "match_all": true,
-        "operand": "source -source.css",
-        "operator": "equal"
-      }
-    ]
-  },
-  {
-    "caption": "CTags: Show Symbols (all)",
-    "command": "show_symbols",
-    "args": {
-      "type": "multi"
+    {
+        "caption": "CTags: Rebuild Tags",
+        "command": "rebuild_tags"
     },
-    "context": [
-      {
-        "key": "selector",
-        "match_all": true,
-        "operand": "source -source.css",
-        "operator": "equal"
-      }
-    ]
-  }
+    {
+        "caption": "CTags: Show Symbols (file)",
+        "command": "show_symbols",
+        "context": [
+            {
+                "key": "selector",
+                "match_all": true,
+                "operand": "source -source.css",
+                "operator": "equal"
+            }
+        ]
+    },
+    {
+        "caption": "CTags: Show Symbols (all)",
+        "command": "show_symbols",
+        "args": {
+            "type": "multi"
+        },
+        "context": [
+            {
+                "key": "selector",
+                "match_all": true,
+                "operand": "source -source.css",
+                "operator": "equal"
+            }
+        ]
+    }
 ]

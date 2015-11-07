@@ -1,56 +1,167 @@
 // Place your settings in the file "User/CTags.sublime-settings", which
 // overrides the settings in here.
 {
-    // Enable debugging
+    // Enable debugging.
+    //
+    // When enabled, this will result in debug output being printed to the
+    // console. This can be useful for debugging issues.
     "debug": false,
 
-    // Enable autocomplete
+    // Enable auto-complete.
+    //
+    // When enabled, this turns on a basic "auto-complete" feature, similar to
+    // a very rudimentary "Intellisense(TM)". This is useful for providing
+    // better suggestions than stock Sublime Text could provide.
     "autocomplete": false,
 
+    // Path to ctags executable.
+    //
     // Alter this value if your ctags command is not in the PATH, or if using
     // a different version of ctags to that in the path (i.e. for OSX).
     //
     // NOTE: You *should not* place entire commands here. These commands are
-    // built automatically using the values below. For example:
-    //   GOOD: "command": "/usr/bin/ctags"
-    //   BAD:  "command": "ctags -R -f .tags --exclude=some/path"
+    // built automatically using the values below. For example, this is OK:
+    //
+    //     "command": "/usr/bin/ctags"
+    //
+    // This, on the other hand, won't work!
+    //
+    //     "command": "ctags -R -f .tags --exclude=some/path"
+    //
     "command": "",
 
-    // Set to false to disable recursive search for ctag generation. This
-    // translates the `-R` parameter
+    // Enable recursive searching of directories when building tag files.
+    //
+    // When enabled, this is equivalent to `-R` parameter. Set to true to
+    // enable recursive search of directories when generating tag files.
     "recursive" : true,
 
-    // Default read/write location of the tags file. This translates to the
-    // `-f [FILENAME]` parameter
+    // Default read/write location of the tags file.
+    //
+    // This is equivalent to the `-f [FILENAME]` parameter. There is likely no
+    // reason to change this unless you have a large number of existing tags
+    // files you'd like to use that already have a different name. In this
+    // case perhaps consider using the 'extra_tag_files' setting instead.
     "tag_file" : ".tags",
 
-    // Additional options to pass to ctags, i.e.
-    // ["--exclude=some/path", "--exclude=some/other/path", ...]
+    // Additional tag files names to search.
+    //
+    // These are searched in addition to the file name given in 'tag_file'
+    "extra_tag_files": [".gemtags", "tags"],
+
+    // Additional options to pass to ctags.
+    //
+    // Any addition options you may wish to pass to the ctags executable. For
+    // example:
+    //
+    //     ["--exclude=some/path", "--exclude=some/other/path", ...]
     "opts" : [],
 
+    // Tag "kind"s to ignore.
+    //
+    // A ctags tagfile describes a number of different "kind"s, described in
+    // tag FORMAT file found here:
+    //
+    //     http://ctags.sourceforge.net/FORMAT
+    //
+    // These can be filtered (i.e. ignored). For example - 'import' statements
+    // should be ignored in Python. These are of kind "i", e.g.
+    //
+    //     "type":"^i$"
     //
     "filters": {
         "source.python": {"type":"^i$"}
     },
 
+    // Definition "kind"s to ignore.
     //
+    // This is very similar to the 'filters' option. However, this only
+    // applies to the process that is used to find a definition. All filters
+    // placed here will be used when the plugin is searching for a definition
+    // in the file.
     "definition_filters": {
         "source.php": {"type":"^v$"}
     },
 
-    //
-    "definition_current_first": true,
-
-    // Show the ctags menu in the context menus
+    // Enable the ctags menu in the context menus.
     "show_context_menus": true,
 
-    // Paths to additional tag files to include in tag search. This is a list
-    // of items in the form [["language", "platform"], "path"]
-    "extra_tag_paths": [[["source.python", "windows"], "C:\\Python27\\Lib\\tags"]],
+    // Paths to additional tag files to include in tag search.
+    //
+    // This is a list of items in the following format:
+    //
+    //     [["language", "platform"], "path"]
+    //
+    "extra_tag_paths": [
+        [["source.python", "windows"], "C:\\Python27\\Lib\\tags"]
+    ],
 
-    // Additional tag files to search
-    "extra_tag_files": [".gemtags", "tags"],
+    // Enable highlighting of selected symbol.
+    //
+    // When enabled, searched symbols will be highlighted when found. This
+    // can be irritating in some instances, e.g. when in Vintage mode. In
+    // these cases, setting this to false will disable this highlighting.
+    "select_searched_symbol": true,
 
-    // Set to false so as not to select searched symbol (in Vintage mode)
-    "select_searched_symbol": true
+    // Set to false to not open an error dialog while tags are building
+    "display_rebuilding_message": true,
+
+    // Rank Manager language syntax regex and character sets
+    //
+    // Ex: Python 'and' ignore exp --> '\sand\s' - it must have whitespace
+    // around it so it is not part of real name: gates.Nand.evaluate()
+    "language_syntax": {
+        "splitters" : [".", "::", "->"],
+        "source.js": {
+            "member_exp": {
+                "chars": "[A-Za-z0-9_$]",
+                "splitters": ["\\."],
+                "open": ["\\{", "\\[", "\\("],
+                "close": ["\\}", "\\]" , "\\)"], //close[i] must match open[i]
+                "ignore": ["&", "\\|", "\\?", ":", "\\!", "'", "=", "\""],
+                "stop": ["\\s", ","],
+                "this": ["this", "me", "self", "that"]
+            },
+            "reference_types": {
+                "__symbol__(\\.call|\\.apply){0,1}\\s*?\\(": ["f", "fa"],
+                "\\.fire\\s*?\\(\\s*?\\[\\'\"]__symbol__\\[\\'\"\\]": [
+                    "eventHandler"
+                ]
+            }
+        },
+        "source.python": {
+            //python settings inherit JavaScript, with some overrides
+            "inherit": "source.js",
+            "member_exp": {
+                "ignore": ["\\sand\\s", "\\sor\\s", "\\snot\\s", ":", "\\!",
+                           "'", "=", "\""],
+                "this" : ["self"]
+            }
+        },
+        "source.java": {
+            "inherit": "source.js",
+            "member_exp": {
+                "this" : ["this"]
+            }
+        },
+        "source.cs": {
+            "inherit": "source.js",
+            "member_exp": {
+                "this" : ["this"]
+            }
+        }
+    },
+
+    // Scope Filters
+    //
+    // Tags file may optionally contain tagfield for the scope of the tag. For
+    // example:
+    //
+    //   item  .\fileHelper.js   420;"   vp  lineno:420  scope:420:19-422:9
+    //
+    // The re is used to extract 'scope:/beginLine:beginCol-endLine:endCol/'
+    //
+    // Different tags generators may generate this non-standard field in
+    // different formats
+    "scope_re": "(\\d.*?):(\\d.*?)-(\\d.*?):(\\d.*?)"
 }

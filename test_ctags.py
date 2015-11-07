@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 
-"""Unit tests for ctags.py"""
+"""
+Unit tests for 'ctags.py'.
+"""
 
 import os
 import sys
@@ -13,27 +15,17 @@ if sys.version_info < (2, 7):
 else:
     import unittest
 
-try:
-    import sublime
-
-    if int(sublime.version()) > 3000:
-        from . import ctags
-    else:
-        import ctags
-except:
-    import ctags
-
+import ctags
 
 class CTagsTest(unittest.TestCase):
-    """
-    Helper functions
-    """
-
+    #
+    # Helper functions
+    #
     def build_python_file(self):
-        """Build a simple Python "program" that ctags can use.
+        """
+        Build a simple Python "program" that ctags can use.
 
-        :Returns:
-        Path to a constructed, valid Python source file
+        :returns: Path to a constructed, valid Python source file
         """
         path = ''
 
@@ -52,7 +44,8 @@ class CTagsTest(unittest.TestCase):
         return path
 
     def build_python_file__extended(self):
-        """Build a Python "program" demonstrating all common CTag types
+        """
+        Build a Python "program" demonstrating all common CTag types
 
         Build a Python program that demonstrates the following CTag types:
             - ``f`` - function definitions
@@ -63,8 +56,7 @@ class CTagsTest(unittest.TestCase):
 
         This is mainly intended to regression test for issue #209.
 
-        :Returns:
-        Path to a constructed, valid Python source file
+        :returns: Path to a constructed, valid Python source file
         """
         path = ''
 
@@ -94,13 +86,13 @@ class CTagsTest(unittest.TestCase):
         return path
 
     def build_java_file(self):
-        """Build a slightly detailed Java "program" that ctags can use.
+        """
+        Build a slightly detailed Java "program" that ctags can use.
 
         Build a slightly more detailed program that 'build_python_file' does,
         in order to test more advanced functionality of ctags.py, or ctags.exe
 
-        :Returns:
-        Path to a constructed, valid Java source file
+        :returns: Path to a constructed, valid Java source file
         """
         path = ''
 
@@ -128,12 +120,12 @@ class CTagsTest(unittest.TestCase):
         return path
 
     def build_c_file(self):
-        """Build a simple C "program" that ctags can use.
+        """
+        Build a simple C "program" that ctags can use.
 
         This is mainly intended to regression test for issue #213.
 
-        :Returns:
-        Path to a constructed, valid Java source file
+        :returns: Path to a constructed, valid C source file
         """
         path = ''
 
@@ -158,24 +150,26 @@ class CTagsTest(unittest.TestCase):
 
         return path
 
-
-    """
-    Test functions
-    """
+    #
+    # Test functions
+    #
 
     def setUp(self):
-        """Set up test environment.
+        """
+        Set up test environment.
 
         Ensures the ``ctags_not_on_path`` test is run first, and all other
         tests are skipped if this fails. If ctags is not installed, no test
-        will pass
+        will pass.
         """
         self.test_build_ctags__ctags_on_path()
 
-    """build ctags"""
+    # build ctags
 
     def test_build_ctags__ctags_on_path(self):
-        """Checks that ``ctags`` is in ``PATH``"""
+        """
+        Checks that ``ctags`` is in ``PATH``.
+        """
         # build_ctags requires a real path, so we create a temporary file as a
         # cross-platform way to get the temp directory
         with tempfile.NamedTemporaryFile() as temp:
@@ -186,7 +180,9 @@ class CTagsTest(unittest.TestCase):
                           ' on path')
 
     def test_build_ctags__custom_command(self):
-        """Checks for support of simple custom command to execute ctags"""
+        """
+        Checks for support of simple custom command to execute ctags.
+        """
         # build_ctags requires a real path, so we create a temporary file as a
         # cross-platform way to get the temp directory
         with tempfile.NamedTemporaryFile() as temp:
@@ -197,7 +193,9 @@ class CTagsTest(unittest.TestCase):
                           ' on path')
 
     def test_build_ctags__invalid_custom_command(self):
-        """Checks for failure for invalid custom command to execute ctags"""
+        """
+        Checks for failure for invalid custom command to execute ctags.
+        """
         # build_ctags requires a real path, so we create a temporary file as a
         # cross-platform way to get the temp directory
         with tempfile.NamedTemporaryFile() as temp:
@@ -205,7 +203,9 @@ class CTagsTest(unittest.TestCase):
                 ctags.build_ctags(path=temp.name, cmd='ccttaaggss')
 
     def test_build_ctags__single_file(self):
-        """Test execution of ctags using a single temporary file"""
+        """
+        Test execution of ctags using a single temporary file.
+        """
         path = self.build_python_file()
 
         tag_file = ctags.build_ctags(path=path)
@@ -224,7 +224,9 @@ class CTagsTest(unittest.TestCase):
                 os.remove(tag_file)
 
     def test_build_ctags__custom_tag_file(self):
-        """Test execution of ctags using a custom tag file"""
+        """
+        Test execution of ctags using a custom tag file.
+        """
         path = self.build_python_file()
 
         tag_file = ctags.build_ctags(path=path, tag_file='my_tag_file')
@@ -243,7 +245,9 @@ class CTagsTest(unittest.TestCase):
                 os.remove(tag_file)
 
     def test_build_ctags__additional_options(self):
-        """Test execution of ctags using additional ctags options"""
+        """
+        Test execution of ctags using additional ctags options.
+        """
         path = self.build_python_file()
 
         tag_file = ctags.build_ctags(path=path, tag_file='my_tag_file',
@@ -262,10 +266,11 @@ class CTagsTest(unittest.TestCase):
                 os.remove(path)  # clean up
                 os.remove(tag_file)
 
-    """post_process_tag"""
+    # post_process_tag
 
     def test_post_process_tag__line_numbers(self):
-        """Test ``post_process_tag`` with a line number ``excmd`` variable.
+        """
+        Test ``post_process_tag`` with a line number ``excmd`` variable.
 
         Test function with an sample tag from a Python file. This in turn tests
         the supporting functions.
@@ -290,7 +295,8 @@ class CTagsTest(unittest.TestCase):
         self.assertEqual(result, expected_output)
 
     def test_post_process_tag__regex_no_fields(self):
-        """Test ``post_process_tag`` with a regex ``excmd`` variable.
+        """
+        Test ``post_process_tag`` with a regex ``excmd`` variable.
 
         Test function with an sample tag from a Python file. This in turn tests
         the supporting functions.
@@ -315,7 +321,8 @@ class CTagsTest(unittest.TestCase):
         self.assertEqual(result, expected_output)
 
     def test_post_process_tag__fields(self):
-        """Test ``post_process_tag`` with a number of ``field`` variables.
+        """
+        Test ``post_process_tag`` with a number of ``field`` variables.
 
         Test function with an sample tag from a Java file. This in turn tests
         the supporting functions.
@@ -342,11 +349,12 @@ class CTagsTest(unittest.TestCase):
 
         self.assertEqual(result, expected_output)
 
-
-    """Tag class"""
+    # Tag class
 
     def test_parse_tag_lines__python(self):
-        """Test ``parse_tag_lines`` with a sample Python file"""
+        """
+        Test ``parse_tag_lines`` with a sample Python file.
+        """
         path = self.build_python_file__extended()
 
         tag_file = ctags.build_ctags(path=path, opts=['--python-kinds=-i'])
@@ -355,7 +363,7 @@ class CTagsTest(unittest.TestCase):
             try:
                 content = output.readlines()
                 filename = os.path.basename(path)
-            except:
+            except IOError:
                 self.fail("Setup of files for test failed")
             finally:
                 output.close()
@@ -422,7 +430,9 @@ class CTagsTest(unittest.TestCase):
             self.assertEqual(expected_outputs[key], result[key])
 
     def test_parse_tag_lines__c(self):
-        """Test ``parse_tag_lines`` with a sample C file"""
+        """
+        Test ``parse_tag_lines`` with a sample C file.
+        """
         path = self.build_c_file()
 
         tag_file = ctags.build_ctags(path=path)
@@ -473,7 +483,6 @@ class CTagsTest(unittest.TestCase):
 
         for key in result:  # don't forget - we might have missed something!
             self.assertEqual(expected_outputs[key], result[key])
-
 
 if __name__ == '__main__':
     unittest.main()
