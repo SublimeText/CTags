@@ -912,7 +912,6 @@ class CTagsAutoComplete(sublime_plugin.EventListener):
     def on_query_completions(self, view, prefix, locations):
         if setting('autocomplete'):
             prefix = prefix.strip().lower()
-            tags_path = view.window().folders()[0] + '/' + setting('tag_file')
 
             sub_results = [v.extract_completions(prefix)
                            for v in sublime.active_window().views()]
@@ -927,8 +926,14 @@ class CTagsAutoComplete(sublime_plugin.EventListener):
                 return results
             else:
                 tags = []
+                tags_path = ''
 
                 # check if a project is open and the tags file exists
+                for folder in view.window().folders():
+                    if view.file_name().startswith(folder):
+                        tags_path = os.path.join(folder, setting('tag_file'))
+                        break
+
                 if not (view.window().folders() and os.path.exists(tags_path)):
                     return tags
 
