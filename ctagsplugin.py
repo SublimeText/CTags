@@ -65,6 +65,13 @@ ON_LOAD = sublime_plugin.all_callbacks['on_load']
 
 
 def select(view, region):
+    if view.settings().get("command_mode"):
+        a = region.a
+        b = region.b
+        a = min(a, b)
+        region = sublime.Region(a , a )
+
+  
     sel_set = view.sel()
     sel_set.clear()
     sel_set.add(region)
