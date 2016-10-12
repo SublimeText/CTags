@@ -17,6 +17,7 @@ import subprocess
 from itertools import chain
 from operator import itemgetter as iget
 from collections import defaultdict, deque
+from Default.history_list import get_jump_history_for_view
 
 try:
     import sublime
@@ -496,6 +497,7 @@ class JumpPrev(sublime_plugin.WindowCommand):
         name = view.file_name()
         if name:
             sel = [s for s in view.sel()][0]
+            get_jump_history_for_view(view).push_selection(view)
             cls.buf.append((name, sel))
 
 # CTags commands
