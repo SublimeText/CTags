@@ -17,12 +17,12 @@ import subprocess
 from itertools import chain
 from operator import itemgetter as iget
 from collections import defaultdict, deque
-from Default.history_list import get_jump_history_for_view
 
 try:
     import sublime
     import sublime_plugin
     from sublime import status_message, error_message
+    from Default.history_list import get_jump_history_for_view
 
     # hack the system path to prevent the following issue in ST3
     #     ImportError: No module named 'ctags'
@@ -497,7 +497,10 @@ class JumpPrev(sublime_plugin.WindowCommand):
         name = view.file_name()
         if name:
             sel = [s for s in view.sel()][0]
-            get_jump_history_for_view(view).push_selection(view)
+            try:
+                get_jump_history_for_view(view).push_selection(view)
+            except:
+                pass
             cls.buf.append((name, sel))
 
 # CTags commands
