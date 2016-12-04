@@ -821,6 +821,7 @@ class RebuildTags(sublime_plugin.TextCommand):
         recursive = setting('recursive')
         opts = setting('opts')
         tag_file = setting('tag_file')
+        opts = self.append_project_options(opts)
 
         if 'dirs' in args and args['dirs']:
             paths.extend(args['dirs'])
@@ -893,6 +894,30 @@ class RebuildTags(sublime_plugin.TextCommand):
             tags_built(result)
 
         GetAllCTagsList.ctags_list = []  # clear the cached ctags list
+
+    def append_project_options(self, opts):
+        """
+        append ctags.cnf path to opts.
+        """
+        window = sublime.active_window()
+
+        if setting('enable_project_option') is True:
+            project_file_path = window.project_file_name()
+            if project_file_path is None:
+                return opts
+            project_file_path = os.path.dirname(project_file_path)
+            project_path = window.project_data()['folders'][0]['path']
+            options_file = setting('options_file')
+            options_file_path = os.path.join(
+                project_file_path,
+                project_path,
+                options_file)
+            if os.path.isfile(options_file_path) is True:
+                import platform
+                if platform.platform().find('Windows') >= 0:
+                    options_file_path = options_file_path.replace('\\', '\\\\')
+                opts.append('--options=%s' % options_file_path)
+        return opts
 
 # Autocomplete commands
 
