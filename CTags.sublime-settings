@@ -169,5 +169,9 @@
     "enable_project_option": false,
 
     // Default options file name
-    "options_file": "ctags.cnf"
+    "options_file": "ctags.cnf",
+
+    // Enable use compatible "Goto Definition"
+    // Quick panel symbol search by file path
+    "enable_search_file_path": false,
 }
