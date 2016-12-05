@@ -370,7 +370,7 @@ def scroll_to_tag(view, tag, hook=None):
 # Formatting helper functions
 
 
-def format_tag_for_quickopen(tag, show_path=True):
+def format_tag_for_quickopen(tag, show_path=True, search_file_path=False):
     """
     Format a tag for use in quickopen panel.
 
@@ -390,10 +390,15 @@ def format_tag_for_quickopen(tag, show_path=True):
                 '    %($field)s$punct%(symbol)s').substitute(locals())
 
     format_ = [f % tag if f else tag.symbol, tag.ex_command]
+    format_[0] = format_[0].strip()
     format_[1] = format_[1].strip()
+    insert_point = 1
+
+    if search_file_path:
+        insert_point = 0
 
     if show_path:
-        format_.insert(1, tag.filename)
+        format_.insert(insert_point, tag.filename)
 
     return format_
 
@@ -629,8 +634,11 @@ class JumpToDefinition:
             return status_message('Can\'t find "%s"' % symbol)
 
         rankmgr = RankMgr(region, mbrParts, view, symbol, sym_line)
+        formatting = functools.partial(
+            format_tag_for_quickopen,
+            search_file_path=setting('enable_search_file_path'))
 
-        @prepare_for_quickpanel()
+        @prepare_for_quickpanel(formatting)
         def sorted_tags():
             taglist = tags.get(symbol, [])
             p_tags = rankmgr.sort_tags(taglist)
