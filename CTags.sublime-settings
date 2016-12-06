@@ -174,4 +174,8 @@
     // Enable use compatible "Goto Definition"
     // Quick panel symbol search by file path
     "enable_search_file_path": false,
+
+    // Support for auto update
+    // auto update when file create, load, save.
+    "auto_update": false,
 }
