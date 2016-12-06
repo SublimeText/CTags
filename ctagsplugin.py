@@ -986,6 +986,77 @@ class CTagsAutoComplete(sublime_plugin.EventListener):
 
                 return results
 
+
+def get_tagfile_setting():
+    """ piggy-backs on ctags settings file and alerts user if non-existent """
+    settings = sublime.load_settings("CTags.sublime-settings")
+    if settings:
+        name = setting('tag_file')
+        if name:
+            return name
+        else:
+            sublime.error_message("CTags settings found, but could not find 'tag_file'!")
+    else:
+        sublime.error_message("CTags settings not found!")
+
+
+def folders_to_ctag(window=None, initialOnly=True):
+    """ if .tag files already exist, don't bother doing anything """
+    if not window:
+        window = sublime.active_window()
+
+    folders = window.folders()
+    global TAGFILE
+    for folder in folders:
+        if initialOnly and os.path.exists(os.path.join(folder, TAGFILE)):
+            # don't need to keep scanning, we won't be issuing anything
+            return []
+    return folders
+
+
+class AutoCtagListener(sublime_plugin.EventListener):
+
+    def on_new_async(self, view):
+        if is_auto_update() is not True:
+            return false
+        """ Check for initial tag creation """
+        folders = folders_to_ctag(view.window())
+        if folders:
+            # build initial tag file
+            view.window().run_command('rebuild_tags', args={'dirs': folders})
+
+    def on_load_async(self, view):
+        """ Check for initial tag creation """
+        if is_auto_update() is not True:
+            return false
+        folders = folders_to_ctag(view.window())
+        if folders:
+            # build initial tag file
+            view.window().run_command('rebuild_tags', args={'dirs': folders})
+
+    def on_post_save_async(self, view):
+        """ Update tag file for current file after changes saved """
+        if is_auto_update() is not True:
+            pass
+        folders = folders_to_ctag(view.window(), initialOnly=False)
+        if folders:
+            view.window().run_command('rebuild_tags', args={'dirs': folders})
+        else:
+            f = view.file_name()
+            view.window().run_command('rebuild_tags', args={'files': [f]})
+
+
+def plugin_loaded():
+    """ Must wait until notified that plugin is loaded before using sublime API """
+    global TAGFILE
+    TAGFILE = get_tagfile_setting()
+
+
+def is_auto_update():
+    is_auto_update = setting('auto_update')
+    if is_auto_update is not True:
+        return false
+
 # Test CTags commands
 
 
