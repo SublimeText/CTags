@@ -1018,7 +1018,7 @@ class AutoCtagListener(sublime_plugin.EventListener):
 
     def on_new_async(self, view):
         if is_auto_update() is not True:
-            return false
+            return
         """ Check for initial tag creation """
         folders = folders_to_ctag(view.window())
         if folders:
@@ -1028,7 +1028,7 @@ class AutoCtagListener(sublime_plugin.EventListener):
     def on_load_async(self, view):
         """ Check for initial tag creation """
         if is_auto_update() is not True:
-            return false
+            return
         folders = folders_to_ctag(view.window())
         if folders:
             # build initial tag file
@@ -1037,7 +1037,7 @@ class AutoCtagListener(sublime_plugin.EventListener):
     def on_post_save_async(self, view):
         """ Update tag file for current file after changes saved """
         if is_auto_update() is not True:
-            pass
+            return
         folders = folders_to_ctag(view.window(), initialOnly=False)
         if folders:
             view.window().run_command('rebuild_tags', args={'dirs': folders})
@@ -1055,7 +1055,7 @@ def plugin_loaded():
 def is_auto_update():
     is_auto_update = setting('auto_update')
     if is_auto_update is not True:
-        return false
+        return False
 
 # Test CTags commands
 
