@@ -370,7 +370,7 @@ def scroll_to_tag(view, tag, hook=None):
 # Formatting helper functions
 
 
-def format_tag_for_quickopen(tag, show_path=True):
+def format_tag_for_quickopen(tag, show_path=True, search_file_path=False):
     """
     Format a tag for use in quickopen panel.
 
@@ -390,10 +390,15 @@ def format_tag_for_quickopen(tag, show_path=True):
                 '    %($field)s$punct%(symbol)s').substitute(locals())
 
     format_ = [f % tag if f else tag.symbol, tag.ex_command]
+    format_[0] = format_[0].strip()
     format_[1] = format_[1].strip()
+    insert_point = 1
+
+    if search_file_path:
+        insert_point = 0
 
     if show_path:
-        format_.insert(1, tag.filename)
+        format_.insert(insert_point, tag.filename)
 
     return format_
 
@@ -629,8 +634,11 @@ class JumpToDefinition:
             return status_message('Can\'t find "%s"' % symbol)
 
         rankmgr = RankMgr(region, mbrParts, view, symbol, sym_line)
+        formatting = functools.partial(
+            format_tag_for_quickopen,
+            search_file_path=setting('enable_search_file_path'))
 
-        @prepare_for_quickpanel()
+        @prepare_for_quickpanel(formatting)
         def sorted_tags():
             taglist = tags.get(symbol, [])
             p_tags = rankmgr.sort_tags(taglist)
@@ -821,6 +829,7 @@ class RebuildTags(sublime_plugin.TextCommand):
         recursive = setting('recursive')
         opts = setting('opts')
         tag_file = setting('tag_file')
+        opts = self.append_project_options(opts)
 
         if 'dirs' in args and args['dirs']:
             paths.extend(args['dirs'])
@@ -894,6 +903,30 @@ class RebuildTags(sublime_plugin.TextCommand):
 
         GetAllCTagsList.ctags_list = []  # clear the cached ctags list
 
+    def append_project_options(self, opts):
+        """
+        append ctags.cnf path to opts.
+        """
+        window = sublime.active_window()
+
+        if setting('enable_project_option') is True:
+            project_file_path = window.project_file_name()
+            if project_file_path is None:
+                return opts
+            project_file_path = os.path.dirname(project_file_path)
+            project_path = window.project_data()['folders'][0]['path']
+            options_file = setting('options_file')
+            options_file_path = os.path.join(
+                project_file_path,
+                project_path,
+                options_file)
+            if os.path.isfile(options_file_path) is True:
+                import platform
+                if platform.platform().find('Windows') >= 0:
+                    options_file_path = options_file_path.replace('\\', '\\\\')
+                opts.append('--options=%s' % options_file_path)
+        return opts
+
 # Autocomplete commands
 
 
@@ -952,6 +985,78 @@ class CTagsAutoComplete(sublime_plugin.EventListener):
                 results = sorted(set(results).union(set(sub_results)))
 
                 return results
+
+
+def get_tagfile_setting():
+    """ piggy-backs on ctags settings file and alerts user if non-existent """
+    settings = sublime.load_settings("CTags.sublime-settings")
+    if settings:
+        name = setting('tag_file')
+        if name:
+            return name
+        else:
+            sublime.error_message("CTags settings found, but could not find 'tag_file'!")
+    else:
+        sublime.error_message("CTags settings not found!")
+
+
+def folders_to_ctag(window=None, initialOnly=True):
+    """ if .tag files already exist, don't bother doing anything """
+    if not window:
+        window = sublime.active_window()
+
+    folders = window.folders()
+    global TAGFILE
+    for folder in folders:
+        if initialOnly and os.path.exists(os.path.join(folder, TAGFILE)):
+            # don't need to keep scanning, we won't be issuing anything
+            return []
+    return folders
+
+
+class AutoCtagListener(sublime_plugin.EventListener):
+
+    def on_new_async(self, view):
+        if is_auto_update() is not True:
+            return
+        """ Check for initial tag creation """
+        folders = folders_to_ctag(view.window())
+        if folders:
+            # build initial tag file
+            view.window().run_command('rebuild_tags', args={'dirs': folders})
+
+    def on_load_async(self, view):
+        """ Check for initial tag creation """
+        if is_auto_update() is not True:
+            return
+        folders = folders_to_ctag(view.window())
+        if folders:
+            # build initial tag file
+            view.window().run_command('rebuild_tags', args={'dirs': folders})
+
+    def on_post_save_async(self, view):
+        """ Update tag file for current file after changes saved """
+        if is_auto_update() is not True:
+            return
+        folders = folders_to_ctag(view.window(), initialOnly=False)
+        if folders:
+            view.window().run_command('rebuild_tags', args={'dirs': folders})
+        else:
+            f = view.file_name()
+            view.window().run_command('rebuild_tags', args={'files': [f]})
+
+
+def plugin_loaded():
+    """ Must wait until notified that plugin is loaded before using sublime API """
+    global TAGFILE
+    TAGFILE = get_tagfile_setting()
+
+
+def is_auto_update():
+    is_auto_update = setting('auto_update')
+    if is_auto_update is not True:
+        return False
+    return True
 
 # Test CTags commands
 

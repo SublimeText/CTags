@@ -163,5 +163,19 @@
     //
     // Different tags generators may generate this non-standard field in
     // different formats
-    "scope_re": "(\\d.*?):(\\d.*?)-(\\d.*?):(\\d.*?)"
+    "scope_re": "(\\d.*?):(\\d.*?)-(\\d.*?):(\\d.*?)",
+
+    // Enable use project options file
+    "enable_project_option": false,
+
+    // Default options file name
+    "options_file": "ctags.cnf",
+
+    // Enable use compatible "Goto Definition"
+    // Quick panel symbol search by file path
+    "enable_search_file_path": false,
+
+    // Support for auto update
+    // auto update when file create, load, save.
+    "auto_update": false,
 }
