@@ -1056,6 +1056,7 @@ def is_auto_update():
     is_auto_update = setting('auto_update')
     if is_auto_update is not True:
         return False
+    return True
 
 # Test CTags commands
 
