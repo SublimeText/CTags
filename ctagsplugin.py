@@ -930,7 +930,8 @@ class CTagsAutoComplete(sublime_plugin.EventListener):
 
                 # check if a project is open and the tags file exists
                 for folder in view.window().folders():
-                    if view.file_name().startswith(folder):
+                    filename = view.file_name()
+                    if filename is not None and filename.startswith(folder):
                         tags_path = os.path.join(folder, setting('tag_file'))
                         break
 
@@ -943,9 +944,9 @@ class CTagsAutoComplete(sublime_plugin.EventListener):
                     prefix = "\\"
 
                 f = os.popen(
-                    "awk \"{ print " + prefix + "$1 }\" \"" + tags_path + "\"")
+                    "awk \"{ print " + prefix + "$1 }\" \"" + tags_path + "\" | uniq")
 
-                for i in f.readlines():
+                for i in f:
                     tags.append([i.strip()])
 
                 tags = [(item, item) for sublist in tags
