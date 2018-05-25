@@ -69,8 +69,7 @@ def select(view, region):
     sel_set = view.sel()
     sel_set.clear()
     sel_set.add(region)
-    sublime.set_timeout(functools.partial(view.show_at_center, region), 1)
-
+    sublime.set_timeout(functools.partial(view.show_at_center, region), 200)
 
 def in_main(f):
     @functools.wraps(f)
@@ -514,13 +513,14 @@ def show_build_panel(view):
     a given directory or all open directories.
     """
     display = []
-
+    """
     if view.file_name() is not None:
         if not setting('recursive'):
             display.append(['Open File', view.file_name()])
         else:
             display.append([
                 'Open File\'s Directory', os.path.dirname(view.file_name())])
+    """
 
     if len(view.window().folders()) > 0:
         # append option to build for all open folders
@@ -528,6 +528,10 @@ def show_build_panel(view):
             ['All Open Folders', '; '.join(
                 ['\'{0}\''.format(os.path.split(x)[1])
                  for x in view.window().folders()])])
+        for x in view.window().folders():
+            print(x)
+            print(os.path.split(x))
+            print(os.path.split(x)[1])
         # Append options to build for each open folder
         display.extend(
             [[os.path.split(x)[1], x] for x in view.window().folders()])
