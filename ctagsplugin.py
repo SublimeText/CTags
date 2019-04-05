@@ -310,7 +310,7 @@ def find_source(view, pattern, start_at, flags=sublime.LITERAL):
                            start_at, False, flags)
 
 
-def follow_tag_path(view, tag_path, pattern):
+def follow_tag_path(view, tag_path, pattern, anchor=""):
     regions = [sublime.Region(0, 0)]
 
     for p in list(tag_path)[1:-1]:
@@ -326,7 +326,7 @@ def follow_tag_path(view, tag_path, pattern):
 
     # find the ex_command pattern
     pattern_region = find_source(
-        view, '^' + escape_regex(pattern) + '$', start_at, flags=0)
+        view, '^' + escape_regex(pattern) + anchor, start_at, flags=0)
 
     if setting('debug'):  # leave a visual trail for easy debugging
         regions = regions + ([pattern_region] if pattern_region else [])
@@ -341,10 +341,12 @@ def scroll_to_tag(view, tag, hook=None):
     def and_then(view):
         do_find = True
 
-        if tag.ex_command.isdigit():
-            look_from = view.text_point(int(tag.ex_command) - 1, 0)
+        # ex_command is a tuple consisting of the ctags pattern
+        # plus an optional right-anchor, if the ctags regex originally had one
+        if tag.ex_command[0].isdigit():
+            look_from = view.text_point(int(tag.ex_command[0]) - 1, 0)
         else:
-            look_from = follow_tag_path(view, tag.tag_path, tag.ex_command)
+            look_from = follow_tag_path(view, tag.tag_path, tag.ex_command[0], tag.ex_command[1])
             if not look_from:
                 do_find = False
 
@@ -389,7 +391,7 @@ def format_tag_for_quickopen(tag, show_path=True):
             f += string.Template(
                 '    %($field)s$punct%(symbol)s').substitute(locals())
 
-    format_ = [f % tag if f else tag.symbol, tag.ex_command]
+    format_ = [f % tag if f else tag.symbol, tag.ex_command[0]]
     format_[1] = format_[1].strip()
 
     if show_path:
@@ -990,10 +992,10 @@ class TestCtags(sublime_plugin.TextCommand):
                 def hook(av):
                     test_context = av.sel()[0]
 
-                    if tag.ex_command.isdigit():
+                    if tag.ex_command[0].isdigit():
                         test_string = tag.symbol
                     else:
-                        test_string = tag.ex_command
+                        test_string = tag.ex_command[0]
                         test_context = av.line(test_context)
 
                     if not av.substr(test_context).startswith(test_string):
