@@ -626,6 +626,9 @@ class JumpToDefinition:
                 break
 
         if not tags:
+            # append to allow jump back to work
+            JumpPrev.append(view)
+            view.window().run_command("goto_definition")
             return status_message('Can\'t find "%s"' % symbol)
 
         rankmgr = RankMgr(region, mbrParts, view, symbol, sym_line)
