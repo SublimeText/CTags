@@ -204,6 +204,10 @@ def find_tags_relative_to(path, tag_file):
 
     return None
 
+def read_opts(view):
+    # the first one is useful to change opts only on a specific project
+    # (by adding ctags.opts to a project settings file)
+    return view.settings().get('ctags.opts') or setting('opts')
 
 def get_alternate_tags_paths(view, tags_file):
     """
@@ -537,7 +541,7 @@ def show_build_panel(view):
             command = setting('command')
             recursive = setting('recursive')
             tag_file = setting('tag_file')
-            opts = setting('opts')
+            opts = read_opts(view)
 
             rebuild_tags = RebuildTags(False)
             rebuild_tags.build_ctags(paths, command, tag_file, recursive, opts)
@@ -822,7 +826,7 @@ class RebuildTags(sublime_plugin.TextCommand):
 
         command = setting('command')
         recursive = setting('recursive')
-        opts = setting('opts')
+        opts = read_opts(self.view)
         tag_file = setting('tag_file')
 
         if 'dirs' in args and args['dirs']:
