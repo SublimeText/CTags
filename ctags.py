@@ -184,9 +184,18 @@ def process_ex_cmd(tag):
     ex_cmd = tag.get('ex_command')
 
     if ex_cmd.isdigit():  # if a line number, do nothing
-        return ex_cmd
+        return (ex_cmd, None)
     else:                 # else a regex, so unescape
-        return re.sub(r"\\(\$|/|\^|\\)", r'\1', ex_cmd[2:-2])  # unescape regex
+        end_anchor = ""
+        # Some ctags regexes have an end-anchor ('$'), some don't
+        # We need to check which is the case, strip it off, and save it so we can
+        # add it back later when searching
+        if ex_cmd.endswith("/"):
+            ex_cmd = ex_cmd[:-1]
+        if ex_cmd.endswith('$'):
+            ex_cmd = ex_cmd[:-1]
+            end_anchor = "$"
+        return (re.sub(r"\\(\$|/|\^|\\)", r'\1', ex_cmd[2:]), end_anchor)  # unescape regex
 
 def process_fields(tag):
     """
