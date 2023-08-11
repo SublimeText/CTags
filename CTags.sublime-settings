@@ -163,5 +163,11 @@
     //
     // Different tags generators may generate this non-standard field in
     // different formats
-    "scope_re": "(\\d.*?):(\\d.*?)-(\\d.*?):(\\d.*?)"
+    "scope_re": "(\\d.*?):(\\d.*?)-(\\d.*?):(\\d.*?)",
+
+    // Enable use project options file
+    "enable_project_option": false,
+
+    // Default options file name
+    "options_file": "ctags.cnf"
 }
