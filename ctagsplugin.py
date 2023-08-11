@@ -207,6 +207,8 @@ def find_tags_relative_to(path, tag_file):
 def read_opts(view):
     # the first one is useful to change opts only on a specific project
     # (by adding ctags.opts to a project settings file)
+    if not view:    
+        return setting('opts')
     return view.settings().get('ctags.opts') or setting('opts')
 
 def get_alternate_tags_paths(view, tags_file):
@@ -812,7 +814,7 @@ class ShowSymbols(sublime_plugin.TextCommand):
 # Rebuild CTags commands
 
 
-class RebuildTags(sublime_plugin.TextCommand):
+class RebuildTags(sublime_plugin.WindowCommand):
     """
     Provider for the ``rebuild_tags`` command.
 
@@ -820,13 +822,15 @@ class RebuildTags(sublime_plugin.TextCommand):
     relevant settings from the settings file.
     """
 
-    def run(self, edit, **args):
+    def run(self, **args):
         """Handler for ``rebuild_tags`` command"""
         paths = []
 
+        view = self.window.active_view();
+
         command = setting('command')
         recursive = setting('recursive')
-        opts = read_opts(self.view)
+        opts = read_opts(view)
         tag_file = setting('tag_file')
 
         if 'dirs' in args and args['dirs']:
@@ -837,12 +841,10 @@ class RebuildTags(sublime_plugin.TextCommand):
             # build ctags and ignore recursive flag - we clearly only want
             # to build them for a file
             self.build_ctags(paths, command, tag_file, False, opts)
-        elif (self.view.file_name() is None and
-                len(self.view.window().folders()) <= 0):
+        elif view is None or view.file_name() is None and len(self.window.folders()) <= 0:
             status_message('Cannot build CTags: No file or folder open.')
-            return
         else:
-            show_build_panel(self.view)
+            show_build_panel(view)
 
     @threaded(msg='Already running CTags!')
     def build_ctags(self, paths, command, tag_file, recursive, opts):
