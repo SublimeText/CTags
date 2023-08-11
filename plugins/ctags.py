@@ -2,18 +2,15 @@
 A ctags wrapper, parser and sorter.
 """
 
-import codecs
-import re
-import os
-import sys
-import subprocess
 import bisect
+import codecs
 import mmap
+import os
+import re
+import subprocess
+import sys
 
-if sys.version_info < (2, 7):
-    from helpers.check_output import check_output
-else:
-    from subprocess import check_output
+from subprocess import check_output
 
 #
 # Contants

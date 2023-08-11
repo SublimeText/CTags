@@ -1,46 +1,39 @@
-"""
-A ctags plugin for Sublime Text 2/3.
-"""
-
-import functools
-from functools import reduce
 import codecs
+import functools
 import locale
-import sys
 import os
 import pprint
 import re
 import string
-import threading
 import subprocess
+import sys
+import threading
 
+from collections import defaultdict, deque
+from functools import reduce
 from itertools import chain
 from operator import itemgetter as iget
-from collections import defaultdict, deque
 
 try:
     import sublime
     import sublime_plugin
     from sublime import status_message, error_message
 
-    # hack the system path to prevent the following issue in ST3
-    #     ImportError: No module named 'ctags'
-    sys.path.append(os.path.dirname(os.path.realpath(__file__)))
 except ImportError:  # running tests
-    from tests.sublime_fake import sublime
-    from tests.sublime_fake import sublime_plugin
+    from ..tests.sublime_fake import sublime
+    from ..tests.sublime_fake import sublime_plugin
 
     sys.modules['sublime'] = sublime
     sys.modules['sublime_plugin'] = sublime_plugin
 
-import ctags
-from ctags import (FILENAME, parse_tag_lines, PATH_ORDER, SYMBOL,
+from . import ctags
+from .ctags import (FILENAME, parse_tag_lines, PATH_ORDER, SYMBOL,
                    TagElements, TagFile)
-from helpers.edit import Edit
 
-from helpers.common import *
-from ranking.rank import RankMgr
-from ranking.parse import Parser
+from .edit import Edit
+from .ranking.parse import Parser
+from .ranking.rank import RankMgr
+from .utils import *
 
 #
 # Contants
