@@ -822,27 +822,28 @@ class RebuildTags(sublime_plugin.WindowCommand):
     relevant settings from the settings file.
     """
 
-    def run(self, **args):
+    def run(self, dirs=None, files=None):
         """Handler for ``rebuild_tags`` command"""
-        paths = []
-
         view = self.window.active_view();
 
-        command = setting('command')
-        recursive = setting('recursive')
-        opts = read_opts(view)
-        tag_file = setting('tag_file')
+        paths = []
+        if dirs:
+            paths += dirs
+        if files:
+            paths += files
 
-        if 'dirs' in args and args['dirs']:
-            paths.extend(args['dirs'])
-            self.build_ctags(paths, command, tag_file, recursive, opts)
-        elif 'files' in args and args['files']:
-            paths.extend(args['files'])
-            # build ctags and ignore recursive flag - we clearly only want
-            # to build them for a file
-            self.build_ctags(paths, command, tag_file, False, opts)
+        if paths:
+            self.build_ctags(
+                paths, 
+                command=setting('command'),
+                tag_file=setting('tag_file'),
+                recursive=setting('recursive'),
+                opts=read_opts(view)
+            )
+
         elif view is None or view.file_name() is None and len(self.window.folders()) <= 0:
             status_message('Cannot build CTags: No file or folder open.')
+
         else:
             show_build_panel(view)
 
