@@ -53,8 +53,6 @@
         ]
     },
     {
-        "caption": "Preferences",
-        "mnemonic": "n",
         "id": "preferences",
         "children":
         [
@@ -69,82 +67,30 @@
                         "children":
                         [
                             {
-                                "command": "open_file", "args":
+                                "caption": "CTags Settings",
+                                "command": "edit_settings", "args":
                                 {
-                                    "file": "${packages}/CTags/CTags.sublime-settings"
-                                },
-                                "caption": "Settings – Default"
+                                    "base_file": "${packages}/CTags/CTags.sublime-settings",
+                                    "default": "// CTags Preferences – User\n// ================================================================\n{\n\t$0\n}\n"
+                                }
                             },
                             {
-                                "command": "open_file", "args":
+                                "caption": "Key Bindings",
+                                "command": "edit_settings", "args":
                                 {
-                                    "file": "${packages}/User/CTags.sublime-settings"
-                                },
-                                "caption": "Settings – User"
-                            },
-                            { "caption": "-" },
-                            {
-                                "command": "open_file",
-                                "args": {
-                                    "file": "${packages}/CTags/Default.sublime-keymap"
-                                },
-                                "caption": "Key Bindings – Default"
+                                    "base_file": "${packages}/CTags/Default.sublime-keymap",
+                                    "user_file": "${packages}/CTags/Default ($platform).sublime-keymap",
+                                    "default": "[\n\t$0\n]\n"
+                                }
                             },
                             {
-                                "command": "open_file",
-                                "args": {
-                                    "file": "${packages}/User/Default (Windows).sublime-keymap",
-                                    "platform": "Windows"
-                                },
-                                "caption": "Key Bindings – User"
-                            },
-                            {
-                                "command": "open_file",
-                                "args": {
-                                    "file": "${packages}/User/Default (OSX).sublime-keymap",
-                                    "platform": "OSX"
-                                },
-                                "caption": "Key Bindings – User"
-                            },
-                            {
-                                "command": "open_file",
-                                "args": {
-                                    "file": "${packages}/User/Default (Linux).sublime-keymap",
-                                    "platform": "Linux"
-                                },
-                                "caption": "Key Bindings – User"
-                            },
-                            { "caption": "-" },
-                            {
-                                "command": "open_file",
-                                "args": {
-                                    "file": "${packages}/CTags/Default.sublime-mousemap"
-                                },
-                                "caption": "Mouse Bindings – Default"
-                            },
-                            {
-                                "command": "open_file",
-                                "args": {
-                                    "file": "${packages}/User/Default (Windows).sublime-mousemap",
-                                    "platform": "Windows"
-                                },
-                                "caption": "Mouse Bindings – User"
-                            },
-                            {
-                                "command": "open_file",
-                                "args": {
-                                    "file": "${packages}/User/Default (OSX).sublime-mousemap",
-                                    "platform": "OSX"
-                                },
-                                "caption": "Mouse Bindings – User"
-                            },
-                            {
-                                "command": "open_file",
-                                "args": {
-                                    "file": "${packages}/User/Default (Linux).sublime-mousemap",
-                                    "platform": "Linux"
-                                },
-                                "caption": "Mouse Bindings – User"
+                                "caption": "Mouse Bindings",
+                                "command": "edit_settings", "args":
+                                {
+                                    "base_file": "${packages}/CTags/Default.sublime-mousemap",
+                                    "user_file": "${packages}/CTags/Default ($platform).sublime-mousemap",
+                                    "default": "[\n\t$0\n]\n"
+                                }
                             }
                         ]
                     }
