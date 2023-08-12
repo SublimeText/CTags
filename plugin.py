@@ -17,7 +17,6 @@ else:
 	    if module_name.startswith(prefix) and module_name != __name__
 	]:
 	    del sys.modules[module_name]
-	del module_name
 	del prefix
 	del sys
 
