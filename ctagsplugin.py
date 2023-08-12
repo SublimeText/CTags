@@ -332,7 +332,7 @@ def follow_tag_path(view, tag_path, pattern):
 
     # find the ex_command pattern
     pattern_region = find_source(
-        view, '^' + escape_regex(pattern) + '$', start_at, flags=0)
+        view, r'^' + escape_regex(pattern), start_at, flags=0)
 
     if setting('debug'):  # leave a visual trail for easy debugging
         regions = regions + ([pattern_region] if pattern_region else [])
