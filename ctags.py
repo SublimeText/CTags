@@ -345,7 +345,7 @@ def resort_ctags(tag_file):
         For each key in the sorted dictionary
             For each line in the list indicated by the key
                 Split the line on tab character
-                Remove the prepending ``.\`` from the ``file_name`` part of
+                Remove the prepending ``.`` from the ``file_name`` part of
                     the                   tag
                 Join the line again and write the ``sorted_by_file`` file
 
