@@ -31,3 +31,5 @@ else:
 		ShowSymbols,
 		TestCtags,
 	)
+
+	from .plugins.edit import apply_edit
