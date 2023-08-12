@@ -26,9 +26,9 @@ except ImportError:  # running tests
     sys.modules['sublime'] = sublime
     sys.modules['sublime_plugin'] = sublime_plugin
 
-from . import ctags
-from .ctags import (FILENAME, parse_tag_lines, PATH_ORDER, SYMBOL,
-                   TagElements, TagFile)
+from .ctags import (FILENAME, PATH_ORDER, SYMBOL,
+                    build_ctags, parse_tag_lines,
+                    TagElements, TagFile)
 
 from .edit import Edit
 from .ranking.parse import Parser
@@ -379,7 +379,7 @@ def format_tag_for_quickopen(tag, show_path=True):
     :returns: formatted tag
     """
     format_ = []
-    tag = ctags.TagElements(tag)
+    tag = TagElements(tag)
     f = ''
 
     for field in getattr(tag, 'field_keys', []):
@@ -872,9 +872,9 @@ class RebuildTags(sublime_plugin.WindowCommand):
             tags_building(path)
 
             try:
-                result = ctags.build_ctags(path=path, tag_file=tag_file,
-                                           recursive=recursive, opts=opts,
-                                           cmd=command)
+                result = build_ctags(path=path, tag_file=tag_file,
+                                     recursive=recursive, opts=opts,
+                                     cmd=command)
             except IOError as e:
                 error_message(e.strerror)
                 return
