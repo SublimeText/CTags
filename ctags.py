@@ -476,7 +476,7 @@ class TagFile(object):
         """
         Open file.
         """
-        self.file_o = codecs.open(self.path, 'r+b', encoding='ascii')
+        self.file_o = codecs.open(self.path, 'r+b', encoding='utf-8')
         self.mapped = mmap.mmap(self.file_o.fileno(), 0,
                                 access=mmap.ACCESS_READ)
 
