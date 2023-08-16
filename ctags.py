@@ -341,7 +341,7 @@ def resort_ctags(tag_file):
             If not exists, create an empty array and store in the
                 dictionary with the file name as key
             Save the line to this list
-        Create a new ``[tagfile]_sorted_by_file`` file
+        Create a new ``tagfile`` file
         For each key in the sorted dictionary
             For each line in the list indicated by the key
                 Split the line on tab character
@@ -355,6 +355,7 @@ def resort_ctags(tag_file):
     """
     meta = []
     symbols = []
+    tmp_file = tag_file + '.tmp'
 
     with codecs.open(tag_file, encoding='utf-8', errors='replace') as file_:
         for line in file_:
@@ -372,7 +373,7 @@ def resort_ctags(tag_file):
     meta.sort()
     symbols.sort()
 
-    with codecs.open(tag_file+'_sorted_by_file', 'w', encoding='utf-8',
+    with codecs.open(tmp_file, 'w', encoding='utf-8',
                      errors='replace') as file_:
         
         # write sourted metadata
@@ -382,6 +383,9 @@ def resort_ctags(tag_file):
         for _, split in symbols:
             split[FILENAME] = split[FILENAME].lstrip('.\\')
             file_.write('\t'.join(split))
+
+    os.remove(tag_file)
+    os.rename(tmp_file, tag_file)
 
 #
 # Models
