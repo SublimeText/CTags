@@ -944,7 +944,7 @@ class CTagsAutoComplete(sublime_plugin.EventListener):
 
             ctags_completions[tags_path] = tags
 
-        return [tag, for tag in ctags_completions[tags_path]
+        return [tag for tag in ctags_completions[tags_path]
                 if tag.lower().startswith(prefix)]
 
 
