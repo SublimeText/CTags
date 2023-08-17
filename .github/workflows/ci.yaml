@@ -1,0 +1,20 @@
+name: CI
+on: [push, pull_request]
+
+jobs:
+  tests:
+
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - name: Set up Python
+      uses: actions/setup-python@v3
+      with:
+        python-version: 3.8
+    - name: Install Universal CTags
+      run: sudo apt-get install universal-ctags
+    - name: Install PyTest
+      run: pip install pytest
+    - name: Run PyTest
+      run: pytest .
+
