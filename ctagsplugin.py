@@ -908,66 +908,51 @@ class RebuildTags(sublime_plugin.WindowCommand):
 
             tags_built(result)
 
-        GetAllCTagsList.ctags_list = []  # clear the cached ctags list
+        if tag_file in ctags_completions:
+            del ctags_completions[tag_file]  # clear the cached ctags list
 
 # Autocomplete commands
 
 
-class GetAllCTagsList():
-    """
-    Cache all the ctags list.
-    """
-    ctags_list = []
-
-    def __init__(self, list):
-        self.ctags_list = list
+ctags_completions = {}
 
 
 class CTagsAutoComplete(sublime_plugin.EventListener):
 
     def on_query_completions(self, view, prefix, locations):
-        if setting('autocomplete'):
-            prefix = prefix.strip().lower()
-            tags_path = view.window().folders()[0] + '/' + setting('tag_file')
+        if not setting('autocomplete'):
+            return None
 
-            sub_results = [v.extract_completions(prefix)
-                           for v in sublime.active_window().views()]
-            sub_results = [(item, item) for sublist in sub_results
-                           for item in sublist]  # flatten
+        prefix = prefix.lower()
 
-            if GetAllCTagsList.ctags_list:
-                results = [sublist for sublist in GetAllCTagsList.ctags_list
-                           if sublist[0].lower().startswith(prefix)]
-                results = sorted(set(results).union(set(sub_results)))
+        tags_path = find_tags_relative_to(
+            view.file_name(), setting('tag_file'))
 
-                return results
-            else:
-                tags = []
+        if not tags_path:
+            return None
 
-                # check if a project is open and the tags file exists
-                if not (view.window().folders() and os.path.exists(tags_path)):
-                    return tags
+        if not os.path.exists(tags_path):
+            return None
 
-                if sublime.platform() == "windows":
-                    prefix = ""
-                else:
-                    prefix = "\\"
+        if os.path.getsize(tags_path) > 100 * 1024 * 1024:
+            return None
 
-                f = os.popen(
-                    "awk \"{ print " + prefix + "$1 }\" \"" + tags_path + "\"")
+        if tags_path not in ctags_completions:
+            tags = set()
 
-                for i in f.readlines():
-                    tags.append([i.strip()])
+            with open(tags_path, "r", encoding="utf-8") as fobj:
+                for line in fobj:
+                    line = line.strip()
+                    if not line or line.startswith("!_TAG"):
+                        continue
+                    cols = line.split("\t", 1)
+                    tags.add(cols[0])
 
-                tags = [(item, item) for sublist in tags
-                        for item in sublist]  # flatten
-                tags = sorted(set(tags))  # make unique
-                GetAllCTagsList.ctags_list = tags
-                results = [sublist for sublist in GetAllCTagsList.ctags_list
-                           if sublist[0].lower().startswith(prefix)]
-                results = sorted(set(results).union(set(sub_results)))
+            ctags_completions[tags_path] = tags
 
-                return results
+        return [tag for tag in ctags_completions[tags_path]
+                if tag.lower().startswith(prefix)]
+
 
 # Test CTags commands
 
