@@ -24,11 +24,9 @@ See this `forum thread`_ for a bit of historical background on the Sublime Text 
 Installation
 ============
 
-The easiest way to install this plugin, is to use the `Package Control`_ 
-plugin, by `Will Bond`_
+The easiest way to install this plugin, is to use the `Package Control`_ .
 
-.. _Package Control: http://wbond.net/sublime_packages/package_control/
-.. _Will Bond: http://wbond.net/
+.. _Package Control: http://packagecontrol.io/
 
 Alternatively, the plugin can be installed manually using one of the following
 methods.
@@ -158,7 +156,7 @@ can be edited like any other ``.sublime-settings`` file
 
   or::
 
-    "command" : "C:\Users\<username>\Downloads\CTags\ctag.exe"
+    "command" : "C:\\Users\\<username>\\Downloads\\CTags\\ctag.exe"
 
 The rest of the options are fairly self explanatory.
 
