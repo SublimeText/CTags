@@ -22,39 +22,22 @@
                 "command": "rebuild_tags"
               },
               {
+                "caption": "Show Symbols (file)",
                 "command": "show_symbols",
-                "context": [
-                  {
-                    "key": "selector",
-                    "match_all": true,
-                    "operand": "source -source.css",
-                    "operator": "equal"
-                  }
-                ]
               },
               {
+                "caption": "Show Symbols (all)",
+                "command": "show_symbols",
                 //"arg_comment": "TODO",
                 "args": {
                   "type": "multi"
                 },
-                "caption": "Show Symbols (all)",
-                "command": "show_symbols",
-                "context": [
-                  {
-                    "key": "selector",
-                    "match_all": true,
-                    "operand": "source -source.css",
-                    "operator": "equal"
-                  }
-                ]
               }
             ]
           }
         ]
     },
     {
-        "caption": "Preferences",
-        "mnemonic": "n",
         "id": "preferences",
         "children":
         [
