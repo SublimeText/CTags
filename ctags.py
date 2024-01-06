@@ -393,16 +393,26 @@ class Tag(object):
         self.column = column
 
     def __lt__(self, other):
-        return self.line.split('\t')[self.column] < other
+        try:
+            return self.key < other
+        except IndexError:
+            return False
 
     def __gt__(self, other):
-        return self.line.split('\t')[self.column] > other
+        try:
+            return self.key > other
+        except IndexError:
+            return False
 
     def __getitem__(self, index):
-        return self.line.split('\t')[index]
+        return self.line.split('\t', self.column + 1)[index]
 
     def __len__(self):
-        return len(self.line.split('\t'))
+        return self.line.count('\t') + 1
+
+    @property
+    def key(self):
+        return self[self.column]
 
 class TagFile(object):
     """
@@ -443,6 +453,8 @@ class TagFile(object):
             result = self.mapped.readline()  # get a complete line
 
         result = result.strip()
+        if not result:
+            raise IndexError("Invalid tag at index %d." % index)
 
         return Tag(result, self.column)
 
@@ -500,7 +512,8 @@ class TagFile(object):
         if not tags:
             while self.mapped.tell() < self.mapped.size():
                 result = Tag(self.mapped.readline().strip(), self.column)
-                yield(result)
+                if result.line:
+                    yield result
             return
 
         for key in tags:
@@ -508,12 +521,12 @@ class TagFile(object):
             if exact_match:
                 result = self[left_index]
                 while result.line and result[result.column] == key:
-                    yield(result)
+                    yield result
                     result = Tag(self.mapped.readline().strip(), self.column)
             else:
                 result = self[left_index]
                 while result.line and result[result.column].startswith(key):
-                    yield(result)
+                    yield result
                     result = Tag(self.mapped.readline().strip(), self.column)
 
     def search_by_suffix(self, suffix):
@@ -529,10 +542,9 @@ class TagFile(object):
         :returns: matching tags
         """
         for line in self.file_o:
-            if line.split('\t')[self.column].endswith(suffix):
-                yield Tag(line)
-            else:
-                continue
+            tag = Tag(line, self.column)
+            if tag.key.endswith(suffix):
+                yield tag
 
     def tag_class(self):
         """
