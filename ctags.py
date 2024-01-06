@@ -341,11 +341,11 @@ def resort_ctags(tag_file):
             If not exists, create an empty array and store in the
                 dictionary with the file name as key
             Save the line to this list
-        Create a new ``[tagfile]_sorted_by_file`` file
+        Create a new ``tagfile`` file
         For each key in the sorted dictionary
             For each line in the list indicated by the key
                 Split the line on tab character
-                Remove the prepending ``.\`` from the ``file_name`` part of
+                Remove the prepending ``.`` from the ``file_name`` part of
                     the                   tag
                 Join the line again and write the ``sorted_by_file`` file
 
@@ -353,19 +353,39 @@ def resort_ctags(tag_file):
 
     :returns: None
     """
-    keys = {}
+    meta = []
+    symbols = []
+    tmp_file = tag_file + '.tmp'
 
     with codecs.open(tag_file, encoding='utf-8', errors='replace') as file_:
         for line in file_:
-            keys.setdefault(line.split('\t')[FILENAME], []).append(line)
+            if line.startswith('!_TAG'):
+                meta.append(line)
+                continue
 
-    with codecs.open(tag_file+'_sorted_by_file', 'w', encoding='utf-8',
+            # read all valid symbol tags, which contain at least 
+            # symbol name and containing file and build a list of tuples
+            split = line.split('\t')
+            if len(split) > FILENAME:
+                symbols.append((split[FILENAME], split))
+
+    # sort inplace to save some RAM with large .tags files
+    meta.sort()
+    symbols.sort()
+
+    with codecs.open(tmp_file, 'w', encoding='utf-8',
                      errors='replace') as file_:
-        for k in sorted(keys):
-            for line in keys[k]:
-                split = line.split('\t')
-                split[FILENAME] = split[FILENAME].lstrip('.\\')
-                file_.write('\t'.join(split))
+        
+        # write sourted metadata
+        file_.writelines(meta)
+
+        # followed by sorted list of symbols
+        for _, split in symbols:
+            split[FILENAME] = split[FILENAME].lstrip('.\\')
+            file_.write('\t'.join(split))
+
+    os.remove(tag_file)
+    os.rename(tmp_file, tag_file)
 
 #
 # Models
@@ -393,16 +413,26 @@ class Tag(object):
         self.column = column
 
     def __lt__(self, other):
-        return self.line.split('\t')[self.column] < other
+        try:
+            return self.key < other
+        except IndexError:
+            return False
 
     def __gt__(self, other):
-        return self.line.split('\t')[self.column] > other
+        try:
+            return self.key > other
+        except IndexError:
+            return False
 
     def __getitem__(self, index):
-        return self.line.split('\t')[index]
+        return self.line.split('\t', self.column + 1)[index]
 
     def __len__(self):
-        return len(self.line.split('\t'))
+        return self.line.count('\t') + 1
+
+    @property
+    def key(self):
+        return self[self.column]
 
 class TagFile(object):
     """
@@ -443,6 +473,8 @@ class TagFile(object):
             result = self.mapped.readline()  # get a complete line
 
         result = result.strip()
+        if not result:
+            raise IndexError("Invalid tag at index %d." % index)
 
         return Tag(result, self.column)
 
@@ -476,7 +508,7 @@ class TagFile(object):
         """
         Open file.
         """
-        self.file_o = codecs.open(self.path, 'r+b', encoding='ascii')
+        self.file_o = codecs.open(self.path, 'r+b', encoding='utf-8')
         self.mapped = mmap.mmap(self.file_o.fileno(), 0,
                                 access=mmap.ACCESS_READ)
 
@@ -500,7 +532,8 @@ class TagFile(object):
         if not tags:
             while self.mapped.tell() < self.mapped.size():
                 result = Tag(self.mapped.readline().strip(), self.column)
-                yield(result)
+                if result.line:
+                    yield result
             return
 
         for key in tags:
@@ -508,12 +541,12 @@ class TagFile(object):
             if exact_match:
                 result = self[left_index]
                 while result.line and result[result.column] == key:
-                    yield(result)
+                    yield result
                     result = Tag(self.mapped.readline().strip(), self.column)
             else:
                 result = self[left_index]
                 while result.line and result[result.column].startswith(key):
-                    yield(result)
+                    yield result
                     result = Tag(self.mapped.readline().strip(), self.column)
 
     def search_by_suffix(self, suffix):
@@ -529,10 +562,9 @@ class TagFile(object):
         :returns: matching tags
         """
         for line in self.file_o:
-            if line.split('\t')[self.column].endswith(suffix):
-                yield Tag(line)
-            else:
-                continue
+            tag = Tag(line, self.column)
+            if tag.key.endswith(suffix):
+                yield tag
 
     def tag_class(self):
         """

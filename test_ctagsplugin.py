@@ -205,24 +205,22 @@ class CTagsPluginTest(unittest.TestCase):
         temp = '/c/users/temporary_file'
         tag_file = '/c/users/tags'
 
-        result = ctagsplugin.get_rel_path_to_source(
-            temp, tag_file, multiple=False)
+        result = ctagsplugin.get_rel_path_to_source(temp, tag_file)
 
         relative_path = 'temporary_file'
 
-        self.assertEqual([relative_path], result)
+        self.assertEqual(relative_path, result)
 
     def test_get_rel_path_to_source__source_file_in_child_directory(self):
         temp = '/c/users/folder/temporary_file'
         tag_file = '/c/users/tags'
 
-        result = ctagsplugin.get_rel_path_to_source(
-            temp, tag_file, multiple=False)
+        result = ctagsplugin.get_rel_path_to_source(temp, tag_file)
 
         # handle [windows, unix] paths
         relative_paths = ['folder\\temporary_file', 'folder/temporary_file']
 
-        self.assertIn(result[0], relative_paths)
+        self.assertIn(result, relative_paths)
 
 if __name__ == '__main__':
     unittest.main()
