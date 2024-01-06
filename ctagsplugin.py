@@ -772,7 +772,6 @@ class ShowSymbols(sublime_plugin.TextCommand):
 
             files = [key]
 
-        tags_file = tags_file + '_sorted_by_file'
         base_path = get_common_ancestor_folder(
             view.file_name(), view.window().folders())
 

@@ -341,7 +341,7 @@ def resort_ctags(tag_file):
             If not exists, create an empty array and store in the
                 dictionary with the file name as key
             Save the line to this list
-        Create a new ``[tagfile]_sorted_by_file`` file
+        Create a new ``tagfile`` file
         For each key in the sorted dictionary
             For each line in the list indicated by the key
                 Split the line on tab character
@@ -353,19 +353,39 @@ def resort_ctags(tag_file):
 
     :returns: None
     """
-    keys = {}
+    meta = []
+    symbols = []
+    tmp_file = tag_file + '.tmp'
 
     with codecs.open(tag_file, encoding='utf-8', errors='replace') as file_:
         for line in file_:
-            keys.setdefault(line.split('\t')[FILENAME], []).append(line)
+            if line.startswith('!_TAG'):
+                meta.append(line)
+                continue
 
-    with codecs.open(tag_file+'_sorted_by_file', 'w', encoding='utf-8',
+            # read all valid symbol tags, which contain at least 
+            # symbol name and containing file and build a list of tuples
+            split = line.split('\t')
+            if len(split) > FILENAME:
+                symbols.append((split[FILENAME], split))
+
+    # sort inplace to save some RAM with large .tags files
+    meta.sort()
+    symbols.sort()
+
+    with codecs.open(tmp_file, 'w', encoding='utf-8',
                      errors='replace') as file_:
-        for k in sorted(keys):
-            for line in keys[k]:
-                split = line.split('\t')
-                split[FILENAME] = split[FILENAME].lstrip('.\\')
-                file_.write('\t'.join(split))
+        
+        # write sourted metadata
+        file_.writelines(meta)
+
+        # followed by sorted list of symbols
+        for _, split in symbols:
+            split[FILENAME] = split[FILENAME].lstrip('.\\')
+            file_.write('\t'.join(split))
+
+    os.remove(tag_file)
+    os.rename(tmp_file, tag_file)
 
 #
 # Models
