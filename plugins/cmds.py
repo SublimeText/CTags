@@ -6,25 +6,15 @@ import pprint
 import re
 import string
 import subprocess
-import sys
 import threading
 
 from collections import defaultdict, deque
-from functools import reduce
 from itertools import chain
 from operator import itemgetter as iget
 
-try:
-    import sublime
-    import sublime_plugin
-    from sublime import status_message, error_message
-
-except ImportError:  # running tests
-    from .tests.sublime_fake import sublime
-    from .tests.sublime_fake import sublime_plugin
-
-    sys.modules['sublime'] = sublime
-    sys.modules['sublime_plugin'] = sublime_plugin
+import sublime
+import sublime_plugin
+from sublime import status_message, error_message
 
 from .ctags import (FILENAME, PATH_ORDER, SYMBOL,
                     build_ctags, parse_tag_lines,

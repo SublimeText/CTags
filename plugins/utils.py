@@ -1,23 +1,12 @@
 """
 common utilities used by all ctags modules
 """
-import os
 import re
-import sys
 
 # Helper functions
 
-try:
-    import sublime
-    import sublime_plugin
-    from sublime import status_message, error_message
-
-except ImportError:  # running tests
-    from .tests.sublime_fake import sublime
-    from .tests.sublime_fake import sublime_plugin
-
-    sys.modules['sublime'] = sublime
-    sys.modules['sublime_plugin'] = sublime_plugin
+import sublime
+import sublime_plugin
 
 
 def get_settings():
