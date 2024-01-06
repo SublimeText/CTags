@@ -1,4 +1,6 @@
-.mypy_cache
-.pytest_cache
-__pycache__
+# python cache files
+.mypy_cache/
+.pytest_cache/
+.venv/
+__pycache__/
 *.pyc
