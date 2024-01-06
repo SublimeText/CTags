@@ -426,7 +426,7 @@ def prepare_for_quickpanel(formatter=format_tag_for_quickopen):
 # File collection helper functions
 
 
-def get_rel_path_to_source(path, tag_file, multiple=True):
+def get_rel_path_to_source(path, tag_file):
     """
     Get relative path from tag_file to source file.
 
@@ -436,14 +436,11 @@ def get_rel_path_to_source(path, tag_file, multiple=True):
 
     :returns: list containing relative path from tag_file to source file
     """
-    if multiple:
-        return []
-
     tag_dir = os.path.dirname(tag_file)  # get tag directory
-    common_prefix = os.path.commonprefix([tag_dir, path])
+    common_prefix = os.path.commonprefix((tag_dir, path))
     relative_path = os.path.relpath(path, common_prefix)
 
-    return [relative_path]
+    return relative_path
 
 
 def get_current_file_suffix(path):
@@ -753,18 +750,27 @@ class ShowSymbols(sublime_plugin.TextCommand):
         if not tags_file:
             return
 
-        multi = args.get('type') == 'multi'
-        lang = args.get('type') == 'lang'
-
-        if view.file_name():
-            files = get_rel_path_to_source(
-                view.file_name(), tags_file, multi)
+        symbol_type = args.get('type')
+        multi = symbol_type == 'multi'
+        lang = symbol_type == 'lang'
 
         if lang:
+            # filter and cache by file suffix
             suffix = get_current_file_suffix(view.file_name())
             key = suffix
+        elif multi:
+            # request all symbols of given tags file
+            key = "__all__"
+            files = []
         else:
-            key = ','.join(files)
+            # request symbols of current view's file
+            key = view.file_name()
+            if not key:
+                return
+            key = get_rel_path_to_source(key, tags_file)
+            key = key.replace('\\', '/')
+
+            files = [key]
 
         tags_file = tags_file + '_sorted_by_file'
         base_path = get_common_ancestor_folder(
