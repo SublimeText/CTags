@@ -772,6 +772,17 @@ class ShowSymbols(sublime_plugin.TextCommand):
 
             files = [key]
 
+        # Note: Help migrating existing tags files to new file name.
+        # Needed, because this plugin now sorts .tags file in-place,
+        # while former versions used to create a dedicated file.
+        sorted_tags_file = tags_file + '_sorted_by_file'
+        if os.path.isfile(sorted_tags_file):
+            try:
+                os.remove(tags_file)
+                os.rename(sorted_tags_file, tags_file)
+            except OSError:
+                pass
+
         base_path = get_common_ancestor_folder(
             view.file_name(), view.window().folders())
 
