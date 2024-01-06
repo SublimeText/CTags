@@ -1,86 +1,81 @@
 [
-    {
-        "id": "find",
-        "children":
-        [
-          {
-            "caption": "-",
-            "id": "find_tools_ctags"
-          },
-          {
-            "caption": "CTags",
-            "id": "ctags",
-            "children":
-            [
-              {
-                "command": "navigate_to_definition"
-              },
-              {
-                "command": "jump_prev"
-              },
-              {
-                "command": "rebuild_tags"
-              },
-              {
-                "caption": "Show Symbols (file)",
-                "command": "show_symbols",
-              },
-              {
-                "caption": "Show Symbols (all)",
-                "command": "show_symbols",
-                //"arg_comment": "TODO",
-                "args": {
-                  "type": "multi"
-                },
-              }
-            ]
-          }
-        ]
-    },
-    {
-        "id": "preferences",
-        "children":
-        [
-            {
-                "caption": "Package Settings",
-                "mnemonic": "P",
-                "id": "package-settings",
-                "children":
-                [
-                    {
-                        "caption": "CTags",
-                        "children":
-                        [
-                            {
-                                "caption": "CTags Settings",
-                                "command": "edit_settings", "args":
-                                {
-                                    "base_file": "${packages}/CTags/CTags.sublime-settings",
-                                    "default": "// CTags Preferences – User\n// ================================================================\n{\n\t$0\n}\n"
-                                }
-                            },
-                            {
-                                "caption": "Key Bindings",
-                                "command": "edit_settings", "args":
-                                {
-                                    "base_file": "${packages}/CTags/Default.sublime-keymap",
-                                    "user_file": "${packages}/CTags/Default ($platform).sublime-keymap",
-                                    "default": "[\n\t$0\n]\n"
-                                }
-                            },
-                            {
-                                "caption": "Mouse Bindings",
-                                "command": "edit_settings", "args":
-                                {
-                                    "base_file": "${packages}/CTags/Default.sublime-mousemap",
-                                    "user_file": "${packages}/CTags/Default ($platform).sublime-mousemap",
-                                    "default": "[\n\t$0\n]\n"
-                                }
-                            }
-                        ]
-                    }
-                ]
-            }
-        ]
-    }
+	{
+		"id": "find",
+		"children": [
+			{
+				"caption": "-",
+				"id": "find_tools_ctags"
+			},
+			{
+				"caption": "CTags",
+				"id": "ctags",
+				"children": [
+					{
+						"command": "navigate_to_definition"
+					},
+					{
+						"command": "jump_prev"
+					},
+					{
+						"command": "rebuild_tags"
+					},
+					{
+						"caption": "Show Symbols (file)",
+						"command": "show_symbols",
+					},
+					{
+						"caption": "Show Symbols (all)",
+						"command": "show_symbols",
+						//"arg_comment": "TODO",
+						"args": {
+							"type": "multi"
+						},
+					}
+				]
+			}
+		]
+	},
+	{
+		"id": "preferences",
+		"children": [
+			{
+				"caption": "Package Settings",
+				"mnemonic": "P",
+				"id": "package-settings",
+				"children": [
+					{
+						"caption": "CTags",
+						"children": [
+							{
+								"caption": "CTags Settings",
+								"command": "edit_settings",
+								"args": {
+									"base_file": "${packages}/CTags/CTags.sublime-settings",
+									"default": "// CTags Preferences – User\n// ================================================================\n{\n\t$0\n}\n"
+								}
+							},
+							{
+								"caption": "Key Bindings",
+								"command": "edit_settings",
+								"args": {
+									"base_file": "${packages}/CTags/Default.sublime-keymap",
+									"user_file": "${packages}/CTags/Default ($platform).sublime-keymap",
+									"default": "[\n\t$0\n]\n"
+								}
+							},
+							{
+								"caption": "Mouse Bindings",
+								"command": "edit_settings",
+								"args": {
+									"base_file": "${packages}/CTags/Default.sublime-mousemap",
+									"user_file": "${packages}/CTags/Default ($platform).sublime-mousemap",
+									"default": "[\n\t$0\n]\n"
+								}
+							}
+						]
+					}
+				]
+			}
+		]
+	}
 ]
