@@ -156,7 +156,7 @@ can be edited like any other ``.sublime-settings`` file
 
   or::
 
-    "command" : "C:\Users\<username>\Downloads\CTags\ctag.exe"
+    "command" : "C:\\Users\\<username>\\Downloads\\CTags\\ctag.exe"
 
 The rest of the options are fairly self explanatory.
 
