@@ -34,18 +34,20 @@ class CTagsPluginTest(unittest.TestCase):
 
         :returns: Path to a constructed, valid Java source file
         """
-        path = ''
+        path = ""
 
         # the file created here is locked while open, hence we can't delete
         # similarly, ctags appears to require an extension hence the suffix
-        with tempfile.NamedTemporaryFile(
-                delete=False, suffix='.py', dir=pwd) as temp:
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".py", dir=pwd) as temp:
             try:
                 path = temp.name  # store name for later use
-                temp.writelines([
-                    b'def my_definition():\n',
-                    b'\toutput = "Hello, world!"\n',
-                    b'\tprint(output)\n'])
+                temp.writelines(
+                    [
+                        b"def my_definition():\n",
+                        b'\toutput = "Hello, world!"\n',
+                        b"\tprint(output)\n",
+                    ]
+                )
             finally:
                 temp.close()
 
@@ -60,27 +62,29 @@ class CTagsPluginTest(unittest.TestCase):
 
         :returns: Path to a constructed, valid Java source file
         """
-        path = ''
+        path = ""
 
         # the file created here is locked while open, hence we can't delete
         # similarly, ctags appears to require an extension hence the suffix
-        with tempfile.NamedTemporaryFile(
-                delete=False, suffix='.java', dir=pwd) as temp:
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".java", dir=pwd) as temp:
             try:
                 path = temp.name  # store name for later use
-                temp.writelines([
-                    b'public class DemoClass {\n',
-                    b'\tpublic static void main(String args[]) {\n',
-                    b'\t\tSystem.out.println("Hello, World");\n',
-                    b'\n',
-                    b'\t\tDemoClass demo = new DemoClass();\n',
-                    b'\t\tSystem.out.printf("Sum %d\n", demo.getSum(5,6));\n',
-                    b'\t}\n',
-                    b'\n',
-                    b'\tprivate int getSum(int a, int b) {\n',
-                    b'\t\treturn (a + b);\n',
-                    b'\t}\n',
-                    b'}\n'])
+                temp.writelines(
+                    [
+                        b"public class DemoClass {\n",
+                        b"\tpublic static void main(String args[]) {\n",
+                        b'\t\tSystem.out.println("Hello, World");\n',
+                        b"\n",
+                        b"\t\tDemoClass demo = new DemoClass();\n",
+                        b'\t\tSystem.out.printf("Sum %d\n", demo.getSum(5,6));\n',
+                        b"\t}\n",
+                        b"\n",
+                        b"\tprivate int getSum(int a, int b) {\n",
+                        b"\t\treturn (a + b);\n",
+                        b"\t}\n",
+                        b"}\n",
+                    ]
+                )
             finally:
                 temp.close()
 
@@ -114,32 +118,29 @@ class CTagsPluginTest(unittest.TestCase):
     # find_tags_relative_to
 
     def test_find_tags_relative_to__find_tags_in_current_directory(self):
-        tag_file = 'example_tags'
+        tag_file = "example_tags"
 
         current_path = self.build_python_file()
         tag_file_ = ctags.build_ctags(path=current_path, tag_file=tag_file)
 
         # should find tag file in current directory
-        self.assertEqual(
-            cmds.find_tags_relative_to(current_path, tag_file),
-            tag_file_)
+        self.assertEqual(cmds.find_tags_relative_to(current_path, tag_file), tag_file_)
 
         # cleanup
         self.remove_tmp_files([current_path, tag_file_])
 
     def test_find_tags_relative_to__find_tags_in_parent_directory(self):
-        tag_file = 'example_tags'
+        tag_file = "example_tags"
 
         parent_path = self.build_python_file()
-        parent_tag_file = ctags.build_ctags(path=parent_path,
-                                            tag_file=tag_file)
+        parent_tag_file = ctags.build_ctags(path=parent_path, tag_file=tag_file)
         child_dir = self.make_tmp_directory()
         child_path = self.build_python_file(pwd=child_dir)
 
         # should find tag file in parent directory
         self.assertEqual(
-            cmds.find_tags_relative_to(child_path, tag_file),
-            parent_tag_file)
+            cmds.find_tags_relative_to(child_path, tag_file), parent_tag_file
+        )
 
         # cleanup
         self.remove_tmp_files([parent_path, parent_tag_file])
@@ -148,9 +149,9 @@ class CTagsPluginTest(unittest.TestCase):
     # get_common_ancestor_folder
 
     def test_get_common_ancestor_folder__current_folder_open(self):
-        parent_dir = '/c/users'
+        parent_dir = "/c/users"
 
-        temp = parent_dir + '/example.py'
+        temp = parent_dir + "/example.py"
 
         path = cmds.get_common_ancestor_folder(temp, [parent_dir])
 
@@ -159,10 +160,10 @@ class CTagsPluginTest(unittest.TestCase):
         self.assertEqual(path, parent_dir)
 
     def test_get_common_ancestor_folder__single_ancestor_folder_open(self):
-        parent_dir = '/c/users'
-        child_dir = parent_dir + '/child'
+        parent_dir = "/c/users"
+        child_dir = parent_dir + "/child"
 
-        temp = child_dir + '/example.py'
+        temp = child_dir + "/example.py"
 
         path = cmds.get_common_ancestor_folder(temp, [parent_dir])
 
@@ -171,11 +172,11 @@ class CTagsPluginTest(unittest.TestCase):
         self.assertEqual(path, parent_dir)
 
     def test_get_common_ancestor_folder__single_sibling_folder_open(self):
-        parent_dir = '/c/users'
-        child_a_dir = parent_dir + '/child_a'
-        child_b_dir = parent_dir + '/child_b'
+        parent_dir = "/c/users"
+        child_a_dir = parent_dir + "/child_a"
+        child_b_dir = parent_dir + "/child_b"
 
-        temp = child_b_dir + '/example.py'
+        temp = child_b_dir + "/example.py"
 
         path = cmds.get_common_ancestor_folder(temp, [child_a_dir])
 
@@ -184,11 +185,11 @@ class CTagsPluginTest(unittest.TestCase):
         self.assertEqual(path, parent_dir)
 
     def test_get_common_ancestor_folder__single_child_folder_open(self):
-        parent_dir = '/c/users'
-        child_dir = parent_dir + '/child'
-        grandchild_dir = child_dir + '/grandchild'
+        parent_dir = "/c/users"
+        child_dir = parent_dir + "/child"
+        grandchild_dir = child_dir + "/grandchild"
 
-        temp = child_dir + '/example.py'
+        temp = child_dir + "/example.py"
 
         # create temporary folders and files
         path = cmds.get_common_ancestor_folder(temp, [grandchild_dir])
@@ -199,25 +200,26 @@ class CTagsPluginTest(unittest.TestCase):
     # get_rel_path_to_source
 
     def test_get_rel_path_to_source__source_file_in_sibling_directory(self):
-        temp = '/c/users/temporary_file'
-        tag_file = '/c/users/tags'
+        temp = "/c/users/temporary_file"
+        tag_file = "/c/users/tags"
 
         result = cmds.get_rel_path_to_source(temp, tag_file)
 
-        relative_path = 'temporary_file'
+        relative_path = "temporary_file"
 
         self.assertEqual(relative_path, result)
 
     def test_get_rel_path_to_source__source_file_in_child_directory(self):
-        temp = '/c/users/folder/temporary_file'
-        tag_file = '/c/users/tags'
+        temp = "/c/users/folder/temporary_file"
+        tag_file = "/c/users/tags"
 
         result = cmds.get_rel_path_to_source(temp, tag_file)
 
         # handle [windows, unix] paths
-        relative_paths = ['folder\\temporary_file', 'folder/temporary_file']
+        relative_paths = ["folder\\temporary_file", "folder/temporary_file"]
 
         self.assertIn(result, relative_paths)
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     unittest.main()

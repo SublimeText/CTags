@@ -13,19 +13,19 @@ WRAP = 16
 
 
 def arch():
-    return 'x64'
+    return "x64"
 
 
 def platform():
-    if sys.platform == 'darwin':
-        return 'osx'
-    if sys.platform == 'win32':
-        return 'windows'
-    return 'linux'
+    if sys.platform == "darwin":
+        return "osx"
+    if sys.platform == "win32":
+        return "windows"
+    return "linux"
 
 
 def version():
-    return '4126'
+    return "4126"
 
 
 def load_settings(self, **kargs):

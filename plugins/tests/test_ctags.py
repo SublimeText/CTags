@@ -24,17 +24,20 @@ class CTagsTest(unittest.TestCase):
 
         :returns: Path to a constructed, valid Python source file
         """
-        path = ''
+        path = ""
 
         # the file created here is locked while open, hence we can't delete
         # similarly, ctags appears to require an extension hence the suffix
-        with tempfile.NamedTemporaryFile(delete=False, suffix='.py') as temp:
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".py") as temp:
             try:
                 path = temp.name  # store name for later use
-                temp.writelines([
-                    b'def my_definition():\n',
-                    b'\toutput = "Hello, world!"\n',
-                    b'\tprint(output)\n'])
+                temp.writelines(
+                    [
+                        b"def my_definition():\n",
+                        b'\toutput = "Hello, world!"\n',
+                        b"\tprint(output)\n",
+                    ]
+                )
             finally:
                 temp.close()
 
@@ -55,28 +58,31 @@ class CTagsTest(unittest.TestCase):
 
         :returns: Path to a constructed, valid Python source file
         """
-        path = ''
+        path = ""
 
         # the file created here is locked while open, hence we can't delete
         # similarly, ctags appears to require an extension hence the suffix
-        with tempfile.NamedTemporaryFile(delete=False, suffix='.py') as temp:
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".py") as temp:
             try:
                 path = temp.name  # store name for later use
-                temp.writelines([
-                    b'import os\n',
-                    b'\n',
-                    b'COLOR_RED = "\\c800080FF;"\t#red\n',
-                    b'\n',
-                    b'def my_function(first_name):\n',
-                    b'\tprint("Hello {0}".format(first_name))\n',
-                    b'\n',
-                    b'class MyClass(object):\n',
-                    b'\tlast_name = None\n',
-                    b'\taddress = None\t# comment preceded by a tab\n',
-                    b'\n',
-                    b'\tdef my_method(self, last_name):\n',
-                    b'\t\tself.last_name = last_name\n',
-                    b'\t\tprint("Hello again, {0}".format(self.last_name))\n'])
+                temp.writelines(
+                    [
+                        b"import os\n",
+                        b"\n",
+                        b'COLOR_RED = "\\c800080FF;"\t#red\n',
+                        b"\n",
+                        b"def my_function(first_name):\n",
+                        b'\tprint("Hello {0}".format(first_name))\n',
+                        b"\n",
+                        b"class MyClass(object):\n",
+                        b"\tlast_name = None\n",
+                        b"\taddress = None\t# comment preceded by a tab\n",
+                        b"\n",
+                        b"\tdef my_method(self, last_name):\n",
+                        b"\t\tself.last_name = last_name\n",
+                        b'\t\tprint("Hello again, {0}".format(self.last_name))\n',
+                    ]
+                )
             finally:
                 temp.close()
 
@@ -91,26 +97,29 @@ class CTagsTest(unittest.TestCase):
 
         :returns: Path to a constructed, valid Java source file
         """
-        path = ''
+        path = ""
 
         # the file created here is locked while open, hence we can't delete
         # similarly, ctags appears to require an extension hence the suffix
-        with tempfile.NamedTemporaryFile(delete=False, suffix='.java') as temp:
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".java") as temp:
             try:
                 path = temp.name  # store name for later use
-                temp.writelines([
-                    b'public class DemoClass {\n',
-                    b'\tpublic static void main(String args[]) {\n',
-                    b'\t\tSystem.out.println("Hello, World");\n',
-                    b'\n',
-                    b'\t\tDemoClass demo = new DemoClass();\n',
-                    b'\t\tSystem.out.printf("Sum %d\n", demo.getSum(5,6));\n',
-                    b'\t}\n',
-                    b'\n',
-                    b'\tprivate int getSum(int a, int b) {\n',
-                    b'\t\treturn (a + b);\n',
-                    b'\t}\n',
-                    b'}\n'])
+                temp.writelines(
+                    [
+                        b"public class DemoClass {\n",
+                        b"\tpublic static void main(String args[]) {\n",
+                        b'\t\tSystem.out.println("Hello, World");\n',
+                        b"\n",
+                        b"\t\tDemoClass demo = new DemoClass();\n",
+                        b'\t\tSystem.out.printf("Sum %d\n", demo.getSum(5,6));\n',
+                        b"\t}\n",
+                        b"\n",
+                        b"\tprivate int getSum(int a, int b) {\n",
+                        b"\t\treturn (a + b);\n",
+                        b"\t}\n",
+                        b"}\n",
+                    ]
+                )
             finally:
                 temp.close()
 
@@ -124,24 +133,27 @@ class CTagsTest(unittest.TestCase):
 
         :returns: Path to a constructed, valid C source file
         """
-        path = ''
+        path = ""
 
         # the file created here is locked while open, hence we can't delete
         # similarly, ctags appears to require an extension hence the suffix
-        with tempfile.NamedTemporaryFile(delete=False, suffix='.c') as temp:
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".c") as temp:
             try:
                 path = temp.name  # store name for later use
-                temp.writelines([
-                    b'#define foo(x,y) x+y\n'
-                    b'#define foobar 1\n'
-                    b'\n'
-                    b'void bar()\n'
-                    b'{\n'
-                    b'\tfoo(10,2);'
-                    b'\n'
-                    b'#if foobar\n'
-                    b'\tfoo(2,3); \n'
-                    b'}\n'])
+                temp.writelines(
+                    [
+                        b"#define foo(x,y) x+y\n"
+                        b"#define foobar 1\n"
+                        b"\n"
+                        b"void bar()\n"
+                        b"{\n"
+                        b"\tfoo(10,2);"
+                        b"\n"
+                        b"#if foobar\n"
+                        b"\tfoo(2,3); \n"
+                        b"}\n"
+                    ]
+                )
             finally:
                 temp.close()
 
@@ -173,8 +185,7 @@ class CTagsTest(unittest.TestCase):
             try:
                 ctags.build_ctags(path=temp.name)
             except EnvironmentError:
-                self.fail('build_ctags() raised EnvironmentError. ctags not'
-                          ' on path')
+                self.fail("build_ctags() raised EnvironmentError. ctags not" " on path")
 
     def test_build_ctags__custom_command(self):
         """
@@ -184,10 +195,9 @@ class CTagsTest(unittest.TestCase):
         # cross-platform way to get the temp directory
         with tempfile.NamedTemporaryFile() as temp:
             try:
-                ctags.build_ctags(path=temp.name, cmd='ctags')
+                ctags.build_ctags(path=temp.name, cmd="ctags")
             except EnvironmentError:
-                self.fail('build_ctags() raised EnvironmentError. ctags not'
-                          ' on path')
+                self.fail("build_ctags() raised EnvironmentError. ctags not" " on path")
 
     def test_build_ctags__invalid_custom_command(self):
         """
@@ -197,7 +207,7 @@ class CTagsTest(unittest.TestCase):
         # cross-platform way to get the temp directory
         with tempfile.NamedTemporaryFile() as temp:
             with self.assertRaises(CalledProcessError):
-                ctags.build_ctags(path=temp.name, cmd='ccttaaggss')
+                ctags.build_ctags(path=temp.name, cmd="ccttaaggss")
 
     def test_build_ctags__single_file(self):
         """
@@ -207,14 +217,15 @@ class CTagsTest(unittest.TestCase):
 
         tag_file = ctags.build_ctags(path=path)
 
-        with codecs.open(tag_file, encoding='utf-8') as output:
+        with codecs.open(tag_file, encoding="utf-8") as output:
             try:
                 content = output.readlines()
                 filename = os.path.basename(path)
                 self.assertEqual(
                     content[-1],
-                    'my_definition\t{0}\t/^def my_definition()'
-                    ':$/;"\tf{1}'.format(filename, os.linesep))
+                    "my_definition\t{0}\t/^def my_definition()"
+                    ':$/;"\tf{1}'.format(filename, os.linesep),
+                )
             finally:
                 output.close()
                 os.remove(path)  # clean up
@@ -226,16 +237,17 @@ class CTagsTest(unittest.TestCase):
         """
         path = self.build_python_file()
 
-        tag_file = ctags.build_ctags(path=path, tag_file='my_tag_file')
+        tag_file = ctags.build_ctags(path=path, tag_file="my_tag_file")
 
-        with codecs.open(tag_file, encoding='utf-8') as output:
+        with codecs.open(tag_file, encoding="utf-8") as output:
             try:
                 content = output.readlines()
                 filename = os.path.basename(path)
                 self.assertEqual(
                     content[-1],
-                    'my_definition\t{0}\t/^def my_definition()'
-                    ':$/;"\tf{1}'.format(filename, os.linesep))
+                    "my_definition\t{0}\t/^def my_definition()"
+                    ':$/;"\tf{1}'.format(filename, os.linesep),
+                )
             finally:
                 output.close()
                 os.remove(path)  # clean up
@@ -247,17 +259,18 @@ class CTagsTest(unittest.TestCase):
         """
         path = self.build_python_file()
 
-        tag_file = ctags.build_ctags(path=path, tag_file='my_tag_file',
-                                     opts="--language-force=java")
+        tag_file = ctags.build_ctags(
+            path=path, tag_file="my_tag_file", opts="--language-force=java"
+        )
 
-        with codecs.open(tag_file, encoding='utf-8') as output:
+        with codecs.open(tag_file, encoding="utf-8") as output:
             try:
                 content = output.readlines()
                 # there should be nothing in the file but headers (due to the
                 # Java 'language-force' option on a Python file)
                 self.assertEqual(
-                    content[-1][:2],  # all comments start with '!_' - confirm
-                    '!_')
+                    content[-1][:2], "!_"  # all comments start with '!_' - confirm
+                )
             finally:
                 output.close()
                 os.remove(path)  # clean up
@@ -273,19 +286,21 @@ class CTagsTest(unittest.TestCase):
         the supporting functions.
         """
         tag = {
-            'symbol': 'acme_function',
-            'filename': '.\\a_folder\\a_script.py',
-            'ex_command': '99',
-            'type': 'f',
-            'fields': None}
+            "symbol": "acme_function",
+            "filename": ".\\a_folder\\a_script.py",
+            "ex_command": "99",
+            "type": "f",
+            "fields": None,
+        }
 
         expected_output = {
-            'symbol': 'acme_function',
-            'filename': '.\\a_folder\\a_script.py',
-            'tag_path': ('.\\a_folder\\a_script.py', 'acme_function'),
-            'ex_command': '99',
-            'type': 'f',
-            'fields': None}
+            "symbol": "acme_function",
+            "filename": ".\\a_folder\\a_script.py",
+            "tag_path": (".\\a_folder\\a_script.py", "acme_function"),
+            "ex_command": "99",
+            "type": "f",
+            "fields": None,
+        }
 
         result = ctags.post_process_tag(tag)
 
@@ -299,19 +314,21 @@ class CTagsTest(unittest.TestCase):
         the supporting functions.
         """
         tag = {
-            'symbol': 'acme_function',
-            'filename': '.\\a_folder\\a_script.py',
-            'ex_command': '/^def acme_function(tag):$/',
-            'type': 'f',
-            'fields': None}
+            "symbol": "acme_function",
+            "filename": ".\\a_folder\\a_script.py",
+            "ex_command": "/^def acme_function(tag):$/",
+            "type": "f",
+            "fields": None,
+        }
 
         expected_output = {
-            'symbol': 'acme_function',
-            'filename': '.\\a_folder\\a_script.py',
-            'tag_path': ('.\\a_folder\\a_script.py', 'acme_function'),
-            'ex_command': 'def acme_function(tag):',
-            'type': 'f',
-            'fields': None}
+            "symbol": "acme_function",
+            "filename": ".\\a_folder\\a_script.py",
+            "tag_path": (".\\a_folder\\a_script.py", "acme_function"),
+            "ex_command": "def acme_function(tag):",
+            "type": "f",
+            "fields": None,
+        }
 
         result = ctags.post_process_tag(tag)
 
@@ -325,22 +342,24 @@ class CTagsTest(unittest.TestCase):
         the supporting functions.
         """
         tag = {
-            'symbol': 'getSum',
-            'filename': '.\\a_folder\\DemoClass.java',
-            'ex_command': '/^\tprivate int getSum(int a, int b) {$/',
-            'type': 'm',
-            'fields': 'class:DemoClass\tfile:'}
+            "symbol": "getSum",
+            "filename": ".\\a_folder\\DemoClass.java",
+            "ex_command": "/^\tprivate int getSum(int a, int b) {$/",
+            "type": "m",
+            "fields": "class:DemoClass\tfile:",
+        }
 
         expected_output = {
-            'symbol': 'getSum',
-            'filename': '.\\a_folder\\DemoClass.java',
-            'tag_path': ('.\\a_folder\\DemoClass.java', 'DemoClass', 'getSum'),
-            'ex_command': '\tprivate int getSum(int a, int b) {',
-            'type': 'm',
-            'fields': 'class:DemoClass\tfile:',
-            'field_keys': ['class', 'file'],
-            'class': 'DemoClass',
-            'file': ''}
+            "symbol": "getSum",
+            "filename": ".\\a_folder\\DemoClass.java",
+            "tag_path": (".\\a_folder\\DemoClass.java", "DemoClass", "getSum"),
+            "ex_command": "\tprivate int getSum(int a, int b) {",
+            "type": "m",
+            "fields": "class:DemoClass\tfile:",
+            "field_keys": ["class", "file"],
+            "class": "DemoClass",
+            "file": "",
+        }
 
         result = ctags.post_process_tag(tag)
 
@@ -354,9 +373,9 @@ class CTagsTest(unittest.TestCase):
         """
         path = self.build_python_file__extended()
 
-        tag_file = ctags.build_ctags(path=path, opts=['--python-kinds=-i'])
+        tag_file = ctags.build_ctags(path=path, opts=["--python-kinds=-i"])
 
-        with codecs.open(tag_file, encoding='utf-8') as output:
+        with codecs.open(tag_file, encoding="utf-8") as output:
             try:
                 content = output.readlines()
                 filename = os.path.basename(path)
@@ -368,55 +387,73 @@ class CTagsTest(unittest.TestCase):
                 os.remove(tag_file)
 
         expected_outputs = {
-            'MyClass': [{
-                'symbol': 'MyClass',
-                'filename': filename,
-                'ex_command': 'class MyClass(object):',
-                'tag_path': (filename, 'MyClass'),
-                'type': 'c',
-                'fields': None}],
-            'address': [{
-                'symbol': 'address',
-                'filename': filename,
-                'ex_command': '\taddress = None\t# comment preceded by a tab',
-                'tag_path': (filename, 'MyClass', 'address'),
-                'type': 'v',
-                'fields': 'class:MyClass',
-                'field_keys': ['class'],
-                'class': 'MyClass'}],
-            'last_name': [{
-                'symbol': 'last_name',
-                'filename': filename,
-                'ex_command': '\tlast_name = None',
-                'tag_path': (filename, 'MyClass', 'last_name'),
-                'type': 'v',
-                'fields': 'class:MyClass',
-                'field_keys': ['class'],
-                'class': 'MyClass'}],
-            'my_function': [{
-                'symbol': 'my_function',
-                'filename': filename,
-                'ex_command': 'def my_function(first_name):',
-                'tag_path': (filename, 'my_function'),
-                'type': 'f',
-                'fields': None}],
-            'my_method': [{
-                'symbol': 'my_method',
-                'filename': filename,
-                'ex_command': '\tdef my_method(self, last_name):',
-                'tag_path': (filename, 'MyClass', 'my_method'),
-                'type': 'm',
-                'fields': 'class:MyClass',
-                'field_keys': ['class'],
-                'class': 'MyClass'}],
-            'COLOR_RED': [{
-                'symbol': 'COLOR_RED',
-                'filename': filename,
-                'ex_command': 'COLOR_RED = "\\c800080FF;"\t#red',
-                'tag_path': (filename, 'COLOR_RED'),
-                'type': 'v',
-                'fields': None}],
-            }
+            "MyClass": [
+                {
+                    "symbol": "MyClass",
+                    "filename": filename,
+                    "ex_command": "class MyClass(object):",
+                    "tag_path": (filename, "MyClass"),
+                    "type": "c",
+                    "fields": None,
+                }
+            ],
+            "address": [
+                {
+                    "symbol": "address",
+                    "filename": filename,
+                    "ex_command": "\taddress = None\t# comment preceded by a tab",
+                    "tag_path": (filename, "MyClass", "address"),
+                    "type": "v",
+                    "fields": "class:MyClass",
+                    "field_keys": ["class"],
+                    "class": "MyClass",
+                }
+            ],
+            "last_name": [
+                {
+                    "symbol": "last_name",
+                    "filename": filename,
+                    "ex_command": "\tlast_name = None",
+                    "tag_path": (filename, "MyClass", "last_name"),
+                    "type": "v",
+                    "fields": "class:MyClass",
+                    "field_keys": ["class"],
+                    "class": "MyClass",
+                }
+            ],
+            "my_function": [
+                {
+                    "symbol": "my_function",
+                    "filename": filename,
+                    "ex_command": "def my_function(first_name):",
+                    "tag_path": (filename, "my_function"),
+                    "type": "f",
+                    "fields": None,
+                }
+            ],
+            "my_method": [
+                {
+                    "symbol": "my_method",
+                    "filename": filename,
+                    "ex_command": "\tdef my_method(self, last_name):",
+                    "tag_path": (filename, "MyClass", "my_method"),
+                    "type": "m",
+                    "fields": "class:MyClass",
+                    "field_keys": ["class"],
+                    "class": "MyClass",
+                }
+            ],
+            "COLOR_RED": [
+                {
+                    "symbol": "COLOR_RED",
+                    "filename": filename,
+                    "ex_command": 'COLOR_RED = "\\c800080FF;"\t#red',
+                    "tag_path": (filename, "COLOR_RED"),
+                    "type": "v",
+                    "fields": None,
+                }
+            ],
+        }
 
         result = ctags.parse_tag_lines(content)
 
@@ -434,7 +471,7 @@ class CTagsTest(unittest.TestCase):
 
         tag_file = ctags.build_ctags(path=path)
 
-        with codecs.open(tag_file, encoding='utf-8') as output:
+        with codecs.open(tag_file, encoding="utf-8") as output:
             try:
                 content = output.readlines()
                 filename = os.path.basename(path)
@@ -446,35 +483,43 @@ class CTagsTest(unittest.TestCase):
                 os.remove(tag_file)
 
         expected_outputs = {
-            'bar': [{
-                'symbol': 'bar',
-                'filename': filename,
-                'ex_command': 'void bar()',
-                'tag_path': (filename, 'typename', 'void', 'bar'),
-                'type': 'f',
-                'fields': 'typeref:typename:void',
-                'field_keys': ['typeref'],
-                'typeref': 'typename:void',
-            }],
-            'foo': [{
-                'symbol': 'foo',
-                'filename': filename,
-                'ex_command': '#define foo',
-                'tag_path': (filename, 'foo'),
-                'type': 'd',
-                'fields': 'file:',
-                'field_keys': ['file'],
-                'file': ''}],
-            'foobar': [{
-                'symbol': 'foobar',
-                'filename': filename,
-                'ex_command': '#define foobar',
-                'tag_path': (filename, 'foobar'),
-                'type': 'd',
-                'fields': 'file:',
-                'field_keys': ['file'],
-                'file': ''}]
-            }
+            "bar": [
+                {
+                    "symbol": "bar",
+                    "filename": filename,
+                    "ex_command": "void bar()",
+                    "tag_path": (filename, "typename", "void", "bar"),
+                    "type": "f",
+                    "fields": "typeref:typename:void",
+                    "field_keys": ["typeref"],
+                    "typeref": "typename:void",
+                }
+            ],
+            "foo": [
+                {
+                    "symbol": "foo",
+                    "filename": filename,
+                    "ex_command": "#define foo",
+                    "tag_path": (filename, "foo"),
+                    "type": "d",
+                    "fields": "file:",
+                    "field_keys": ["file"],
+                    "file": "",
+                }
+            ],
+            "foobar": [
+                {
+                    "symbol": "foobar",
+                    "filename": filename,
+                    "ex_command": "#define foobar",
+                    "tag_path": (filename, "foobar"),
+                    "type": "d",
+                    "fields": "file:",
+                    "field_keys": ["file"],
+                    "file": "",
+                }
+            ],
+        }
 
         result = ctags.parse_tag_lines(content)
 
@@ -484,5 +529,6 @@ class CTagsTest(unittest.TestCase):
         for key in result:  # don't forget - we might have missed something!
             self.assertEqual(expected_outputs[key], result[key])
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     unittest.main()

@@ -16,33 +16,35 @@ from subprocess import check_output
 #
 
 TAGS_RE = re.compile(
-    r'(?P<symbol>[^\t]+)\t'
-    r'(?P<filename>[^\t]+)\t'
+    r"(?P<symbol>[^\t]+)\t"
+    r"(?P<filename>[^\t]+)\t"
     r'(?P<ex_command>(/.+/|\?.+\?|\d+));"\t'
-    r'(?P<type>[^\t\r\n]+)'
-    r'(?:\t(?P<fields>.*))?'
+    r"(?P<type>[^\t\r\n]+)"
+    r"(?:\t(?P<fields>.*))?"
 )
 
 # column indexes
 SYMBOL = 0
 FILENAME = 1
 
-MATCHES_STARTWITH = 'starts_with'
+MATCHES_STARTWITH = "starts_with"
 
 PATH_ORDER = [
-    'function', 'class', 'struct',
+    "function",
+    "class",
+    "struct",
 ]
 
-PATH_IGNORE_FIELDS = (
-    'file', 'access', 'signature', 'language', 'line', 'inherits')
+PATH_IGNORE_FIELDS = ("file", "access", "signature", "language", "line", "inherits")
 
-TAG_PATH_SPLITTERS = ('/', '.', '::', ':')
+TAG_PATH_SPLITTERS = ("/", ".", "::", ":")
 
 #
 # Functions
 #
 
 # Helper functions
+
 
 def splits(string, *splitters):
     """
@@ -61,9 +63,11 @@ def splits(string, *splitters):
         if string:
             yield string
 
+
 # Tag processing functions
 
-def parse_tag_lines(lines, order_by='symbol', tag_class=None, filters=None):
+
+def parse_tag_lines(lines, order_by="symbol", tag_class=None, filters=None):
     """
     Parse and sort a list of tags.
 
@@ -88,7 +92,7 @@ def parse_tag_lines(lines, order_by='symbol', tag_class=None, filters=None):
         if isinstance(line, Tag):  # handle both text and tag objects
             line = line.line
 
-        line = line.rstrip('\r\n')
+        line = line.rstrip("\r\n")
 
         search_obj = TAGS_RE.search(line)
 
@@ -115,6 +119,7 @@ def parse_tag_lines(lines, order_by='symbol', tag_class=None, filters=None):
         tags_lookup.setdefault(tag[order_by], []).append(tag)
 
     return tags_lookup
+
 
 def post_process_tag(tag):
     """
@@ -160,11 +165,12 @@ def post_process_tag(tag):
     """
     tag.update(process_fields(tag))
 
-    tag['ex_command'] = process_ex_cmd(tag)
+    tag["ex_command"] = process_ex_cmd(tag)
 
     tag.update(create_tag_path(tag))
 
     return tag
+
 
 def process_ex_cmd(tag):
     """
@@ -177,12 +183,13 @@ def process_ex_cmd(tag):
 
     :returns: updated 'ex_command' dictionary entry
     """
-    ex_cmd = tag.get('ex_command')
+    ex_cmd = tag.get("ex_command")
 
     if ex_cmd.isdigit():  # if a line number, do nothing
         return ex_cmd
-    else:                 # else a regex, so unescape
-        return re.sub(r"\\(\$|/|\^|\\)", r'\1', ex_cmd[2:-2])  # unescape regex
+    else:  # else a regex, so unescape
+        return re.sub(r"\\(\$|/|\^|\\)", r"\1", ex_cmd[2:-2])  # unescape regex
+
 
 def process_fields(tag):
     """
@@ -197,18 +204,19 @@ def process_fields(tag):
     :returns: dict containing the key-value pairs from the field element, plus
         a list of keys for said pairs
     """
-    fields = tag.get('fields')
+    fields = tag.get("fields")
 
     if not fields:  # do nothing
         return {}
 
     # split the fields string into a dictionary of key-value pairs
-    result = dict(f.split(':', 1) for f in fields.split('\t'))
+    result = dict(f.split(":", 1) for f in fields.split("\t"))
 
     # append all keys to the dictionary
-    result['field_keys'] = sorted(result.keys())
+    result["field_keys"] = sorted(result.keys())
 
     return result
+
 
 def create_tag_path(tag):
     """
@@ -226,9 +234,9 @@ def create_tag_path(tag):
 
     :returns: dict containing the 'tag_path' entry
     """
-    field_keys = tag.get('field_keys', [])[:]
+    field_keys = tag.get("field_keys", [])[:]
     fields = []
-    tag_path = ''
+    tag_path = ""
 
     # sort field arguments related to path order in correct order
     for field in PATH_ORDER:
@@ -242,21 +250,22 @@ def create_tag_path(tag):
     # convert list of fields to dot-joined string, dropping any "ignore" fields
     for field in fields:
         if field not in PATH_IGNORE_FIELDS:
-            tag_path += (tag.get(field) + '.')
+            tag_path += tag.get(field) + "."
 
     # append symbol as last item in string
-    tag_path += tag.get('symbol')
+    tag_path += tag.get("symbol")
 
     # split string on seperators and append tag filename to resulting list
-    splitup = ([tag.get('filename')] +
-               list(splits(tag_path, *TAG_PATH_SPLITTERS)))
+    splitup = [tag.get("filename")] + list(splits(tag_path, *TAG_PATH_SPLITTERS))
 
     # convert list to tuple
-    result = {'tag_path': tuple(splitup)}
+    result = {"tag_path": tuple(splitup)}
 
     return result
 
+
 # Tag building/sorting functions
+
 
 def build_ctags(path, cmd=None, tag_file=None, recursive=False, opts=None):
     """
@@ -275,11 +284,12 @@ def build_ctags(path, cmd=None, tag_file=None, recursive=False, opts=None):
     if cmd:
         cmd = [cmd]
     else:
-        cmd = ['ctags']
+        cmd = ["ctags"]
 
     if not os.path.exists(path):
-        raise IOError('\'path\' is not at valid directory or file path, or '
-                      'is not accessible')
+        raise IOError(
+            "'path' is not at valid directory or file path, or " "is not accessible"
+        )
 
     if os.path.isfile(path):
         cwd = os.path.dirname(path)
@@ -287,7 +297,7 @@ def build_ctags(path, cmd=None, tag_file=None, recursive=False, opts=None):
         cwd = path
 
     if tag_file:
-        cmd.append('-f {0}'.format(tag_file))
+        cmd.append("-f {0}".format(tag_file))
 
     if opts:
         if type(opts) == list:
@@ -296,24 +306,25 @@ def build_ctags(path, cmd=None, tag_file=None, recursive=False, opts=None):
             cmd.append(opts)
 
     if recursive:  # ignore any file specified in path if recursive set
-        cmd.append('-R')
+        cmd.append("-R")
     elif os.path.isfile(path):
         filename = os.path.basename(path)
         cmd.append(filename)
     else:  # search all files in current directory
-        cmd.append(os.path.join(path, '*'))
+        cmd.append(os.path.join(path, "*"))
 
     # workaround for the issue described here:
     #   http://bugs.python.org/issue6689
-    if os.name == 'posix':
-        cmd = ' '.join(cmd)
+    if os.name == "posix":
+        cmd = " ".join(cmd)
 
     # execute the command
-    check_output(cmd, cwd=cwd, shell=True, stdin=subprocess.PIPE,
-                 stderr=subprocess.STDOUT)
+    check_output(
+        cmd, cwd=cwd, shell=True, stdin=subprocess.PIPE, stderr=subprocess.STDOUT
+    )
 
     if not tag_file:  # Exuberant ctags defaults to ``tags`` filename.
-        tag_file = os.path.join(cwd, 'tags')
+        tag_file = os.path.join(cwd, "tags")
     else:
         if os.path.dirname(tag_file) != cwd:
             tag_file = os.path.join(cwd, tag_file)
@@ -322,6 +333,7 @@ def build_ctags(path, cmd=None, tag_file=None, recursive=False, opts=None):
     resort_ctags(tag_file)
 
     return tag_file
+
 
 def resort_ctags(tag_file):
     """
@@ -351,35 +363,40 @@ def resort_ctags(tag_file):
     """
     groups = {}
 
-    with codecs.open(tag_file, encoding='utf-8', errors='replace') as file_:
+    with codecs.open(tag_file, encoding="utf-8", errors="replace") as file_:
         for line in file_:
             # meta data not needed in sorted files
-            if line.startswith('!_TAG'):
+            if line.startswith("!_TAG"):
                 continue
 
-            # read all valid symbol tags, which contain at least 
+            # read all valid symbol tags, which contain at least
             # symbol name and containing file and build a list of tuples
-            split = line.split('\t', FILENAME + 1)
+            split = line.split("\t", FILENAME + 1)
             if len(split) > FILENAME:
                 groups.setdefault(split[FILENAME], []).append(line)
 
-    with codecs.open(tag_file + '_sorted_by_file', 'w', encoding='utf-8',
-                     errors='replace') as file_:
+    with codecs.open(
+        tag_file + "_sorted_by_file", "w", encoding="utf-8", errors="replace"
+    ) as file_:
         for group in sorted(groups):
             file_.writelines(groups[group])
+
 
 #
 # Models
 #
 
+
 class TagElements(dict):
     """
     Model the entries of a tag file.
     """
+
     def __init__(self, *args, **kw):
         """Initialise Tag object"""
         dict.__init__(self, *args, **kw)
         self.__dict__ = self
+
 
 class Tag(object):
     """
@@ -387,9 +404,10 @@ class Tag(object):
 
     This exists mainly to enable different types of sorting.
     """
+
     def __init__(self, line, column=0):
         if isinstance(line, bytes):  # python 3 compatibility
-            line = line.decode('utf-8', 'replace')
+            line = line.decode("utf-8", "replace")
         self.line = line
         self.column = column
 
@@ -406,14 +424,15 @@ class Tag(object):
             return False
 
     def __getitem__(self, index):
-        return self.line.split('\t', self.column + 1)[index]
+        return self.line.split("\t", self.column + 1)[index]
 
     def __len__(self):
-        return self.line.count('\t') + 1
+        return self.line.count("\t") + 1
 
     @property
     def key(self):
         return self[self.column]
+
 
 class TagFile(object):
     """
@@ -425,6 +444,7 @@ class TagFile(object):
     searching for a retrieving tags, finding tags based on given criteria
     (prefix, suffix, exact), getting the directory of a tag and so forth.
     """
+
     file_o = None
     mapped = None
 
@@ -489,9 +509,8 @@ class TagFile(object):
         """
         Open file.
         """
-        self.file_o = codecs.open(self.path, 'r+b', encoding='utf-8')
-        self.mapped = mmap.mmap(self.file_o.fileno(), 0,
-                                access=mmap.ACCESS_READ)
+        self.file_o = codecs.open(self.path, "r+b", encoding="utf-8")
+        self.mapped = mmap.mmap(self.file_o.fileno(), 0, access=mmap.ACCESS_READ)
 
     def close(self):
         """
@@ -555,20 +574,22 @@ class TagFile(object):
         accessed as class variables (i.e. ``class.variable``, rather than
         ``dict['variable'])
         """
-        return type('TagElements', (TagElements,), dict(root_dir=self.dir))
+        return type("TagElements", (TagElements,), dict(root_dir=self.dir))
 
     def get_tags_dict(self, *tags, **kw):
         """
         Return the tags from a tag file as a dict.
         """
-        filters = kw.get('filters', [])
-        return parse_tag_lines(self.search(True, *tags),
-                               tag_class=self.tag_class(), filters=filters)
+        filters = kw.get("filters", [])
+        return parse_tag_lines(
+            self.search(True, *tags), tag_class=self.tag_class(), filters=filters
+        )
 
     def get_tags_dict_by_suffix(self, suffix, **kw):
         """
         Return the tags with the given suffix of a tag file as a dict.
         """
-        filters = kw.get('filters', [])
-        return parse_tag_lines(self.search_by_suffix(suffix),
-                               tag_class=self.tag_class(), filters=filters)
+        filters = kw.get("filters", [])
+        return parse_tag_lines(
+            self.search_by_suffix(suffix), tag_class=self.tag_class(), filters=filters
+        )

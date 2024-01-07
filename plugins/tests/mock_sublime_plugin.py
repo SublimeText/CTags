@@ -2,9 +2,7 @@
 Mock module for ``sublime_plugin`` in Sublime Text.
 """
 
-all_callbacks = {
-    'on_load': []
-}
+all_callbacks = {"on_load": []}
 
 
 class WindowCommand(object):
