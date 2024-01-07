@@ -1014,7 +1014,7 @@ class TestCtags(sublime_plugin.TextCommand):
                         failure += av.file_name()
 
                         if setting("debug"):
-                            if not sublime.question_box("%s\n\n\n" % failure):
+                            if not sublime.ok_cancel_dialog("%s\n\n\n" % failure):
                                 self.routine = None
 
                             return sublime.set_clipboard(failure)
