@@ -758,6 +758,7 @@ class ShowSymbols(sublime_plugin.TextCommand):
             # filter and cache by file suffix
             suffix = get_current_file_suffix(view.file_name())
             key = suffix
+            files = []
         elif multi:
             # request all symbols of given tags file
             key = "__all__"
@@ -769,20 +770,9 @@ class ShowSymbols(sublime_plugin.TextCommand):
                 return
             key = get_rel_path_to_source(key, tags_file)
             key = key.replace('\\', '/')
-
             files = [key]
 
-        # Note: Help migrating existing tags files to new file name.
-        # Needed, because this plugin now sorts .tags file in-place,
-        # while former versions used to create a dedicated file.
-        sorted_tags_file = tags_file + '_sorted_by_file'
-        if os.path.isfile(sorted_tags_file):
-            try:
-                os.remove(tags_file)
-                os.rename(sorted_tags_file, tags_file)
-            except OSError:
-                pass
-
+        tags_file = tags_file + '_sorted_by_file'
         base_path = get_common_ancestor_folder(
             view.file_name(), view.window().folders())
 

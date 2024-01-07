@@ -353,39 +353,24 @@ def resort_ctags(tag_file):
 
     :returns: None
     """
-    meta = []
-    symbols = []
-    tmp_file = tag_file + '.tmp'
+    groups = {}
 
     with codecs.open(tag_file, encoding='utf-8', errors='replace') as file_:
         for line in file_:
+            # meta data not needed in sorted files
             if line.startswith('!_TAG'):
-                meta.append(line)
                 continue
 
             # read all valid symbol tags, which contain at least 
             # symbol name and containing file and build a list of tuples
-            split = line.split('\t')
+            split = line.split('\t', FILENAME + 1)
             if len(split) > FILENAME:
-                symbols.append((split[FILENAME], split))
+                groups.setdefault(split[FILENAME], []).append(line)
 
-    # sort inplace to save some RAM with large .tags files
-    meta.sort()
-    symbols.sort()
-
-    with codecs.open(tmp_file, 'w', encoding='utf-8',
+    with codecs.open(tag_file + '_sorted_by_file', 'w', encoding='utf-8',
                      errors='replace') as file_:
-        
-        # write sourted metadata
-        file_.writelines(meta)
-
-        # followed by sorted list of symbols
-        for _, split in symbols:
-            split[FILENAME] = split[FILENAME].lstrip('.\\')
-            file_.write('\t'.join(split))
-
-    os.remove(tag_file)
-    os.rename(tmp_file, tag_file)
+        for group in sorted(groups):
+            file_.writelines(groups[group])
 
 #
 # Models
