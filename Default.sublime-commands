@@ -8,6 +8,13 @@
         "command": "show_symbols",
     },
     {
+        "caption": "CTags: Show Symbols (current language)",
+        "command": "show_symbols",
+        "args": {
+            "type": "lang"
+        },
+    },
+    {
         "caption": "CTags: Show Symbols (all)",
         "command": "show_symbols",
         "args": {
