@@ -1,24 +1,46 @@
 [
-    {
-        "caption": "CTags: Rebuild Tags",
-        "command": "rebuild_tags"
-    },
-    {
-        "caption": "CTags: Show Symbols (file)",
-        "command": "show_symbols",
-    },
-    {
-        "caption": "CTags: Show Symbols (current language)",
-        "command": "show_symbols",
-        "args": {
-            "type": "lang"
-        },
-    },
-    {
-        "caption": "CTags: Show Symbols (all)",
-        "command": "show_symbols",
-        "args": {
-            "type": "multi"
-        },
-    }
+	{
+		"caption": "CTags: Rebuild Tags",
+		"command": "rebuild_tags"
+	},
+	{
+		"caption": "CTags: Show Symbols (file)",
+		"command": "show_symbols",
+	},
+	{
+		"caption": "CTags: Show Symbols (current language)",
+		"command": "show_symbols",
+		"args": {"type": "lang"}
+	},
+	{
+		"caption": "CTags: Show Symbols (all)",
+		"command": "show_symbols",
+		"args": {"type": "multi"}
+	},
+	{
+		"caption": "Preferences: CTags Settings",
+		"command": "edit_settings", "args":
+		{
+			"base_file": "${packages}/CTags/CTags.sublime-settings",
+			"default": "// CTags Preferences – User\n// ================================================================\n{\n\t$0\n}\n"
+		}
+	},
+	{
+		"caption": "Preferences: CTags Key Bindings",
+		"command": "edit_settings", "args":
+		{
+			"base_file": "${packages}/CTags/Default.sublime-keymap",
+			"user_file": "${packages}/CTags/Default ($platform).sublime-keymap",
+			"default": "[\n\t$0\n]\n"
+		}
+	},
+	{
+		"caption": "Preferences: CTags Mouse Bindings",
+		"command": "edit_settings", "args":
+		{
+			"base_file": "${packages}/CTags/Default.sublime-mousemap",
+			"user_file": "${packages}/CTags/Default ($platform).sublime-mousemap",
+			"default": "[\n\t$0\n]\n"
+		}
+	}
 ]

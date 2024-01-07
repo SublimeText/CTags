@@ -1,6 +1,7 @@
 import re
-from helpers.common import *
-#import spdb
+from ..utils import *
+
+# import spdb
 # spdb.start()
 
 
@@ -8,6 +9,7 @@ class Parser:
     """
     Parses tag references and tag definitions. Used for ranking
     """
+
     @staticmethod
     def extract_member_exp(line_to_symbol, source):
         """
@@ -21,23 +23,25 @@ class Parser:
             return [line_to_symbol]
 
         # Get per-language syntax regex of brackets, splitters etc.
-        mbr_exp = lang.get('member_exp')
+        mbr_exp = lang.get("member_exp")
         if mbr_exp is None:
             return [line_to_symbol]
 
-        lstStop = mbr_exp.get('stop', [])
-        if (not lstStop):
-            print('warning!: language has member_exp setting but it is ineffective: Must have "stop" key with array of regex to stop search backward from identifier')
+        lstStop = mbr_exp.get("stop", [])
+        if not lstStop:
+            print(
+                'warning!: language has member_exp setting but it is ineffective: Must have "stop" key with array of regex to stop search backward from identifier'
+            )
             return [line_to_symbol]
 
-        lstClose = mbr_exp.get('close', [])
+        lstClose = mbr_exp.get("close", [])
         reClose = concat_re(lstClose)
-        lstOpen = mbr_exp.get('open', [])
+        lstOpen = mbr_exp.get("open", [])
         reOpen = concat_re(lstOpen)
-        lstIgnore = mbr_exp.get('ignore', [])
+        lstIgnore = mbr_exp.get("ignore", [])
         reIgnore = concat_re(lstIgnore)
         if len(lstOpen) != len(lstClose):
-            print('warning!: extract_member_exp: settings lstOpen must match lstClose')
+            print("warning!: extract_member_exp: settings lstOpen must match lstClose")
         matchOpenClose = dict(zip(lstOpen, lstClose))
         # Construct | regex from all open and close strings with capture (..)
         splex = concat_re(lstOpen + lstClose + lstIgnore + lstStop)
@@ -45,7 +49,7 @@ class Parser:
         reStop = concat_re(lstStop)
         splex = "({0}|{1})".format(splex, reIgnore)
         splat = re.split(splex, line_to_symbol)
-        #print('splat=%s' %  splat)
+        # print('splat=%s' %  splat)
         # Stack iter reverse(splat) for detecting unbalanced e.g 'func(obj.yyy'
         # while skipping balanced brackets in getSlow(a && b).mtd()
         stack = []
@@ -68,8 +72,9 @@ class Parser:
                 tokCloseCur = matchOpenClose.get(cur)
                 if tokClose != tokCloseCur:
                     print(
-                        'non-matching brackets at the same nesting level: %s %s' %
-                        (tokCloseCur, tokClose))
+                        "non-matching brackets at the same nesting level: %s %s"
+                        % (tokCloseCur, tokClose)
+                    )
                     break
                 insideExp = False
             # If white space --> stop. Do not stop for whitespace inside
@@ -84,7 +89,7 @@ class Parser:
 
         strMbrExp = "".join(lstMbr)
 
-        lstSplit = mbr_exp.get('splitters', [])
+        lstSplit = mbr_exp.get("splitters", [])
         reSplit = concat_re(lstSplit)
         # Split member deref per-lang (-> and :: in PHP and C++) - use base if
         # not found

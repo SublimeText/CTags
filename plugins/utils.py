@@ -2,25 +2,11 @@
 common utilities used by all ctags modules
 """
 import re
-import sys
-import os
 
 # Helper functions
 
-try:
-    import sublime
-    import sublime_plugin
-    from sublime import status_message, error_message
-
-    # hack the system path to prevent the following issue in ST3
-    #     ImportError: No module named 'ctags'
-    sys.path.append(os.path.dirname(os.path.realpath(__file__)))
-except ImportError:  # running tests
-    from tests.sublime_fake import sublime
-    from tests.sublime_fake import sublime_plugin
-
-    sys.modules['sublime'] = sublime
-    sys.modules['sublime_plugin'] = sublime_plugin
+import sublime
+import sublime_plugin
 
 
 def get_settings():
@@ -43,6 +29,7 @@ def get_setting(key, default=None):
     """
     return get_settings().get(key, default)
 
+
 setting = get_setting
 
 
@@ -52,7 +39,7 @@ def concat_re(reList, escape=False, wrapCapture=False):
     wrapCapture - if true --> adds () around the result regex --> split will keep the splitters in its output array.
     """
     ret = "|".join((re.escape(spl) if escape else spl) for spl in reList)
-    if (wrapCapture):
+    if wrapCapture:
         ret = "(" + ret + ")"
     return ret
 
@@ -94,12 +81,14 @@ def merge_two_dicts_deep(a, b, path=None):
             a[key] = b[key]
     return a
 
+
 RE_SPECIAL_CHARS = re.compile(
-    '(\\\\|\\*|\\+|\\?|\\||\\{|\\}|\\[|\\]|\\(|\\)|\\^|\\$|\\.|\\#|\\ )')
+    "(\\\\|\\*|\\+|\\?|\\||\\{|\\}|\\[|\\]|\\(|\\)|\\^|\\$|\\.|\\#|\\ )"
+)
 
 
 def escape_regex(s):
-    return RE_SPECIAL_CHARS.sub(lambda m: '\\%s' % m.group(1), s)
+    return RE_SPECIAL_CHARS.sub(lambda m: "\\%s" % m.group(1), s)
 
 
 def get_source(view):
@@ -107,8 +96,9 @@ def get_source(view):
     return the language used in current caret or selection location
     """
     scope_name = view.scope_name(
-        view.sel()[0].begin())  # ex: 'source.python meta.function-call.python '
-    source = re.split(' ', scope_name)[0]  # ex: 'source.python'
+        view.sel()[0].begin()
+    )  # ex: 'source.python meta.function-call.python '
+    source = re.split(" ", scope_name)[0]  # ex: 'source.python'
     return source
 
 
@@ -117,9 +107,9 @@ def get_lang_setting(source):
     given source (ex: 'source.python') --> return its language_syntax settings.
     A language can inherit its settings from another language, overidding as needed.
     """
-    lang = setting('language_syntax').get(source)
+    lang = setting("language_syntax").get(source)
     if lang is not None:
-        base = setting('language_syntax').get(lang.get('inherit'))
+        base = setting("language_syntax").get(lang.get("inherit"))
         lang = dict_extend(lang, base)
     else:
         lang = {}
@@ -128,8 +118,7 @@ def get_lang_setting(source):
 
 def compile_filters(view):
     filters = []
-    for selector, regexes in list(setting('filters', {}).items()):
-        if view.match_selector(view.sel() and view.sel()[0].begin() or 0,
-                               selector):
+    for selector, regexes in list(setting("filters", {}).items()):
+        if view.match_selector(view.sel() and view.sel()[0].begin() or 0, selector):
             filters.append(regexes)
     return filters

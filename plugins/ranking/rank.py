@@ -2,22 +2,20 @@
 Rank and Filter support for ctags plugin for Sublime Text 2/3.
 """
 
-from functools import reduce
-import sys
 import os
 import re
 import string
+import sys
 
+from functools import reduce
 
-from helpers.common import *
+from ..utils import *
 
 
 def compile_definition_filters(view):
     filters = []
-    for selector, regexes in list(
-            get_setting('definition_filters', {}).items()):
-        if view.match_selector(view.sel() and view.sel()[0].begin() or 0,
-                               selector):
+    for selector, regexes in list(get_setting("definition_filters", {}).items()):
+        if view.match_selector(view.sel() and view.sel()[0].begin() or 0, selector):
             filters.append(regexes)
     return filters
 
@@ -45,19 +43,18 @@ class RankMgr:
         self.sym_line = sym_line
 
         self.lang = get_lang_setting(get_source(view))
-        self.mbr_exp = self.lang.get('member_exp', {})
+        self.mbr_exp = self.lang.get("member_exp", {})
 
         self.def_filters = compile_definition_filters(view)
 
-        self.fname_abs = view.file_name().lower() if not(
-            view.file_name() is None) else None
+        self.fname_abs = (
+            view.file_name().lower() if not (view.file_name() is None) else None
+        )
 
         mbrGrams = [get_grams(part) for part in mbrParts]
         self.setMbrGrams = (
-            reduce(
-                lambda s,
-                t: s.union(t),
-                mbrGrams) if mbrGrams else set())
+            reduce(lambda s, t: s.union(t), mbrGrams) if mbrGrams else set()
+        )
 
     def pass_def_filter(self, o):
         for f in self.def_filters:
@@ -70,7 +67,7 @@ class RankMgr:
     def eq_filename(self, rel_path):
         if self.fname_abs is None or rel_path is None:
             return False
-        return self.fname_abs.endswith(rel_path.lstrip('.').lower())
+        return self.fname_abs.endswith(rel_path.lstrip(".").lower())
 
     def scope_filter(self, taglist):
         """
@@ -83,15 +80,19 @@ class RankMgr:
         in_scope = []
         no_scope = []
         for tag in taglist:
-            if self.region is None or tag.get(
-                    'scope') is None or tag.scope is None or tag.scope == 'global':
+            if (
+                self.region is None
+                or tag.get("scope") is None
+                or tag.scope is None
+                or tag.scope == "global"
+            ):
                 no_scope.append(tag)
                 continue
 
             if not self.eq_filename(tag.filename):
                 continue
 
-            mch = re.search(get_setting('scope_re'), tag.scope)
+            mch = re.search(get_setting("scope_re"), tag.scope)
 
             if mch:
                 # .tags file is 1 based and region.begin() is 0 based
@@ -118,11 +119,11 @@ class RankMgr:
         # Try all regex to build a list of preferred / higher rank tag types
         if self.tag_types is None:
             self.tag_types = set()
-            reference_types = self.lang.get('reference_types', {})
+            reference_types = self.lang.get("reference_types", {})
             for re_ref, lstTypes in reference_types.items():
                 # replace special keyword __symbol__ with our reference symbol
-                cur_re = re_ref.replace('__symbol__', self.symbol)
-                if (re.search(cur_re, self.sym_line)):
+                cur_re = re_ref.replace("__symbol__", self.symbol)
+                if re.search(cur_re, self.sym_line):
                     self.tag_types = self.tag_types.union(lstTypes)
 
         return self.RANK_MATCH_TYPE if tag.type in self.tag_types else 0
@@ -138,18 +139,18 @@ class RankMgr:
         Note: Inheritence model (base class in different file) is not yet supported.
         """
         if self.reThis is None:
-            lstThis = self.mbr_exp.get('this')
+            lstThis = self.mbr_exp.get("this")
             if lstThis:
                 self.reThis = re.compile(concat_re(lstThis), re.IGNORECASE)
             elif self.mbr_exp:
                 print(
-                    'Warning! Language that has syntax settings is expected to define this|self expression syntax')
+                    "Warning! Language that has syntax settings is expected to define this|self expression syntax"
+                )
 
         rank = 0
         if self.eq_filename(rel_path):
             rank += self.RANK_EQ_FILENAME_RANK
-            if len(mbrParts) == 1 and self.reThis and self.reThis.match(
-                    mbrParts[-1]):
+            if len(mbrParts) == 1 and self.reThis and self.reThis.match(mbrParts[-1]):
                 # this.mtd() -  rank candidate from current file very high.
                 rank += self.RANK_EQ_FILENAME_RANK
         return rank
@@ -170,11 +171,14 @@ class RankMgr:
         if len(mbrParts) == 0:
             return rank
 
-        rel_path_no_ext = rel_path.lstrip('.' + os.sep)
+        rel_path_no_ext = rel_path.lstrip("." + os.sep)
         rel_path_no_ext = os.path.splitext(rel_path_no_ext)[0]
         pathParts = rel_path_no_ext.split(os.sep)
-        if len(pathParts) >= 1 and len(
-                mbrParts) >= 1 and pathParts[-1].lower() == mbrParts[-1].lower():
+        if (
+            len(pathParts) >= 1
+            and len(mbrParts) >= 1
+            and pathParts[-1].lower() == mbrParts[-1].lower()
+        ):
             rank += self.RANK_EXACT_MATCH_RIGHTMOST_MBR_PART_TO_FILENAME
 
         # Prepare dict of <tri-gram : weight>, where weight decays are we move
@@ -208,7 +212,7 @@ class RankMgr:
         # Object Member Expression File Ranking
         rank += self.get_mbr_exp_match_tagfile_rank(rel_path, mbrParts)
 
-#       print('rank = %d' % rank);
+        #       print('rank = %d' % rank);
         return rank
 
     def sort_tags(self, taglist):
@@ -218,14 +222,17 @@ class RankMgr:
         # If object-receiver (someobj.symbol) --> refer to as global tag -->
         # filter out local-scope tags
         (in_scope, no_scope) = self.scope_filter(taglist)
-        if (len(self.setMbrGrams) == 0 and len(in_scope) >
-                0):  # TODO:Config: @symbol - in Ruby instance var (therefore never local var)
+        if (
+            len(self.setMbrGrams) == 0 and len(in_scope) > 0
+        ):  # TODO:Config: @symbol - in Ruby instance var (therefore never local var)
             p_tags = in_scope
         else:
             p_tags = no_scope
 
         p_tags = list(filter(lambda tag: self.pass_def_filter(tag), p_tags))
         p_tags = sorted(
-            p_tags, key=lambda tag: self.get_combined_rank(
-                tag, self.mbrParts), reverse=True)
+            p_tags,
+            key=lambda tag: self.get_combined_rank(tag, self.mbrParts),
+            reverse=True,
+        )
         return p_tags

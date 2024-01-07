@@ -95,7 +95,7 @@ Windows
 
 * Download the `CTags binary`_ from the `Exuberant CTags`_ site.
 * Extract ``ctags.exe`` from the downloaded zip to 
-  ``C:\Program Files\Sublime Text 2`` or any folder within your PATH so that
+  ``C:\Program Files\Sublime Text`` or any folder within your PATH so that
   Sublime Text can run it.
 * Alternatively, extract to any folder and add the path to this folder to
   the ``command`` setting.

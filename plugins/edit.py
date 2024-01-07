@@ -13,12 +13,14 @@ try:
 except AttributeError:
     sublime.edit_storage = {}
 
+
 def run_callback(func, *args, **kwargs):
     spec = inspect.getfullargspec(func)
     if spec.args or spec.varargs:
         func(*args, **kwargs)
     else:
         func()
+
 
 class EditFuture:
     def __init__(self, func):
@@ -27,19 +29,20 @@ class EditFuture:
     def resolve(self, view, edit):
         return self.func(view, edit)
 
+
 class EditStep:
     def __init__(self, cmd, *args):
         self.cmd = cmd
         self.args = args
 
     def run(self, view, edit):
-        if self.cmd == 'callback':
+        if self.cmd == "callback":
             return run_callback(self.args[0], view, edit)
 
         funcs = {
-            'insert': view.insert,
-            'erase': view.erase,
-            'replace': view.replace,
+            "insert": view.insert,
+            "erase": view.erase,
+            "replace": view.replace,
         }
         func = funcs.get(self.cmd)
         if func:
@@ -53,6 +56,7 @@ class EditStep:
                 arg = arg.resolve(view, edit)
             args.append(arg)
         return args
+
 
 class Edit:
     def __init__(self, view):
@@ -71,21 +75,21 @@ class Edit:
         self.steps.append(step)
 
     def insert(self, point, string):
-        self.step('insert', point, string)
+        self.step("insert", point, string)
 
     def erase(self, region):
-        self.step('erase', region)
+        self.step("erase", region)
 
     def replace(self, region, string):
-        self.step('replace', region, string)
+        self.step("replace", region, string)
 
     def sel(self, start, end=None):
         if end is None:
             end = start
-        self.step('sel', start, end)
+        self.step("sel", start, end)
 
     def callback(self, func):
-        self.step('callback', func)
+        self.step("callback", func)
 
     def run(self, view, edit):
         for step in self.steps:
@@ -96,14 +100,15 @@ class Edit:
 
     def __exit__(self, type_, value, traceback):
         view = self.view
-        if sublime.version().startswith('2'):
+        if sublime.version().startswith("2"):
             edit = view.begin_edit()
             self.run(view, edit)
             view.end_edit(edit)
         else:
             key = str(hash(tuple(self.steps)))
             sublime.edit_storage[key] = self.run
-            view.run_command('apply_edit', {'key': key})
+            view.run_command("apply_edit", {"key": key})
+
 
 class apply_edit(sublime_plugin.TextCommand):
     def run(self, edit, key):

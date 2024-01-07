@@ -16,5 +16,5 @@ jobs:
     - name: Install PyTest
       run: pip install pytest
     - name: Run PyTest
-      run: pytest .
+      run: pytest plugins
 
