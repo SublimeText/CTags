@@ -2,25 +2,11 @@
 common utilities used by all ctags modules
 """
 import re
-import sys
-import os
 
 # Helper functions
 
-try:
-    import sublime
-    import sublime_plugin
-    from sublime import status_message, error_message
-
-    # hack the system path to prevent the following issue in ST3
-    #     ImportError: No module named 'ctags'
-    sys.path.append(os.path.dirname(os.path.realpath(__file__)))
-except ImportError:  # running tests
-    from tests.sublime_fake import sublime
-    from tests.sublime_fake import sublime_plugin
-
-    sys.modules['sublime'] = sublime
-    sys.modules['sublime_plugin'] = sublime_plugin
+import sublime
+import sublime_plugin
 
 
 def get_settings():

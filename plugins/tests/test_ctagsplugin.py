@@ -1,21 +1,18 @@
 #!/usr/bin/env python
 
 """
-Unit tests for 'ctagsplugin.py'.
+Unit tests for 'cmds.py'.
 """
 
 import os
 import sys
-import tempfile
 import shutil
+import tempfile
+import unittest
 
-if sys.version_info < (2, 7):
-    import unittest2 as unittest
-else:
-    import unittest
+from .. import cmds
+from .. import ctags
 
-import ctags
-import ctagsplugin
 
 class CTagsPluginTest(unittest.TestCase):
     #
@@ -124,7 +121,7 @@ class CTagsPluginTest(unittest.TestCase):
 
         # should find tag file in current directory
         self.assertEqual(
-            ctagsplugin.find_tags_relative_to(current_path, tag_file),
+            cmds.find_tags_relative_to(current_path, tag_file),
             tag_file_)
 
         # cleanup
@@ -141,7 +138,7 @@ class CTagsPluginTest(unittest.TestCase):
 
         # should find tag file in parent directory
         self.assertEqual(
-            ctagsplugin.find_tags_relative_to(child_path, tag_file),
+            cmds.find_tags_relative_to(child_path, tag_file),
             parent_tag_file)
 
         # cleanup
@@ -155,7 +152,7 @@ class CTagsPluginTest(unittest.TestCase):
 
         temp = parent_dir + '/example.py'
 
-        path = ctagsplugin.get_common_ancestor_folder(temp, [parent_dir])
+        path = cmds.get_common_ancestor_folder(temp, [parent_dir])
 
         # should return parent of the two child directories the deepest common
         # folder
@@ -167,7 +164,7 @@ class CTagsPluginTest(unittest.TestCase):
 
         temp = child_dir + '/example.py'
 
-        path = ctagsplugin.get_common_ancestor_folder(temp, [parent_dir])
+        path = cmds.get_common_ancestor_folder(temp, [parent_dir])
 
         # should return parent of the two child directories the deepest common
         # folder
@@ -180,7 +177,7 @@ class CTagsPluginTest(unittest.TestCase):
 
         temp = child_b_dir + '/example.py'
 
-        path = ctagsplugin.get_common_ancestor_folder(temp, [child_a_dir])
+        path = cmds.get_common_ancestor_folder(temp, [child_a_dir])
 
         # should return parent of the two child directories the deepest common
         # folder
@@ -194,7 +191,7 @@ class CTagsPluginTest(unittest.TestCase):
         temp = child_dir + '/example.py'
 
         # create temporary folders and files
-        path = ctagsplugin.get_common_ancestor_folder(temp, [grandchild_dir])
+        path = cmds.get_common_ancestor_folder(temp, [grandchild_dir])
 
         # should return child directory as the deepest common folder
         self.assertEqual(path, child_dir)
@@ -205,7 +202,7 @@ class CTagsPluginTest(unittest.TestCase):
         temp = '/c/users/temporary_file'
         tag_file = '/c/users/tags'
 
-        result = ctagsplugin.get_rel_path_to_source(temp, tag_file)
+        result = cmds.get_rel_path_to_source(temp, tag_file)
 
         relative_path = 'temporary_file'
 
@@ -215,7 +212,7 @@ class CTagsPluginTest(unittest.TestCase):
         temp = '/c/users/folder/temporary_file'
         tag_file = '/c/users/tags'
 
-        result = ctagsplugin.get_rel_path_to_source(temp, tag_file)
+        result = cmds.get_rel_path_to_source(temp, tag_file)
 
         # handle [windows, unix] paths
         relative_paths = ['folder\\temporary_file', 'folder/temporary_file']

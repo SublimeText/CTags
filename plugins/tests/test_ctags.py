@@ -4,18 +4,15 @@
 Unit tests for 'ctags.py'.
 """
 
-import os
-import sys
-import tempfile
 import codecs
+import os
+import tempfile
+import unittest
+
 from subprocess import CalledProcessError
 
-if sys.version_info < (2, 7):
-    import unittest2 as unittest
-else:
-    import unittest
+from .. import ctags
 
-import ctags
 
 class CTagsTest(unittest.TestCase):
     #

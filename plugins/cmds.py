@@ -1,46 +1,29 @@
-"""
-A ctags plugin for Sublime Text 2/3.
-"""
-
-import functools
-from functools import reduce
 import codecs
+import functools
 import locale
-import sys
 import os
 import pprint
 import re
 import string
-import threading
 import subprocess
+import threading
 
+from collections import defaultdict, deque
 from itertools import chain
 from operator import itemgetter as iget
-from collections import defaultdict, deque
 
-try:
-    import sublime
-    import sublime_plugin
-    from sublime import status_message, error_message
+import sublime
+import sublime_plugin
+from sublime import status_message, error_message
 
-    # hack the system path to prevent the following issue in ST3
-    #     ImportError: No module named 'ctags'
-    sys.path.append(os.path.dirname(os.path.realpath(__file__)))
-except ImportError:  # running tests
-    from tests.sublime_fake import sublime
-    from tests.sublime_fake import sublime_plugin
+from .ctags import (FILENAME, PATH_ORDER, SYMBOL,
+                    build_ctags, parse_tag_lines,
+                    TagElements, TagFile)
 
-    sys.modules['sublime'] = sublime
-    sys.modules['sublime_plugin'] = sublime_plugin
-
-import ctags
-from ctags import (FILENAME, parse_tag_lines, PATH_ORDER, SYMBOL,
-                   TagElements, TagFile)
-from helpers.edit import Edit
-
-from helpers.common import *
-from ranking.rank import RankMgr
-from ranking.parse import Parser
+from .edit import Edit
+from .ranking.parse import Parser
+from .ranking.rank import RankMgr
+from .utils import *
 
 #
 # Contants
@@ -386,7 +369,7 @@ def format_tag_for_quickopen(tag, show_path=True):
     :returns: formatted tag
     """
     format_ = []
-    tag = ctags.TagElements(tag)
+    tag = TagElements(tag)
     f = ''
 
     for field in getattr(tag, 'field_keys', []):
@@ -885,9 +868,9 @@ class RebuildTags(sublime_plugin.WindowCommand):
             tags_building(path)
 
             try:
-                result = ctags.build_ctags(path=path, tag_file=tag_file,
-                                           recursive=recursive, opts=opts,
-                                           cmd=command)
+                result = build_ctags(path=path, tag_file=tag_file,
+                                     recursive=recursive, opts=opts,
+                                     cmd=command)
             except IOError as e:
                 error_message(e.strerror)
                 return

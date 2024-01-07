@@ -2,14 +2,14 @@
 Rank and Filter support for ctags plugin for Sublime Text 2/3.
 """
 
-from functools import reduce
-import sys
 import os
 import re
 import string
+import sys
 
+from functools import reduce
 
-from helpers.common import *
+from ..utils import *
 
 
 def compile_definition_filters(view):

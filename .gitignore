@@ -1,2 +1,6 @@
-
+# python cache files
+.mypy_cache/
+.pytest_cache/
+.venv/
+__pycache__/
 *.pyc
