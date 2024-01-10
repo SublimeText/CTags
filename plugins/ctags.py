@@ -3,7 +3,6 @@ A ctags wrapper, parser and sorter.
 """
 
 import bisect
-import codecs
 import mmap
 import os
 import re
@@ -363,7 +362,7 @@ def resort_ctags(tag_file):
     """
     groups = {}
 
-    with codecs.open(tag_file, encoding="utf-8", errors="replace") as file_:
+    with open(tag_file, encoding="utf-8", errors="replace") as file_:
         for line in file_:
             # meta data not needed in sorted files
             if line.startswith("!_TAG"):
@@ -375,7 +374,7 @@ def resort_ctags(tag_file):
             if len(split) > FILENAME:
                 groups.setdefault(split[FILENAME], []).append(line)
 
-    with codecs.open(
+    with open(
         tag_file + "_sorted_by_file", "w", encoding="utf-8", errors="replace"
     ) as file_:
         for group in sorted(groups):
@@ -509,7 +508,7 @@ class TagFile(object):
         """
         Open file.
         """
-        self.file_o = codecs.open(self.path, "r+b", encoding="utf-8")
+        self.file_o = open(self.path, "r", encoding="utf-8")
         self.mapped = mmap.mmap(self.file_o.fileno(), 0, access=mmap.ACCESS_READ)
 
     def close(self):

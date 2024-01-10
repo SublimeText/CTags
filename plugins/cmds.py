@@ -1,4 +1,3 @@
-import codecs
 import functools
 import locale
 import os
@@ -226,9 +225,7 @@ def get_alternate_tags_paths(view, tags_file):
 
     # read and add additional tag file paths from file
     if os.path.exists(tags_paths):
-        search_paths.extend(
-            codecs.open(tags_paths, encoding="utf-8").read().split("\n")
-        )
+        search_paths.extend(open(tags_paths, encoding="utf-8").read().split("\n"))
 
     # read and add additional tag file paths from 'extra_tag_paths' setting
     try:
@@ -988,7 +985,7 @@ class TestCtags(sublime_plugin.TextCommand):
     def co_routine(self, view):
         tag_file = find_tags_relative_to(view.file_name(), setting("tag_file"))
 
-        with codecs.open(tag_file, encoding="utf-8") as tf:
+        with open(tag_file, encoding="utf-8") as tf:
             tags = parse_tag_lines(tf, tag_class=TagElements)
 
         print("Starting Test")
