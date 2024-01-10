@@ -444,9 +444,6 @@ class TagFile(object):
     (prefix, suffix, exact), getting the directory of a tag and so forth.
     """
 
-    file_o = None
-    mapped = None
-
     def __init__(self, path, column):
         """
         Initialise object.
@@ -461,16 +458,18 @@ class TagFile(object):
         """
         self.path = path
         self.column = column
+        self.file = None
+        self.mmap = None
 
     def __getitem__(self, index):
         """
         Provide sequence-type interface to tag file.
         """
-        self.mapped.seek(index)
-        result = self.mapped.readline()
+        self.mmap.seek(index)
+        result = self.mmap.readline()
 
         if index != 0:  # handle first line
-            result = self.mapped.readline()  # get a complete line
+            result = self.mmap.readline()  # get a complete line
 
         result = result.strip()
         if not result:
@@ -482,7 +481,7 @@ class TagFile(object):
         """
         Get size of tag file in bytes.
         """
-        return len(self.mapped)
+        return len(self.mmap)
 
     def __enter__(self):
         """
@@ -508,15 +507,17 @@ class TagFile(object):
         """
         Open file.
         """
-        self.file_o = open(self.path, "r", encoding="utf-8")
-        self.mapped = mmap.mmap(self.file_o.fileno(), 0, access=mmap.ACCESS_READ)
+        self.file = open(self.path, "r", encoding="utf-8")
+        self.mmap = mmap.mmap(self.file.fileno(), 0, access=mmap.ACCESS_READ)
 
     def close(self):
         """
         Close file.
         """
-        self.mapped.close()
-        self.file_o.close()
+        self.mmap.close()
+        self.mmap = None
+        self.file.close()
+        self.file = None
 
     def search(self, exact_match=True, *tags):
         """
@@ -529,8 +530,8 @@ class TagFile(object):
         :returns: matching tags
         """
         if not tags:
-            while self.mapped.tell() < self.mapped.size():
-                result = Tag(self.mapped.readline().strip(), self.column)
+            while self.mmap.tell() < self.mmap.size():
+                result = Tag(self.mmap.readline().strip(), self.column)
                 if result.line:
                     yield result
             return
@@ -541,12 +542,12 @@ class TagFile(object):
                 result = self[left_index]
                 while result.line and result[result.column] == key:
                     yield result
-                    result = Tag(self.mapped.readline().strip(), self.column)
+                    result = Tag(self.mmap.readline().strip(), self.column)
             else:
                 result = self[left_index]
                 while result.line and result[result.column].startswith(key):
                     yield result
-                    result = Tag(self.mapped.readline().strip(), self.column)
+                    result = Tag(self.mmap.readline().strip(), self.column)
 
     def search_by_suffix(self, suffix):
         """
@@ -560,7 +561,7 @@ class TagFile(object):
 
         :returns: matching tags
         """
-        for line in self.file_o:
+        for line in self.file:
             tag = Tag(line, self.column)
             if tag.key.endswith(suffix):
                 yield tag
