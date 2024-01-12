@@ -6,10 +6,10 @@
 		"modifiers": ["ctrl", "shift"],
 		"command": "navigate_to_definition"
 	},
-	{
-		"button": "button2",
-		"count": 1,
-		"modifiers": ["ctrl", "shift"],
-		"command": "jump_prev"
-	}
+	// {
+	// 	"button": "button2",
+	// 	"count": 1,
+	// 	"modifiers": ["ctrl", "shift"],
+	// 	"command": "jump_back"
+	// }
 ]

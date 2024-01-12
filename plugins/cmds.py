@@ -7,7 +7,7 @@ import string
 import subprocess
 import threading
 
-from collections import defaultdict, deque
+from collections import defaultdict
 from itertools import chain
 from operator import itemgetter as iget
 
@@ -448,54 +448,6 @@ def get_current_file_suffix(path):
     return file_suffix
 
 
-#
-# Sublime Commands
-#
-
-# JumpPrev Commands
-
-
-class JumpPrev(sublime_plugin.WindowCommand):
-    """
-    Provide ``jump_back`` command.
-
-    Command "jumps back" to the previous code point before a tag was navigated
-    or "jumped" to.
-
-    This is functionality supported natively by ST3 but not by ST2. It is
-    therefore included for legacy purposes.
-    """
-
-    buf = deque(maxlen=100)  # virtually a "ring buffer"
-
-    def is_enabled(self):
-        # disable if nothing in the buffer
-        return len(self.buf) > 0
-
-    def is_visible(self):
-        return setting("show_context_menus")
-
-    def run(self):
-        if not self.buf:
-            return status_message("JumpPrev buffer empty")
-
-        file_name, sel = self.buf.pop()
-        self.jump(file_name, sel)
-
-    def jump(self, path, sel):
-        @on_load(path, begin_edit=True)
-        def and_then(view):
-            select(view, sel)
-
-    @classmethod
-    def append(cls, view):
-        """Append a code point to the list"""
-        name = view.file_name()
-        if name:
-            sel = [s for s in view.sel()][0]
-            cls.buf.append((name, sel))
-
-
 # CTags commands
 
 
@@ -562,7 +514,6 @@ def show_tag_panel(view, result, jump_directly):
 
         def on_select(i):
             if i != -1:
-                JumpPrev.append(view)
                 # Work around bug in ST3 where the quick panel keeps focus after
                 # selecting an entry.
                 # See https://github.com/SublimeText/Issues/issues/39
@@ -632,7 +583,6 @@ class JumpToDefinition:
 
         if not tags:
             # append to allow jump back to work
-            JumpPrev.append(view)
             view.window().run_command("goto_definition")
             return status_message('Can\'t find "%s"' % symbol)
 

@@ -23,7 +23,6 @@ else:
     # Publish Commands and EventListeners
     from .plugins.cmds import (
         CTagsAutoComplete,
-        JumpPrev,
         NavigateToDefinition,
         RebuildTags,
         SearchForDefinition,
