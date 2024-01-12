@@ -15,6 +15,8 @@ import sublime
 import sublime_plugin
 from sublime import status_message, error_message
 
+from .activity_indicator import ActivityIndicator
+
 from .ctags import (
     FILENAME,
     PATH_ORDER,
@@ -822,49 +824,43 @@ class RebuildTags(sublime_plugin.WindowCommand):
 
         :returns: None
         """
+        with ActivityIndicator("CTags: Rebuilding tags...") as progress:
+            for i, path in enumerate(paths, start=1):
+                if len(paths) > 1:
+                    progress.update(
+                        "CTags: Rebuilding tags [%d/%d]..." % (i, len(paths))
+                    )
 
-        def tags_building(tag_file):
-            """Display 'Building CTags' message in all views"""
-            print(("Building CTags for %s: Please be patient" % tag_file))
-            in_main(
-                lambda: status_message(
-                    "Building CTags for {0}: Please be" " patient".format(tag_file)
-                )
-            )()
+                try:
+                    result = build_ctags(
+                        path=path,
+                        tag_file=tag_file,
+                        recursive=recursive,
+                        opts=opts,
+                        cmd=command,
+                    )
+                except IOError as e:
+                    error_message(e.strerror)
+                    return
+                except subprocess.CalledProcessError as e:
+                    if sublime.platform() == "windows":
+                        str_err = " ".join(e.output.decode("windows-1252").splitlines())
+                    else:
+                        str_err = e.output.decode(
+                            locale.getpreferredencoding()
+                        ).rstrip()
 
-        def tags_built(tag_file):
-            """Display 'Finished Building CTags' message in all views"""
-            print(("Finished building %s" % tag_file))
-            in_main(lambda: status_message("Finished building {0}".format(tag_file)))()
-            in_main(lambda: tags_cache[os.path.dirname(tag_file)].clear())()
+                    error_message(str_err)
+                    return
+                except Exception as e:
+                    error_message(
+                        "An unknown error occured.\nCheck the console for info."
+                    )
+                    raise e
 
-        for path in paths:
-            tags_building(path)
+                in_main(lambda: tags_cache[os.path.dirname(result)].clear())()
 
-            try:
-                result = build_ctags(
-                    path=path,
-                    tag_file=tag_file,
-                    recursive=recursive,
-                    opts=opts,
-                    cmd=command,
-                )
-            except IOError as e:
-                error_message(e.strerror)
-                return
-            except subprocess.CalledProcessError as e:
-                if sublime.platform() == "windows":
-                    str_err = " ".join(e.output.decode("windows-1252").splitlines())
-                else:
-                    str_err = e.output.decode(locale.getpreferredencoding()).rstrip()
-
-                error_message(str_err)
-                return
-            except Exception as e:
-                error_message("An unknown error occured.\nCheck the console for info.")
-                raise e
-
-            tags_built(result)
+            progress.finish("Finished building tags!")
 
         if tag_file in ctags_completions:
             del ctags_completions[tag_file]  # clear the cached ctags list
