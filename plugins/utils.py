@@ -2,11 +2,7 @@
 common utilities used by all ctags modules
 """
 import re
-
-# Helper functions
-
 import sublime
-import sublime_plugin
 
 
 def get_settings():
