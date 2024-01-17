@@ -453,55 +453,6 @@ def get_current_file_suffix(path):
 # CTags commands
 
 
-def show_build_panel(view):
-    """
-    Handle build ctags command.
-
-    Allows user to select whether tags should be built for the current file,
-    a given directory or all open directories.
-    """
-    display = []
-
-    if view.file_name() is not None:
-        if not setting("recursive"):
-            display.append(["Open File", view.file_name()])
-        else:
-            display.append(["Open File's Directory", os.path.dirname(view.file_name())])
-
-    if len(view.window().folders()) > 0:
-        # append option to build for all open folders
-        display.append(
-            [
-                "All Open Folders",
-                "; ".join(
-                    [
-                        "'{0}'".format(os.path.split(x)[1])
-                        for x in view.window().folders()
-                    ]
-                ),
-            ]
-        )
-        # Append options to build for each open folder
-        display.extend([[os.path.split(x)[1], x] for x in view.window().folders()])
-
-    def on_select(i):
-        if i != -1:
-            if display[i][0] == "All Open Folders":
-                paths = view.window().folders()
-            else:
-                paths = display[i][1:]
-
-            command = setting("command")
-            recursive = setting("recursive")
-            tag_file = setting("tag_file")
-            opts = read_opts(view)
-
-            rebuild_tags = RebuildTags(False)
-            rebuild_tags.build_ctags(paths, command, tag_file, recursive, opts)
-
-    view.window().show_quick_panel(display, on_select)
-
-
 def show_tag_panel(view, result, jump_directly):
     """
     Handle tag navigation command.
@@ -805,7 +756,56 @@ class RebuildTags(sublime_plugin.WindowCommand):
             status_message("Cannot build CTags: No file or folder open.")
 
         else:
-            show_build_panel(view)
+            self.show_build_panel(view)
+
+    def show_build_panel(self, view):
+        """
+        Handle build ctags command.
+
+        Allows user to select whether tags should be built for the current file,
+        a given directory or all open directories.
+        """
+        display = []
+
+        if view.file_name() is not None:
+            if not setting("recursive"):
+                display.append(["Open File", view.file_name()])
+            else:
+                display.append(
+                    ["Open File's Directory", os.path.dirname(view.file_name())]
+                )
+
+        if len(view.window().folders()) > 0:
+            # append option to build for all open folders
+            display.append(
+                [
+                    "All Open Folders",
+                    "; ".join(
+                        [
+                            "'{0}'".format(os.path.split(x)[1])
+                            for x in view.window().folders()
+                        ]
+                    ),
+                ]
+            )
+            # Append options to build for each open folder
+            display.extend([[os.path.split(x)[1], x] for x in view.window().folders()])
+
+        def on_select(i):
+            if i != -1:
+                if display[i][0] == "All Open Folders":
+                    paths = view.window().folders()
+                else:
+                    paths = display[i][1:]
+
+                command = setting("command")
+                recursive = setting("recursive")
+                tag_file = setting("tag_file")
+                opts = read_opts(view)
+
+                self.build_ctags(paths, command, tag_file, recursive, opts)
+
+        view.window().show_quick_panel(display, on_select)
 
     @threaded(msg="Already running CTags!")
     def build_ctags(self, paths, command, tag_file, recursive, opts):
