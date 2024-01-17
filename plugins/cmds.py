@@ -295,11 +295,11 @@ def find_with_scope(view, pattern, scope, start_pos=0, cond=True, flags=0):
         f = view.find(pattern, start_pos, flags)
 
         if not f or view.match_selector(f.begin(), scope) is cond:
-            break
+            return f
         else:
             start_pos = f.end()
 
-    return f
+    return None
 
 
 def find_source(view, pattern, start_at, flags=sublime.LITERAL):
@@ -349,6 +349,8 @@ def scroll_to_tag(view, tag, hook=None):
             symbol_region = view.find(
                 escape_regex(search_symbol) + r"(?:[^_]|$)", look_from, 0
             )
+        else:
+            symbol_region = None
 
         if do_find and symbol_region:
             # Using reversed symbol_region so cursor stays in front of the
