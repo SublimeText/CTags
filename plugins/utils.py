@@ -113,8 +113,9 @@ def get_lang_setting(source):
 
 
 def compile_filters(view):
-    filters = []
-    for selector, regexes in list(setting("filters", {}).items()):
-        if view.match_selector(view.sel() and view.sel()[0].begin() or 0, selector):
-            filters.append(regexes)
-    return filters
+    pt = view.sel() and view.sel()[0].begin() or 0
+    return [
+        regexes
+        for selector, regexes in setting("filters", {}).items()
+        if view.match_selector(pt, selector)
+    ]
