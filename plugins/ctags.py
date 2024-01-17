@@ -465,6 +465,9 @@ class TagFile(object):
         """
         Provide sequence-type interface to tag file.
         """
+        if not self.mmap:
+            raise RuntimeError("No tag file open.")
+
         self.mmap.seek(index)
         result = self.mmap.readline()
 
@@ -481,6 +484,9 @@ class TagFile(object):
         """
         Get size of tag file in bytes.
         """
+        if not self.mmap:
+            raise RuntimeError("No tag file open.")
+
         return len(self.mmap)
 
     def __enter__(self):
@@ -514,6 +520,9 @@ class TagFile(object):
         """
         Close file.
         """
+        if not self.mmap or not self.file:
+            raise RuntimeError("No tag file open.")
+
         self.mmap.close()
         self.mmap = None
         self.file.close()
@@ -529,6 +538,9 @@ class TagFile(object):
 
         :returns: matching tags
         """
+        if not self.mmap:
+            raise RuntimeError("No tag file open.")
+
         if not tags:
             while self.mmap.tell() < self.mmap.size():
                 result = Tag(self.mmap.readline().strip(), self.column)
@@ -561,6 +573,9 @@ class TagFile(object):
 
         :returns: matching tags
         """
+        if not self.file:
+            raise RuntimeError("No tag file open.")
+
         for line in self.file:
             tag = Tag(line, self.column)
             if tag.key.endswith(suffix):
