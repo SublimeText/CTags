@@ -6,10 +6,5 @@
 		"caption": "Navigate to Definition",
 		"command": "navigate_to_definition",
 		"args": {}
-	},
-	{
-		"caption": "Jump Back",
-		"command": "jump_prev",
-		"args": {}
 	}
 ]

@@ -4,7 +4,6 @@
 Unit tests for 'ctags.py'.
 """
 
-import codecs
 import os
 import tempfile
 import unittest
@@ -217,7 +216,7 @@ class CTagsTest(unittest.TestCase):
 
         tag_file = ctags.build_ctags(path=path)
 
-        with codecs.open(tag_file, encoding="utf-8") as output:
+        with open(tag_file, encoding="utf-8") as output:
             try:
                 content = output.readlines()
                 filename = os.path.basename(path)
@@ -239,7 +238,7 @@ class CTagsTest(unittest.TestCase):
 
         tag_file = ctags.build_ctags(path=path, tag_file="my_tag_file")
 
-        with codecs.open(tag_file, encoding="utf-8") as output:
+        with open(tag_file, encoding="utf-8") as output:
             try:
                 content = output.readlines()
                 filename = os.path.basename(path)
@@ -263,7 +262,7 @@ class CTagsTest(unittest.TestCase):
             path=path, tag_file="my_tag_file", opts="--language-force=java"
         )
 
-        with codecs.open(tag_file, encoding="utf-8") as output:
+        with open(tag_file, encoding="utf-8") as output:
             try:
                 content = output.readlines()
                 # there should be nothing in the file but headers (due to the
@@ -375,7 +374,7 @@ class CTagsTest(unittest.TestCase):
 
         tag_file = ctags.build_ctags(path=path, opts=["--python-kinds=-i"])
 
-        with codecs.open(tag_file, encoding="utf-8") as output:
+        with open(tag_file, encoding="utf-8") as output:
             try:
                 content = output.readlines()
                 filename = os.path.basename(path)
@@ -471,7 +470,7 @@ class CTagsTest(unittest.TestCase):
 
         tag_file = ctags.build_ctags(path=path)
 
-        with codecs.open(tag_file, encoding="utf-8") as output:
+        with open(tag_file, encoding="utf-8") as output:
             try:
                 content = output.readlines()
                 filename = os.path.basename(path)

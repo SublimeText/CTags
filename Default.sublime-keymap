@@ -12,11 +12,11 @@
 		"keys": ["ctrl+t", "ctrl+y"]
 	},
 	{
-		"command": "jump_prev",
+		"command": "jump_back",
 		"keys": ["ctrl+t", "ctrl+b"]
 	},
 	{
-		"command": "jump_prev",
+		"command": "jump_back",
 		"keys": ["ctrl+shift+comma"]
 	},
 	{

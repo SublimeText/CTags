@@ -1,4 +1,3 @@
-import codecs
 import functools
 import locale
 import os
@@ -8,13 +7,15 @@ import string
 import subprocess
 import threading
 
-from collections import defaultdict, deque
+from collections import defaultdict
 from itertools import chain
 from operator import itemgetter as iget
 
 import sublime
 import sublime_plugin
 from sublime import status_message, error_message
+
+from .activity_indicator import ActivityIndicator
 
 from .ctags import (
     FILENAME,
@@ -226,9 +227,7 @@ def get_alternate_tags_paths(view, tags_file):
 
     # read and add additional tag file paths from file
     if os.path.exists(tags_paths):
-        search_paths.extend(
-            codecs.open(tags_paths, encoding="utf-8").read().split("\n")
-        )
+        search_paths.extend(open(tags_paths, encoding="utf-8").read().split("\n"))
 
     # read and add additional tag file paths from 'extra_tag_paths' setting
     try:
@@ -296,11 +295,11 @@ def find_with_scope(view, pattern, scope, start_pos=0, cond=True, flags=0):
         f = view.find(pattern, start_pos, flags)
 
         if not f or view.match_selector(f.begin(), scope) is cond:
-            break
+            return f
         else:
             start_pos = f.end()
 
-    return f
+    return None
 
 
 def find_source(view, pattern, start_at, flags=sublime.LITERAL):
@@ -350,6 +349,8 @@ def scroll_to_tag(view, tag, hook=None):
             symbol_region = view.find(
                 escape_regex(search_symbol) + r"(?:[^_]|$)", look_from, 0
             )
+        else:
+            symbol_region = None
 
         if do_find and symbol_region:
             # Using reversed symbol_region so cursor stays in front of the
@@ -451,104 +452,7 @@ def get_current_file_suffix(path):
     return file_suffix
 
 
-#
-# Sublime Commands
-#
-
-# JumpPrev Commands
-
-
-class JumpPrev(sublime_plugin.WindowCommand):
-    """
-    Provide ``jump_back`` command.
-
-    Command "jumps back" to the previous code point before a tag was navigated
-    or "jumped" to.
-
-    This is functionality supported natively by ST3 but not by ST2. It is
-    therefore included for legacy purposes.
-    """
-
-    buf = deque(maxlen=100)  # virtually a "ring buffer"
-
-    def is_enabled(self):
-        # disable if nothing in the buffer
-        return len(self.buf) > 0
-
-    def is_visible(self):
-        return setting("show_context_menus")
-
-    def run(self):
-        if not self.buf:
-            return status_message("JumpPrev buffer empty")
-
-        file_name, sel = self.buf.pop()
-        self.jump(file_name, sel)
-
-    def jump(self, path, sel):
-        @on_load(path, begin_edit=True)
-        def and_then(view):
-            select(view, sel)
-
-    @classmethod
-    def append(cls, view):
-        """Append a code point to the list"""
-        name = view.file_name()
-        if name:
-            sel = [s for s in view.sel()][0]
-            cls.buf.append((name, sel))
-
-
 # CTags commands
-
-
-def show_build_panel(view):
-    """
-    Handle build ctags command.
-
-    Allows user to select whether tags should be built for the current file,
-    a given directory or all open directories.
-    """
-    display = []
-
-    if view.file_name() is not None:
-        if not setting("recursive"):
-            display.append(["Open File", view.file_name()])
-        else:
-            display.append(["Open File's Directory", os.path.dirname(view.file_name())])
-
-    if len(view.window().folders()) > 0:
-        # append option to build for all open folders
-        display.append(
-            [
-                "All Open Folders",
-                "; ".join(
-                    [
-                        "'{0}'".format(os.path.split(x)[1])
-                        for x in view.window().folders()
-                    ]
-                ),
-            ]
-        )
-        # Append options to build for each open folder
-        display.extend([[os.path.split(x)[1], x] for x in view.window().folders()])
-
-    def on_select(i):
-        if i != -1:
-            if display[i][0] == "All Open Folders":
-                paths = view.window().folders()
-            else:
-                paths = display[i][1:]
-
-            command = setting("command")
-            recursive = setting("recursive")
-            tag_file = setting("tag_file")
-            opts = read_opts(view)
-
-            rebuild_tags = RebuildTags(False)
-            rebuild_tags.build_ctags(paths, command, tag_file, recursive, opts)
-
-    view.window().show_quick_panel(display, on_select)
 
 
 def show_tag_panel(view, result, jump_directly):
@@ -565,7 +469,6 @@ def show_tag_panel(view, result, jump_directly):
 
         def on_select(i):
             if i != -1:
-                JumpPrev.append(view)
                 # Work around bug in ST3 where the quick panel keeps focus after
                 # selecting an entry.
                 # See https://github.com/SublimeText/Issues/issues/39
@@ -608,8 +511,6 @@ def check_if_building(self, **args):
     """
     if RebuildTags.build_ctags.func.running:
         status_message("Tags not available until built")
-        if setting("display_rebuilding_message"):
-            error_message("Please wait while tags are built")
         return False
     return True
 
@@ -635,7 +536,6 @@ class JumpToDefinition:
 
         if not tags:
             # append to allow jump back to work
-            JumpPrev.append(view)
             view.window().run_command("goto_definition")
             return status_message('Can\'t find "%s"' % symbol)
 
@@ -858,7 +758,56 @@ class RebuildTags(sublime_plugin.WindowCommand):
             status_message("Cannot build CTags: No file or folder open.")
 
         else:
-            show_build_panel(view)
+            self.show_build_panel(view)
+
+    def show_build_panel(self, view):
+        """
+        Handle build ctags command.
+
+        Allows user to select whether tags should be built for the current file,
+        a given directory or all open directories.
+        """
+        display = []
+
+        if view.file_name() is not None:
+            if not setting("recursive"):
+                display.append(["Open File", view.file_name()])
+            else:
+                display.append(
+                    ["Open File's Directory", os.path.dirname(view.file_name())]
+                )
+
+        if len(view.window().folders()) > 0:
+            # append option to build for all open folders
+            display.append(
+                [
+                    "All Open Folders",
+                    "; ".join(
+                        [
+                            "'{0}'".format(os.path.split(x)[1])
+                            for x in view.window().folders()
+                        ]
+                    ),
+                ]
+            )
+            # Append options to build for each open folder
+            display.extend([[os.path.split(x)[1], x] for x in view.window().folders()])
+
+        def on_select(i):
+            if i != -1:
+                if display[i][0] == "All Open Folders":
+                    paths = view.window().folders()
+                else:
+                    paths = display[i][1:]
+
+                command = setting("command")
+                recursive = setting("recursive")
+                tag_file = setting("tag_file")
+                opts = read_opts(view)
+
+                self.build_ctags(paths, command, tag_file, recursive, opts)
+
+        view.window().show_quick_panel(display, on_select)
 
     @threaded(msg="Already running CTags!")
     def build_ctags(self, paths, command, tag_file, recursive, opts):
@@ -875,49 +824,43 @@ class RebuildTags(sublime_plugin.WindowCommand):
 
         :returns: None
         """
+        with ActivityIndicator("CTags: Rebuilding tags...") as progress:
+            for i, path in enumerate(paths, start=1):
+                if len(paths) > 1:
+                    progress.update(
+                        "CTags: Rebuilding tags [%d/%d]..." % (i, len(paths))
+                    )
 
-        def tags_building(tag_file):
-            """Display 'Building CTags' message in all views"""
-            print(("Building CTags for %s: Please be patient" % tag_file))
-            in_main(
-                lambda: status_message(
-                    "Building CTags for {0}: Please be" " patient".format(tag_file)
-                )
-            )()
+                try:
+                    result = build_ctags(
+                        path=path,
+                        tag_file=tag_file,
+                        recursive=recursive,
+                        opts=opts,
+                        cmd=command,
+                    )
+                except IOError as e:
+                    error_message(e.strerror)
+                    return
+                except subprocess.CalledProcessError as e:
+                    if sublime.platform() == "windows":
+                        str_err = " ".join(e.output.decode("windows-1252").splitlines())
+                    else:
+                        str_err = e.output.decode(
+                            locale.getpreferredencoding()
+                        ).rstrip()
 
-        def tags_built(tag_file):
-            """Display 'Finished Building CTags' message in all views"""
-            print(("Finished building %s" % tag_file))
-            in_main(lambda: status_message("Finished building {0}".format(tag_file)))()
-            in_main(lambda: tags_cache[os.path.dirname(tag_file)].clear())()
+                    error_message(str_err)
+                    return
+                except Exception as e:
+                    error_message(
+                        "An unknown error occured.\nCheck the console for info."
+                    )
+                    raise e
 
-        for path in paths:
-            tags_building(path)
+                in_main(lambda: tags_cache[os.path.dirname(result)].clear())()
 
-            try:
-                result = build_ctags(
-                    path=path,
-                    tag_file=tag_file,
-                    recursive=recursive,
-                    opts=opts,
-                    cmd=command,
-                )
-            except IOError as e:
-                error_message(e.strerror)
-                return
-            except subprocess.CalledProcessError as e:
-                if sublime.platform() == "windows":
-                    str_err = " ".join(e.output.decode("windows-1252").splitlines())
-                else:
-                    str_err = e.output.decode(locale.getpreferredencoding()).rstrip()
-
-                error_message(str_err)
-                return
-            except Exception as e:
-                error_message("An unknown error occured.\nCheck the console for info.")
-                raise e
-
-            tags_built(result)
+            progress.finish("Finished building tags!")
 
         if tag_file in ctags_completions:
             del ctags_completions[tag_file]  # clear the cached ctags list
@@ -988,7 +931,7 @@ class TestCtags(sublime_plugin.TextCommand):
     def co_routine(self, view):
         tag_file = find_tags_relative_to(view.file_name(), setting("tag_file"))
 
-        with codecs.open(tag_file, encoding="utf-8") as tf:
+        with open(tag_file, encoding="utf-8") as tf:
             tags = parse_tag_lines(tf, tag_class=TagElements)
 
         print("Starting Test")
