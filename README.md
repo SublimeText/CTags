@@ -150,13 +150,13 @@ To open CTags.sublime-settings
 * `extra_tag_files` is a list of extra files relative to the original file
 * `command` is the path to the version of ctags to use, for example::
 
-  ```jsonc
+  ```json
   "command" : "/usr/local/bin/ctags"  
   ```
   
   or:
 
-  ```jsonc
+  ```json
   "command" : "C:\\Users\\<username>\\Downloads\\CTags\\ctag.exe"
   ```
 
@@ -169,7 +169,7 @@ them to show up in the file tree and search results. To disable this behaviour
 you should add a `file_exclude_patterns` entry to your 
 `Preferences.sublime-settings` or your project file. For example:
 
-```jsonc
+```json
 "file_exclude_patterns": [".tags", ".tags_sorted_by_file", ".gemtags"]
 ```
 
